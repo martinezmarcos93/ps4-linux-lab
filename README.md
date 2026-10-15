@@ -55,6 +55,13 @@ Consultar [`docs/UPSTREAM_AUDIT.md`](docs/UPSTREAM_AUDIT.md) antes de reutilizar
 - [`docs/LICENSE_POLICY.md`](docs/LICENSE_POLICY.md): reglas para reutilización de código y binarios.
 - [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md): decisiones y supuestos.
 - [`docs/LAB_LOG_TEMPLATE.md`](docs/LAB_LOG_TEMPLATE.md): plantilla de experimentos.
+- [`docs/UPSTREAM_CODE_MAP.md`](docs/UPSTREAM_CODE_MAP.md): auditoría de código (no solo README) de ambos upstreams, con cita de archivo/línea/commit.
+- [`docs/COMPATIBILITY_MATRIX.md`](docs/COMPATIBILITY_MATRIX.md): matriz modelo/firmware/southbridge con nivel de evidencia por fila.
+- [`docs/BOOT_FLOW.md`](docs/BOOT_FLOW.md): secuencia de arranque real, del jailbreak al escritorio.
+- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md): árboles de diagnóstico no destructivo para síntomas específicos de esta pila.
+- [`docs/GPU_AND_LLM_RESEARCH.md`](docs/GPU_AND_LLM_RESEARCH.md): protocolo de evaluación gráfica y de inferencia LLM, sin prometer aceleración.
+- [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md): casos de prueba concretos, en orden de dependencia.
+- [`docs/EVIDENCE_SOURCES.md`](docs/EVIDENCE_SOURCES.md): registro de fuentes con URL, commit/fecha y nivel de confiabilidad.
 
 ## Regla de estado
 
