@@ -33,7 +33,7 @@ Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de li
 - [x] Repositorio privado creado.
 - [x] Documentación inicial incorporada.
 - [x] Fuentes de referencia y riesgos preliminares registrados.
-- [ ] Identificar modelo CUH, firmware y estado de la consola disponible.
+- [ ] Identificar modelo CUH, firmware y estado de la consola disponible. *(parcial: firmware 13.52, Slim inferida, CUH desconocido; ver LAB-000)*
 - [ ] Completar mapa de código y revisar commits/tags exactos.
 - [ ] Resolver licencias de cada componente candidato.
 - [ ] Elegir método de arranque basado en evidencia para el hardware real.

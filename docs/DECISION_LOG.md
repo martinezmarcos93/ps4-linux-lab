@@ -64,7 +64,7 @@ Las decisiones describen opciones aceptadas y condiciones para revisarlas; no tr
 
 Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-008) surgen de la auditoría de código de esta sesión y son más específicas.
 
-- **Q-001:** ¿modelo CUH y firmware exactos de la consola objetivo? BLOCKED.
+- **Q-001:** ¿modelo CUH y firmware exactos de la consola objetivo? PARCIAL (2026-10-15): firmware 13.52 confirmado, familia Slim inferida, capacidad 861,4 GB. **CUH y southbridge siguen desconocidos** (sin etiqueta en la base). Ver `docs/lab-logs/LAB-000-identificacion-consola.md`.
 - **Q-002:** ¿qué combinación loader/kernel/initramfs/rootfs es compatible? BLOCKED hasta Q-001 y la auditoría.
 - **Q-003:** ¿qué cambios internos realiza el flujo de arranque elegido? Ver D-008 — ya tiene respuesta parcial (sí los hay, según el procedimiento oficial), falta la decisión de aceptarlos o evitarlos.
 - **Q-004:** ¿qué licencia aplica a cada componente/artefacto? Pendiente por componente — ver `docs/UPSTREAM_CODE_MAP.md` §1.3/§2.8 y la lista de dependencias no auditadas en `docs/EVIDENCE_SOURCES.md` §5.

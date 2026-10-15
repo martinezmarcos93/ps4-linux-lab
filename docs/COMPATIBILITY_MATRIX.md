@@ -23,6 +23,16 @@ No extrapolar una fila a modelos/revisiones vecinos. "Slim CUH-2xxx" y "Pro CUH-
 
 **Nota sobre la versión de kernel en la fila CUH-2208B:** el reportante dice "Kernel 5.4.247 Baikal build". El repositorio de distribución audita un `kernel-7.1.7-Strawberry-General.config`. Es **HIPÓTESIS, no confirmada**, que "7.1.7" sea la numeración propia del fork "Strawberry" y no la versión real de Linux mainline (que podría ser una base 5.4.x LTS). No se puede, con la evidencia actual, afirmar que el issue #10 y el `kernel-7.1.7` de la distribución sean la misma build exacta. Tratar esta fila como refuerzo de la combinación hardware/firmware/southbridge, no como confirmación de una versión de kernel específica.
 
+## 1b. Consola del laboratorio (observada, no probada)
+
+| Modelo CUH | Familia | Southbridge | Firmware | Capacidad | Estado | Evidencia | Registro |
+|---|---|---|---|---|---|---|---|
+| **DESCONOCIDO** (sin etiqueta en la base) | Slim (inferida de foto) | **DESCONOCIDO** | 13.52 | 861,4 GB (clase 1 TB) | Sin arranque probado | OBSERVADO-LABORATORIO (firmware, MAC, capacidad); INFERENCIA (familia) | `docs/lab-logs/LAB-000-identificacion-consola.md` |
+
+Esta fila **no** es `REPRODUCIDO-LABORATORIO`: no se ejecutó ningún payload ni arranque. Solo documenta qué se sabe de la consola real.
+
+**Nota:** se recibieron listas de CUH candidatos (p. ej. 2014/2114/2214 con sufijo A/B) generadas por terceros a partir de una foto. Se descartan: el CUH no se deduce de una foto frontal, los códigos regionales citados se contradicen entre sí y no hay fuente verificable. Hasta tener el dato real, no extrapolar ninguna fila de §1 a esta consola (regla D-002).
+
 ## 2. Reportes negativos o sin confirmar (igual de importantes que los positivos)
 
 | Modelo CUH | Familia | Southbridge | Firmware | Resultado reportado | Evidencia | Fuente |
