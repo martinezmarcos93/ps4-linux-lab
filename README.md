@@ -63,8 +63,21 @@ Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de li
 | [Fuentes de evidencia](docs/EVIDENCE_SOURCES.md) | Trazabilidad |
 | [Seguridad de herramientas](docs/SAFETY_AND_TOOLING.md) | Requisitos para scripts futuros |
 | [Plan de ejecución siguiente](docs/NEXT_EXECUTION_PLAN.md) | Tareas inmediatas, responsables y puertas de seguridad |
+| [Manifiestos de artefactos](docs/ARTIFACT_MANIFEST.md) | Formato y uso del verificador de integridad |
 
 ## Convenciones de evidencia
 Estados: PLANNED, IN_PROGRESS, BLOCKED, VERIFIED y REJECTED. Solo marcar VERIFIED con hardware/firmware identificados, evidencia guardada y procedimiento reproducible.
 
 Clasificar afirmaciones como UPSTREAM-CLAIM, CODE-OBSERVATION, INFERENCE, HYPOTHESIS o LAB-VERIFIED. No guardar secretos, logs sensibles ni imágenes de gran tamaño en el repositorio.
+
+
+## Herramienta disponible
+
+La primera utilidad implementada es de solo lectura y verifica tamaño opcional y SHA-256 contra un manifiesto JSON:
+
+```bash
+python3 tools/verify_artifacts.py --manifest manifests/artifacts.json --root .
+python3 -m unittest discover -v
+```
+
+No descarga ni ejecuta binarios, no repara archivos y no escribe en dispositivos físicos. Un hash no autentica el origen por sí solo; el valor esperado debe venir de una fuente confiable.
