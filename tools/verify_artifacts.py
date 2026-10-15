@@ -22,12 +22,14 @@ class ManifestError(ValueError):
 def _validate_manifest(data: Any) -> list[dict[str, Any]]:
     if not isinstance(data, dict):
         raise ManifestError("manifest root must be a JSON object")
-    if data.get("schema_version") != 1:
-        raise ManifestError("schema_version must be 1")
+    version = data.get("schema_version")
+    if type(version) is not int or version != 1:  # excluye True, 1.0 y "1"
+        raise ManifestError("schema_version must be the integer 1")
     artifacts = data.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
         raise ManifestError("artifacts must be a non-empty array")
 
+    seen: set[str] = set()
     for index, artifact in enumerate(artifacts):
         prefix = f"artifacts[{index}]"
         if not isinstance(artifact, dict):
@@ -35,11 +37,17 @@ def _validate_manifest(data: Any) -> list[dict[str, Any]]:
         path_value = artifact.get("path")
         if not isinstance(path_value, str) or not path_value.strip():
             raise ManifestError(f"{prefix}.path must be a non-empty string")
+        if "\x00" in path_value:
+            raise ManifestError(f"{prefix}.path must not contain NUL bytes")
         if "\\" in path_value:
             raise ManifestError(f"{prefix}.path must use POSIX separators")
         rel_path = PurePosixPath(path_value)
         if rel_path.is_absolute() or any(part in ("", ".", "..") for part in rel_path.parts):
             raise ManifestError(f"{prefix}.path must be a safe relative path")
+        normalized = rel_path.as_posix()
+        if normalized in seen:
+            raise ManifestError(f"{prefix}.path duplicates another artifact: {normalized}")
+        seen.add(normalized)
         expected_hash = artifact.get("sha256")
         if not isinstance(expected_hash, str) or not SHA256_RE.fullmatch(expected_hash):
             raise ManifestError(f"{prefix}.sha256 must contain 64 hexadecimal characters")
@@ -63,6 +71,8 @@ def verify_manifest(manifest_path: Path, root: Path | None = None) -> tuple[list
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise ManifestError(f"invalid JSON at line {exc.lineno}, column {exc.colno}") from exc
+    except RecursionError as exc:
+        raise ManifestError("JSON nesting is too deep") from exc
 
     artifacts = _validate_manifest(data)
     root_path = (root if root is not None else manifest_path.parent).expanduser().resolve()
@@ -75,12 +85,17 @@ def verify_manifest(manifest_path: Path, root: Path | None = None) -> tuple[list
         candidate = root_path.joinpath(*relative.parts)
         cursor = root_path
         has_symlink = False
-        for part in relative.parts:
-            cursor = cursor / part
-            if cursor.is_symlink():
-                has_symlink = True
-                break
-        resolved = candidate.resolve(strict=False)
+        try:
+            for part in relative.parts:
+                cursor = cursor / part
+                if cursor.is_symlink():
+                    has_symlink = True
+                    break
+            resolved = candidate.resolve(strict=False)
+        except (OSError, ValueError) as exc:
+            reason = getattr(exc, "strerror", None) or str(exc)
+            results.append({"status": "FAIL", "path": artifact["path"], "message": f"cannot inspect path: {reason}"})
+            continue
         try:
             resolved.relative_to(root_path)
         except ValueError:

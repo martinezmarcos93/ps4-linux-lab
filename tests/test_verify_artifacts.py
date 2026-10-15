@@ -107,3 +107,60 @@ class VerifyArtifactsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VerifyArtifactsAdversarialTests(VerifyArtifactsTests):
+    """Regresiones de entradas hostiles (hallazgos de la revisión 2026-10-15)."""
+
+    def test_schema_version_true_rejected(self):
+        self.write_manifest([self.artifact("files/a", b"x")], schema_version=True)
+        with self.assertRaises(ManifestError):
+            verify_manifest(self.manifest_path, self.root)
+
+    def test_schema_version_float_and_string_rejected(self):
+        for bad in (1.0, "1"):
+            self.write_manifest([self.artifact("files/a", b"x")], schema_version=bad)
+            with self.assertRaises(ManifestError, msg=repr(bad)):
+                verify_manifest(self.manifest_path, self.root)
+
+    def test_nul_byte_in_path_rejected(self):
+        self.write_manifest([self.artifact("files/a\x00b", b"x")])
+        with self.assertRaises(ManifestError):
+            verify_manifest(self.manifest_path, self.root)
+
+    def test_duplicate_paths_rejected(self):
+        (self.root / "files" / "a").write_bytes(b"x")
+        entry = self.artifact("files/a", b"x")
+        self.write_manifest([entry, dict(entry)])
+        with self.assertRaises(ManifestError):
+            verify_manifest(self.manifest_path, self.root)
+
+    def test_duplicate_paths_equivalent_spelling_rejected(self):
+        (self.root / "files" / "a").write_bytes(b"x")
+        self.write_manifest([self.artifact("files/a", b"x"), self.artifact("files//a", b"x")])
+        with self.assertRaises(ManifestError):
+            verify_manifest(self.manifest_path, self.root)
+
+    def test_deeply_nested_json_is_manifest_error_not_crash(self):
+        self.manifest_path.write_bytes(b"[" * 100000)
+        with self.assertRaises(ManifestError):
+            verify_manifest(self.manifest_path, self.root)
+
+    def test_overlong_filename_fails_cleanly(self):
+        self.write_manifest([self.artifact("files/" + "ñ" * 300, b"x")])
+        results, code = verify_manifest(self.manifest_path, self.root)
+        self.assertEqual(code, 1)
+        self.assertEqual(results[0]["status"], "FAIL")
+
+    def test_directory_is_not_a_regular_file(self):
+        (self.root / "files" / "d").mkdir()
+        self.write_manifest([self.artifact("files/d", b"x")])
+        results, code = verify_manifest(self.manifest_path, self.root)
+        self.assertEqual((code, results[0]["message"]), (1, "not a regular file"))
+
+    def test_uppercase_sha256_accepted(self):
+        (self.root / "files" / "a").write_bytes(b"x")
+        entry = self.artifact("files/a", b"x")
+        entry["sha256"] = entry["sha256"].upper()
+        self.write_manifest([entry])
+        self.assertEqual(verify_manifest(self.manifest_path, self.root)[1], 0)
