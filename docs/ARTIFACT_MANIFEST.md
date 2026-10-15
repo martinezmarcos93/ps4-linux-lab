@@ -26,7 +26,7 @@ Las rutas se resuelven dentro del directorio raíz y no pueden usar rutas absolu
 Desde la raíz del repositorio:
 
 \`\`\`bash
-python3 tools/verify_artifacts.py --manifest manifests/artifacts.json --root .
+python3 tools/verify_artifacts.py --manifest /ruta/a/tu-manifiesto.json --root .
 python3 -m unittest discover -v
 \`\`\`
 
@@ -38,6 +38,6 @@ Códigos de salida:
 ## Límites de seguridad
 
 - Un hash solo confirma igualdad con el valor del manifiesto; no autentica por sí solo al publicador ni la procedencia.
-- El manifiesto debe obtener su hash esperado de una fuente confiable e independiente.
+- El manifiesto debe obtener su hash esperado de una fuente confiable e independiente. Reemplazá la ruta de ejemplo del comando por el archivo JSON que creaste; el archivo manifests/artifacts.example.json contiene valores ficticios y no debe usarse como evidencia.
 - El verificador no acepta dispositivos de bloques como artefactos normales y nunca abre archivos para escritura.
 - No usar el manifiesto de ejemplo como evidencia: contiene valores ficticios.
