@@ -67,16 +67,18 @@ Estados: `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `VERIFIED` y `REJECTED`. Una puert
 **Puerta de salida:** procedimiento específico revisado y documentado (cumplida); ejecución real pendiente de D-008 + Fase 1.
 
 ## Fase 4 — Herramientas USB seguras
-**Estado:** PLANNED. **Nota de auditoría:** `X-F1REBALL-X/PS4-Linux` ya trae `tools/build-img.sh` y `tools/write-img.ps1`, auditados línea por línea en `docs/UPSTREAM_CODE_MAP.md` §2.4-2.5. Confirmado: `write-img.ps1` **no** permite omitir las comprobaciones de BusType/IsBoot/IsSystem/tamaño con `-Force` (solo omite la reconfirmación manual del número de disco) — esto corrige una imprecisión de `docs/UPSTREAM_AUDIT.md`. Evaluar reutilizar/envolver estos scripts en vez de reescribirlos desde cero.
+**Estado:** IN_PROGRESS — primera utilidad host-side de verificación implementada; inspección de imágenes y discos aún pendientes. **Nota de auditoría:** `X-F1REBALL-X/PS4-Linux` ya trae `tools/build-img.sh` y `tools/write-img.ps1`, auditados línea por línea en `docs/UPSTREAM_CODE_MAP.md` §2.4-2.5. Confirmado: `write-img.ps1` **no** permite omitir las comprobaciones de BusType/IsBoot/IsSystem/tamaño con `-Force` (solo omite la reconfirmación manual del número de disco) — esto corrige una imprecisión de `docs/UPSTREAM_AUDIT.md`. Evaluar reutilizar/envolver estos scripts en vez de reescribirlos desde cero.
 - [ ] `inspect-host`/`doctor`: sistema operativo, herramientas disponibles, espacio y permisos.
-- [ ] `verify-artifacts`: SHA-256, tamaño, formato y manifiesto (origen, versión, hash, tamaño).
+- [x] Primera versión de `verify-artifacts`: SHA-256, tamaño opcional y manifiesto JSON de solo lectura (`tools/verify_artifacts.py`). Formato y uso: `docs/ARTIFACT_MANIFEST.md`.
+- [ ] Ampliar `verify-artifacts` con procedencia, versión y formato de artefacto cuando exista un manifiesto fuente verificable.
 - [ ] `inspect-disks`: lista discos con modelo, tamaño, bus, serial y particiones.
 - [ ] `build-usb-image`: construcción en directorio temporal único; limpiar solo archivos propios, no borrar rutas arbitrarias.
 - [ ] `write-usb-image`: modo seguro, reidentificación del disco justo antes de escribir, doble confirmación, sin bypass genérico tipo `--force` que elimine las comprobaciones estructurales.
 - [ ] `verify-usb-image`: lectura de muestra o verificación completa posterior a escritura.
 - [ ] `collect-diagnostics`: empaqueta logs sin secretos ni identificadores innecesarios.
 - [ ] Añadir `--dry-run` comprobable a toda herramienta con efectos secundarios.
-- [ ] Tests con dispositivos virtuales/archivos de imagen (fixtures); nunca con discos reales por defecto.
+- [x] Tests unitarios para hash correcto/incorrecto, tamaño, archivo ausente, archivo vacío, JSON inválido, manifiesto vacío, hash inválido, rutas absolutas/traversal y symlinks (`tests/test_verify_artifacts.py`). 11/11 pasan en sandbox local; CI remoto pendiente de confirmar.
+- [ ] Tests de integración con imágenes virtuales; nunca con discos reales por defecto.
 
 Ver también [`docs/SAFETY_AND_TOOLING.md`](SAFETY_AND_TOOLING.md) para los requisitos de seguridad detallados (manifiesto, logging/privacidad, reglas de escritura física) que estas herramientas deben cumplir antes de implementarse.
 
