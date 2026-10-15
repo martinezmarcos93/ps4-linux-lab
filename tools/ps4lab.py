@@ -10,37 +10,26 @@ Subcomandos:
 Solo usa la biblioteca estándar. No escribe nada fuera de la carpeta de logs indicada.
 """
 import argparse
-import hashlib
 import http.server
 import ipaddress
-import json
 import logging
 import shutil
 import socket
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from tools.verify_artifacts import ManifestError, verify_manifest  # noqa: E402
+
 logger = logging.getLogger("ps4lab")
 MAX_POST = 4096
-CHUNK = 1024 * 1024
 
 
-class ErrorManifiesto(Exception):
-    pass
-
-
-def cargar_manifiesto(ruta):
-    try:
-        datos = json.loads(Path(ruta).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as e:
-        raise ErrorManifiesto(f"no se pudo leer el manifiesto {ruta}: {e}") from e
-    archivos = datos.get("archivos")
-    if not isinstance(archivos, list) or not archivos:
-        raise ErrorManifiesto("manifiesto sin lista 'archivos'")
-    for a in archivos:
-        if not all(k in a for k in ("ruta", "tamano", "sha256")):
-            raise ErrorManifiesto(f"entrada incompleta en manifiesto: {a}")
-    return datos
+def permitidos_desde_manifiesto(ruta):
+    """Rutas permitidas = las del manifiesto, ya validado por tools.verify_artifacts."""
+    import json
+    datos = json.loads(Path(ruta).read_text(encoding="utf-8"))
+    return {x["path"] for x in datos["artifacts"]}
 
 
 def ruta_segura(base, relativa):
@@ -52,30 +41,6 @@ def ruta_segura(base, relativa):
     except ValueError:
         return None
     return destino
-
-
-def sha256_archivo(ruta):
-    h = hashlib.sha256()
-    with open(ruta, "rb") as f:
-        for bloque in iter(lambda: f.read(CHUNK), b""):
-            h.update(bloque)
-    return h.hexdigest()
-
-
-def verificar(directorio, manifiesto):
-    """Devuelve (ok, lista_de_problemas). No modifica nada."""
-    problemas = []
-    for a in manifiesto["archivos"]:
-        p = ruta_segura(directorio, a["ruta"])
-        if p is None:
-            problemas.append(f"{a['ruta']}: ruta fuera del directorio")
-        elif not p.is_file():
-            problemas.append(f"{a['ruta']}: falta")
-        elif p.stat().st_size != a["tamano"]:
-            problemas.append(f"{a['ruta']}: tamaño {p.stat().st_size} != {a['tamano']}")
-        elif sha256_archivo(p) != a["sha256"]:
-            problemas.append(f"{a['ruta']}: SHA-256 distinto")
-    return (not problemas), problemas
 
 
 def validar_ip_privada(texto):
@@ -136,25 +101,28 @@ def cmd_doctor(_):
 
 
 def cmd_verify(a):
-    ok, problemas = verificar(a.dir, cargar_manifiesto(a.manifiesto))
-    for p in problemas:
-        print("FALLA:", p)
-    print("OK: todos los artefactos coinciden" if ok else "VERIFICACIÓN FALLIDA")
-    return 0 if ok else 1
+    from tools.verify_artifacts import main as verificar
+    return verificar(["--manifest", str(a.manifiesto), "--root", str(a.dir)])
 
 
 def cmd_serve(a):
-    manifiesto = cargar_manifiesto(a.manifiesto)
-    ok, problemas = verificar(a.dir, manifiesto)
-    if not ok:
-        print("No se sirve: la verificación falló:\n  " + "\n  ".join(problemas))
+    try:
+        resultados, codigo = verify_manifest(Path(a.manifiesto), Path(a.dir))
+    except ManifestError as e:
+        print("No se sirve: manifiesto inválido:", e)
+        return 2
+    if codigo != 0:
+        print("No se sirve: la verificación falló:")
+        for r in resultados:
+            if r["status"] != "PASS":
+                print(f"  {r['path']}: {r['message']}")
         return 1
     try:
         ip = validar_ip_privada(a.ip)
     except ValueError as e:
         print("IP rechazada:", e)
         return 2
-    permitidos = {x["ruta"] for x in manifiesto["archivos"]}
+    permitidos = permitidos_desde_manifiesto(a.manifiesto)
     srv = http.server.ThreadingHTTPServer((ip, a.puerto), crear_handler(a.dir, permitidos))
     print(f"Sirviendo {len(permitidos)} archivos verificados en http://{ip}:{a.puerto}/  (Ctrl+C para parar)")
     try:

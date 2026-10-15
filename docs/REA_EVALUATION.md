@@ -1,6 +1,6 @@
 # Evaluación de REA (`morluto/rea`)
 
-- **Fecha:** 2026-10-15. Repo clonado en carpeta aislada, solo lectura (último commit visto: `6183544`, 2026-10-16). No se instaló nada ni se ejecutó `npx rea-agents setup`.
+- **Fecha de auditoría:** 2026-10-15. Repo clonado en carpeta aislada, solo lectura (commit abreviado registrado como `6183544`). La fecha `2026-10-16` que figuraba junto a ese commit es posterior a la fecha de auditoría y queda pendiente de verificar; no se usa como hecho confirmado. No se instaló nada ni se ejecutó `npx rea-agents setup`.
 - **Qué es:** servidor MCP de ingeniería inversa que conecta un agente con Ghidra, Hopper o IDA (y herramientas de binarios, JavaScript/Electron, APK, firmware, capturas, etc.). Licencia MIT. Análisis local, según su README.
 - **Instalación:** `npx rea-agents setup` **modifica la configuración de los agentes** (registra el servidor MCP y un skill, con backups). Requiere Node 22+/24+/26+ (hay Node 24.20 local).
 

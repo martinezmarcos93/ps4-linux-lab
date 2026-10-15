@@ -1,91 +1,91 @@
 {
-  "nombre": "raw13g.github.io",
+  "schema_version": 1,
   "fuente": "https://github.com/raw13g/raw13g.github.io",
   "commit": "9ba2f07",
   "fecha_commit": "2026-09-26",
   "licencia": "MIT (commit 9ba2f07)",
   "fuente_del_hash": "calculado localmente sobre un clon (no hay manifiesto publicado por el autor); detecta cambios, no autentica el origen",
   "auditoria": "docs/EXPLOIT_AUDIT_13.52.md",
-  "archivos": [
+  "artifacts": [
     {
-      "ruta": "index.html",
-      "tamano": 24773,
-      "sha256": "4898a1249458a4e1baaff5480a92810db010bdf538cdb8f7a58715805166f65c"
+      "path": "index.html",
+      "sha256": "4898a1249458a4e1baaff5480a92810db010bdf538cdb8f7a58715805166f65c",
+      "size_bytes": 24773
     },
     {
-      "ruta": "jb.html",
-      "tamano": 22535,
-      "sha256": "810088d929458ce1f3b98d6c3b7f4eb7984aa9b998237f74473087b9a19e0d0a"
+      "path": "jb.html",
+      "sha256": "810088d929458ce1f3b98d6c3b7f4eb7984aa9b998237f74473087b9a19e0d0a",
+      "size_bytes": 22535
     },
     {
-      "ruta": "jb.js",
-      "tamano": 119726,
-      "sha256": "6f64a7add3e664e02a6e73a0e4c8189dd2cbde1261774cbef543b7bc2cdfb4dd"
+      "path": "jb.js",
+      "sha256": "6f64a7add3e664e02a6e73a0e4c8189dd2cbde1261774cbef543b7bc2cdfb4dd",
+      "size_bytes": 119726
     },
     {
-      "ruta": "core.js",
-      "tamano": 40946,
-      "sha256": "a76c52afbc19b05d176be2059048a3c6a4fb61db084d56434cef2b17da00b2b3"
+      "path": "core.js",
+      "sha256": "a76c52afbc19b05d176be2059048a3c6a4fb61db084d56434cef2b17da00b2b3",
+      "size_bytes": 40946
     },
     {
-      "ruta": "mem.js",
-      "tamano": 26858,
-      "sha256": "ee5e52ea8c7ac349f3df4249e6245c6bb41aa9482081b452e629e589dead3b11"
+      "path": "mem.js",
+      "sha256": "ee5e52ea8c7ac349f3df4249e6245c6bb41aa9482081b452e629e589dead3b11",
+      "size_bytes": 26858
     },
     {
-      "ruta": "int64.js",
-      "tamano": 2548,
-      "sha256": "611da6a52da5ecf970a3718ab2a4561d3992c655c55342d066d12a9a50554f34"
+      "path": "int64.js",
+      "sha256": "611da6a52da5ecf970a3718ab2a4561d3992c655c55342d066d12a9a50554f34",
+      "size_bytes": 2548
     },
     {
-      "ruta": "ps4_offsets.js",
-      "tamano": 17675,
-      "sha256": "12e3886508e13e176018691def0a192c352b72959e2d1f1ea2b8fbd90a62b2dc"
+      "path": "ps4_offsets.js",
+      "sha256": "12e3886508e13e176018691def0a192c352b72959e2d1f1ea2b8fbd90a62b2dc",
+      "size_bytes": 17675
     },
     {
-      "ruta": "rpc_worker.js",
-      "tamano": 6490,
-      "sha256": "2d030c4cc92f46f96e1e4aea0463e1cde84e7f9a2ec17411473880a0c3f4e682"
+      "path": "rpc_worker.js",
+      "sha256": "2d030c4cc92f46f96e1e4aea0463e1cde84e7f9a2ec17411473880a0c3f4e682",
+      "size_bytes": 6490
     },
     {
-      "ruta": "logo_raw.png",
-      "tamano": 14318,
-      "sha256": "23cdc5f24ffd3508d2ca7c71fcdae5bd7fbe2718dad9393964957a930f3f02a5"
+      "path": "logo_raw.png",
+      "sha256": "23cdc5f24ffd3508d2ca7c71fcdae5bd7fbe2718dad9393964957a930f3f02a5",
+      "size_bytes": 14318
     },
     {
-      "ruta": "cache.appcache",
-      "tamano": 1347,
-      "sha256": "2ea5474577543a8859f5dde3ce26b373052b24e72f8ce46c1898e1b6cd61b388"
+      "path": "cache.appcache",
+      "sha256": "2ea5474577543a8859f5dde3ce26b373052b24e72f8ce46c1898e1b6cd61b388",
+      "size_bytes": 1347
     },
     {
-      "ruta": "goldhen.bin",
-      "tamano": 293120,
-      "sha256": "df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12"
+      "path": "goldhen.bin",
+      "sha256": "df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12",
+      "size_bytes": 293120
     },
     {
-      "ruta": "payload2.bin",
-      "tamano": 293120,
-      "sha256": "df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12"
+      "path": "payload2.bin",
+      "sha256": "df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12",
+      "size_bytes": 293120
     },
     {
-      "ruta": "patches/1302.bin",
-      "tamano": 632,
-      "sha256": "235a051f5a066daa546253de6eb61c1223a2682cb34edd916fc4565bb2c02fc6"
+      "path": "patches/1302.bin",
+      "sha256": "235a051f5a066daa546253de6eb61c1223a2682cb34edd916fc4565bb2c02fc6",
+      "size_bytes": 632
     },
     {
-      "ruta": "patches/1350.bin",
-      "tamano": 632,
-      "sha256": "f771c196d012496c01f575674e95a74d7b00b7c1bc22325c7321f3ab6eb77b56"
+      "path": "patches/1350.bin",
+      "sha256": "f771c196d012496c01f575674e95a74d7b00b7c1bc22325c7321f3ab6eb77b56",
+      "size_bytes": 632
     },
     {
-      "ruta": "patches/1352.bin",
-      "tamano": 632,
-      "sha256": "adfb9771904f71cd1f5a82cbded8ac46c7ffeb3df974579535cf711904ac347e"
+      "path": "patches/1352.bin",
+      "sha256": "adfb9771904f71cd1f5a82cbded8ac46c7ffeb3df974579535cf711904ac347e",
+      "size_bytes": 632
     },
     {
-      "ruta": "LICENSE",
-      "tamano": 1362,
-      "sha256": "2ec58a4da676a8401fdf946c0238a458adb9dc7119e772646322caa4fefa2f68"
+      "path": "LICENSE",
+      "sha256": "2ec58a4da676a8401fdf946c0238a458adb9dc7119e772646322caa4fefa2f68",
+      "size_bytes": 1362
     }
   ]
 }

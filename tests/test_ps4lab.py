@@ -17,43 +17,23 @@ def _montar(tmp, contenido=b"hola"):
     d = Path(tmp)
     (d / "a.js").write_bytes(contenido)
     (d / "secreto.txt").write_bytes(b"no listado")
-    m = {"archivos": [{"ruta": "a.js", "tamano": len(contenido),
-                       "sha256": hashlib.sha256(contenido).hexdigest()}]}
+    m = {"schema_version": 1,
+         "artifacts": [{"path": "a.js", "size_bytes": len(contenido),
+                        "sha256": hashlib.sha256(contenido).hexdigest()}]}
     (d / "m.json").write_text(json.dumps(m), encoding="utf-8")
-    return d, ps4lab.cargar_manifiesto(d / "m.json")
+    return d
 
 
-class TestVerificar(unittest.TestCase):
-    def test_ok(self):
+class TestManifiesto(unittest.TestCase):
+    def test_permitidos(self):
         with tempfile.TemporaryDirectory() as t:
-            d, m = _montar(t)
-            self.assertEqual(ps4lab.verificar(d, m), (True, []))
+            d = _montar(t)
+            self.assertEqual(ps4lab.permitidos_desde_manifiesto(d / "m.json"), {"a.js"})
 
-    def test_hash_distinto(self):
+    def test_ruta_segura(self):
         with tempfile.TemporaryDirectory() as t:
-            d, m = _montar(t)
-            (d / "a.js").write_bytes(b"HOLA")
-            ok, p = ps4lab.verificar(d, m)
-            self.assertFalse(ok)
-            self.assertIn("SHA-256", p[0])
-
-    def test_falta_archivo(self):
-        with tempfile.TemporaryDirectory() as t:
-            d, m = _montar(t)
-            (d / "a.js").unlink()
-            self.assertIn("falta", ps4lab.verificar(d, m)[1][0])
-
-    def test_ruta_fuera_rechazada(self):
-        with tempfile.TemporaryDirectory() as t:
-            d, m = _montar(t)
-            m["archivos"][0]["ruta"] = "../x"
-            self.assertIn("fuera", ps4lab.verificar(d, m)[1][0])
-
-    def test_manifiesto_invalido(self):
-        with tempfile.TemporaryDirectory() as t:
-            (Path(t) / "m.json").write_text("{}", encoding="utf-8")
-            with self.assertRaises(ps4lab.ErrorManifiesto):
-                ps4lab.cargar_manifiesto(Path(t) / "m.json")
+            self.assertIsNone(ps4lab.ruta_segura(t, "../x"))
+            self.assertIsNotNone(ps4lab.ruta_segura(t, "a.js"))
 
 
 class TestIP(unittest.TestCase):
@@ -69,7 +49,7 @@ class TestIP(unittest.TestCase):
 class TestServidor(unittest.TestCase):
     def test_solo_lista_blanca_y_solo_lectura(self):
         with tempfile.TemporaryDirectory() as t:
-            d, m = _montar(t)
+            d = _montar(t)
             h = ps4lab.crear_handler(d, {"a.js"})
             srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), h)
             threading.Thread(target=srv.serve_forever, daemon=True).start()

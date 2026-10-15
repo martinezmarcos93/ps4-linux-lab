@@ -2,7 +2,7 @@
 
 Laboratorio privado para investigar Linux en PlayStation 4, priorizando seguridad, reproducibilidad y trazabilidad.
 
-**Estado:** investigación y preparación documental. No hay todavía una PS4 identificada ni una combinación modelo/firmware validada en este laboratorio. Una declaración upstream no equivale a una prueba propia.
+**Estado:** investigación y preparación. La consola del laboratorio es una PS4 Slim (familia inferida), firmware 13.52 observado y capacidad de 861,4 GB; CUH/southbridge desconocidos y ningún arranque probado. Una declaración upstream no equivale a una prueba propia.
 
 ## Objetivos
 - Identificar un método de arranque compatible con modelo CUH, firmware y southbridge.
@@ -33,7 +33,7 @@ Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de li
 - [x] Repositorio privado creado.
 - [x] Documentación inicial incorporada.
 - [x] Fuentes de referencia y riesgos preliminares registrados.
-- [ ] Identificar modelo CUH, firmware y estado de la consola disponible. *(parcial: firmware 13.52, Slim inferida, CUH desconocido; ver LAB-000)*
+- [ ] Completar identificación del modelo CUH y southbridge. *(parcial: firmware 13.52, Slim inferida, capacidad de clase 1 TB; ver LAB-000)*
 - [ ] Completar mapa de código y revisar commits/tags exactos.
 - [ ] Resolver licencias de cada componente candidato.
 - [ ] Elegir método de arranque basado en evidencia para el hardware real.
@@ -62,6 +62,7 @@ Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de li
 | [Mapa upstream](docs/UPSTREAM_CODE_MAP.md) | Áreas de código a revisar |
 | [Fuentes de evidencia](docs/EVIDENCE_SOURCES.md) | Trazabilidad |
 | [Seguridad de herramientas](docs/SAFETY_AND_TOOLING.md) | Requisitos para scripts futuros |
+| [Plan de ejecución siguiente](docs/NEXT_EXECUTION_PLAN.md) | Tareas inmediatas, responsables y puertas de seguridad |
 
 ## Convenciones de evidencia
 Estados: PLANNED, IN_PROGRESS, BLOCKED, VERIFIED y REJECTED. Solo marcar VERIFIED con hardware/firmware identificados, evidencia guardada y procedimiento reproducible.
