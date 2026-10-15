@@ -14,7 +14,7 @@ Estados: `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `VERIFIED` y `REJECTED`. Una puert
 **Salida:** documentos de gobernanza coherentes; no implica soporte de hardware.
 
 ## Fase 1 — Identificación de consola
-**Estado:** BLOCKED — no hay inventario de hardware propio. Ejecutable como caso **TP-01** de [`docs/TEST_PLAN.md`](TEST_PLAN.md).
+**Estado:** PARCIAL — firmware 13.52 observado, familia Slim inferida y capacidad 861,4 GB observada; CUH/southbridge desconocidos. Registro: [`docs/lab-logs/LAB-000-identificacion-consola.md`](lab-logs/LAB-000-identificacion-consola.md). Ejecutable como caso **TP-01** de [`docs/TEST_PLAN.md`](TEST_PLAN.md).
 - [ ] Registrar modelo CUH y revisión visible.
 - [ ] Registrar firmware exacto sin actualizarlo.
 - [ ] Registrar estado de arranque original y síntomas existentes.
@@ -40,6 +40,19 @@ Estados: `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `VERIFIED` y `REJECTED`. Una puert
 **Puerta de salida (cumplida para el código propio de ambos repos; pendiente para dependencias de terceros):** matriz de compatibilidad con fuente y nivel de confianza → entregada en `docs/COMPATIBILITY_MATRIX.md`.
 
 **Hallazgo que afecta la Fase 1 (releer antes de continuar):** la Fase 1 asume implícitamente que el flujo de arranque puede mantenerse 100% externo. La auditoría de código encontró que el procedimiento *recomendado por la distribución* `X-F1REBALL-X/PS4-Linux` requiere copiar el kernel al almacenamiento interno (`/data/linux/boot/`), aunque el *código del loader* sí soporta un flujo USB-only. Es una decisión pendiente, no algo que se resuelva en esta fase — ver Fase 3 y D-008 en `docs/DECISION_LOG.md`.
+
+## Fase 2.1 — Auditoría estática del exploit/payload para firmware 13.52
+**Estado:** IN_PROGRESS — análisis del JavaScript documentado; payload nativo sin auditar.
+- [x] Registrar hashes del repositorio de exploit consultado y distinguirlo del payload.
+- [x] Revisar estáticamente el JavaScript y documentar el alcance y las limitaciones.
+- [x] Registrar que el hash del payload no corresponde a una release oficial de GoldHEN verificada.
+- [ ] Reproducir el hash del binario desde el commit upstream fijado.
+- [ ] Desensamblar offline con Rizin/objdump si están disponibles; registrar versión, arquitectura y dirección base asumida.
+- [ ] Documentar regiones que no se pueden interpretar y evitar conclusiones basadas solo en strings.
+- [ ] Contrastar con un artefacto oficial verificable si se consigue una referencia fiable.
+- [ ] Mantener el payload fuera de la consola hasta cerrar la revisión y las puertas de seguridad.
+- [ ] No instalar REA ni cambiar configuración de agentes hasta demostrar necesidad.
+**Salida:** informe reproducible de análisis estático, sin ejecución del payload.
 
 ## Fase 3 — Selección del método de arranque
 **Estado:** BLOCKED — requiere Fase 1 **y** la decisión D-008 (ubicación del kernel: interno vía FTP vs. USB-only). El procedimiento completo, con citas de código línea por línea, ya está documentado en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md) — esta fase pasa a ejecutarse, no a investigarse, en cuanto D-008 se resuelva.
