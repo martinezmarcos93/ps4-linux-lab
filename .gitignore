@@ -1,0 +1,26 @@
+# Artefactos grandes y privados
+*.img
+*.img.xz
+*.iso
+*.tar
+*.tar.gz
+*.tar.xz
+*.elf
+*.bin
+*.cpio
+*.cpio.gz
+*.raw
+*.log
+logs/
+artifacts/
+captures/
+secrets/
+.env
+.env.*
+!.env.example
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
+Thumbs.db

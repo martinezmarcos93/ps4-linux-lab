@@ -1,0 +1,29 @@
+name: Investigación / compatibilidad
+description: Registrar una hipótesis, fuente y experimento.
+title: "[RESEARCH] "
+labels: ["research"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Pregunta de investigación
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia y fuentes
+      description: Enlaces, commit/release, fecha y nivel de confianza.
+    validations:
+      required: true
+  - type: textarea
+    id: experiment
+    attributes:
+      label: Experimento falsable
+      description: Pasos, variables, criterio de éxito y criterio de parada.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Resultado y siguiente decisión

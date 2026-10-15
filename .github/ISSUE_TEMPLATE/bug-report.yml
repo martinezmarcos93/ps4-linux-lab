@@ -1,0 +1,40 @@
+name: Bug / fallo de procedimiento
+description: Registrar un fallo reproducible del laboratorio.
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Entorno
+      description: CUH, firmware, southbridge conocido, SO del host y versiones de herramientas.
+      placeholder: No incluir seriales completos ni información sensible.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado observado y logs redactados
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Seguridad
+      options:
+        - label: No escribí en el disco interno de la PS4.
+          required: true
+        - label: Verifiqué la procedencia y los hashes de los artefactos.
+          required: false
