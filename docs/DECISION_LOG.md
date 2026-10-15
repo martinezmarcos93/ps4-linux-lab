@@ -60,6 +60,28 @@ Las decisiones describen opciones aceptadas y condiciones para revisarlas; no tr
 - **Hipótesis de trabajo:** "7.1.7"/"7.0.8" son la numeración propia del fork "Strawberry" (rmuxnet), no la versión de Linux. No confirmada — el repositorio de ese kernel no fue identificado ni auditado en esta sesión.
 - **Acción pendiente:** localizar el repositorio del kernel "Strawberry" (o la fuente que rmuxnet use) y confirmar la versión real de Linux mainline sobre la que está basado, antes de redactar cualquier documento que dependa de esa versión.
 
+## D-010 — Delegación de decisiones técnicas
+- **Fecha:** 2026-10-15
+- **Estado:** ACEPTADA.
+- **Decisión:** Marcos delegó en Claude las decisiones técnicas intermedias ("las demás decisiones te las dejo a vos") para poder avanzar. **No** delega: ejecutar el exploit sobre la consola, escribir en su almacenamiento interno, ni el push de código que no sea documentación. Esos pasos requieren un "sí" puntual de Marcos en el momento.
+
+## D-008 — RESUELTA (2026-10-15) por delegación D-010: Opción B primero, A solo como respaldo
+- **Decisión:** el primer intento usa flujo **solo-USB** (Opción B): sin escribir en `/data/linux/boot/`. Respeta el Hito A de la Carta y el principio de almacenamiento interno solo lectura. Se apoya en que el loader lee `bzImage`/`initramfs` desde el USB con prioridad (CÓDIGO, `UPSTREAM_CODE_MAP.md` §1.3).
+- **Contra:** ningún reporte de terceros lo probó así; puede fallar por razones del procedimiento, no del hardware. Eso se trata como hallazgo, no como bloqueo.
+- **Respaldo (Opción A):** solo si B falla de forma reproducible, y **requiere confirmación puntual de Marcos** antes de escribir (modificación acotada: una carpeta, reversible borrándola). Resuelve Q-006 de forma condicional.
+
+## D-011 — Aceptar el payload nativo no auditable, con mitigaciones y un "go" final
+- **Fecha:** 2026-10-15. **Estado:** ACEPTADA CON CONDICIONES.
+- **Contexto:** `goldhen.bin` está empaquetado (>90 % entropía ≈ 8), no es auditable estáticamente (`EXPLOIT_AUDIT_13.52.md`). No hay otra vía para 13.52. Un jailbreak por navegador es **no persistente** (un reinicio limpia el estado en RAM) y no toca el almacenamiento por sí mismo.
+- **Decisión:** continuar con el plan, pero ejecutar solo si: (1) los artefactos pasan `ps4lab verify` contra el manifiesto fijado; (2) se sirven desde la PC en la LAN, sin internet; (3) PSN cortado (D-012); (4) sin sesión de PSN iniciada; (5) Marcos da el "go" explícito justo antes del primer intento.
+- **Riesgo residual aceptado:** el binario podría hacer cosas no observables mientras corre; mitigado por no persistencia, falta de internet y ausencia de cuenta.
+
+## D-012 — Corte de PSN por DNS manual + alojamiento local
+- **Decisión:** en la PS4, DNS manual a una IP sin servicio (p. ej. `127.0.0.1`), más desactivar descargas automáticas de actualización. El exploit se sirve desde la PC con `tools/ps4lab.py serve`. Reversible, no toca el router. Cortar por MAC en el router queda como refuerzo opcional.
+
+## D-013 — REA no se instala por ahora
+- **Decisión:** no se ejecuta `npx rea-agents setup`. Si se decide analizar el stub de `goldhen.bin`, se instala solo un proveedor (Rizin/Ghidra) y REA pasaría antes por `dependency-auditor`. Ver `REA_EVALUATION.md`.
+
 ## Preguntas abiertas
 
 Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-008) surgen de la auditoría de código de esta sesión y son más específicas.
@@ -69,6 +91,6 @@ Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-
 - **Q-003:** ¿qué cambios internos realiza el flujo de arranque elegido? Ver D-008 — ya tiene respuesta parcial (sí los hay, según el procedimiento oficial), falta la decisión de aceptarlos o evitarlos.
 - **Q-004:** ¿qué licencia aplica a cada componente/artefacto? Pendiente por componente — ver `docs/UPSTREAM_CODE_MAP.md` §1.3/§2.8 y la lista de dependencias no auditadas en `docs/EVIDENCE_SOURCES.md` §5.
 - **Q-005:** ¿qué API de cómputo y backend LLM son realmente utilizables? Posterior a validación gráfica — ver `docs/GPU_AND_LLM_RESEARCH.md` §4.
-- **Q-006 (ex-pregunta 1 de esta sesión):** ¿se autoriza, en principio, la Opción A de D-008 (escritura acotada en `/data/linux/boot/`) si no hay otra forma documentada y probada de lograr un primer arranque exitoso? Sin esta respuesta, la Fase 3 no puede ejecutarse aunque todo lo demás esté listo.
+- **Q-006 [RESUELTA condicionalmente por D-008]** (ex-pregunta 1 de esta sesión):** ¿se autoriza, en principio, la Opción A de D-008 (escritura acotada en `/data/linux/boot/`) si no hay otra forma documentada y probada de lograr un primer arranque exitoso? Sin esta respuesta, la Fase 3 no puede ejecutarse aunque todo lo demás esté listo.
 - **Q-007:** ¿existe tolerancia a repetir el ciclo de jailbreak varias veces en la misma sesión de prueba? El propio upstream documenta que 2-3 intentos son normales (ver `docs/TROUBLESHOOTING.md` caso 2) — afecta cuánto tiempo de sesión planificar, no es una decisión técnica.
 - **Q-008:** ¿vale la pena, antes de tener la consola, investigar específicamente soporte ROCm/Vulkan-compute para GCN1-GCN4 (vacío identificado en `docs/GPU_AND_LLM_RESEARCH.md` §5) para no descubrir un descarte evitable recién en la Fase de compute/LLM? Es una pregunta de priorización de tiempo, no de autorización.
