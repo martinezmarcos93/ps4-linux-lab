@@ -49,6 +49,8 @@ Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de li
 | [Roadmap](docs/ROADMAP.md) | Fases, dependencias y puertas de decisión |
 | [Arquitectura](docs/ARCHITECTURE.md) | Componentes y flujo conceptual |
 | [Auditoría upstream](docs/UPSTREAM_AUDIT.md) | Hallazgos y límites de revisión |
+| [Auditoría del exploit 13.52](docs/EXPLOIT_AUDIT_13.52.md) | Análisis estático y límites del payload no verificado |
+| [Evaluación de REA](docs/REA_EVALUATION.md) | Decisión sobre herramientas de ingeniería inversa |
 | [Riesgos](docs/RISK_REGISTER.md) | Riesgos y mitigaciones |
 | [Recuperación](docs/RECOVERY_STRATEGY.md) | Diagnóstico y rollback |
 | [Licencias](docs/LICENSE_POLICY.md) | Procedencia y reutilización |
