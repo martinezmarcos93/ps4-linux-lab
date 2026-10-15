@@ -53,6 +53,12 @@ Fuentes **de comunidad y blogs, no oficiales, no verificadas contra el código**
 - **Riesgos reportados:** ban de consola/cuenta si se conecta a PSN; con firmware 14.00 el exploit no funciona (por eso no actualizar).
 - **Estado:** SIN VERIFICAR. No promueve ninguna fila de `COMPATIBILITY_MATRIX.md`. Pendiente: leer la fuente primaria del exploit y del GoldHEN usado, y los avisos de seguridad, antes de cualquier ejecución (ver `SAFETY_AND_TOOLING.md`).
 
+**Actualización D-C (2026-10-15, metadatos vía `gh api`, solo lectura; no se descargó ni ejecutó nada):**
+- Host público del exploit: `raw13g/raw13g.github.io` (creado 2026-09-19, último push 2026-09-25, 212 estrellas). Commits: "Deploy RAW GAME (PS4 13.02/13.04/13.50/13.52)" (09-19), "added goldhen for 13.52" (09-20), "added goldhen 13.02 - 13.52" (09-21), "aio fix thanks to MODDED_WARFARE and Al-Azif" (09-22), "Improve stability" y "Add MIT license" (09-25). Contiene `jb.js`, `core.js`, `mem.js`, `ps4_offsets.js` y dos binarios idénticos en tamaño: `goldhen.bin` y `payload2.bin` (293 120 bytes).
+- **GoldHEN oficial (`GoldHEN/GoldHEN`)**: su último release es v2.4b18 (2024-10-28) y **no** lista 13.52. El "GoldHEN 2.4b18.11" citado por blogs **no figura en los releases oficiales**: el binario que se serviría es el `goldhen.bin` de raw13g, de procedencia no verificada y sin código fuente asociado en ese repo.
+- Forks/mirrors (`boomerf90777`, `WhiteShadow8500`, `L00naria`) y `OptiTronOffical/bd-j-usr-1352` ("probs fake" según su propia descripción): **no usar**.
+- Conclusión provisoria: el exploit parece real y público, pero el payload que habilita GoldHEN en 13.52 es un binario sin auditar. Cualquier ejecución requiere antes revisar `jb.js`/`ps4_offsets.js`, comparar hashes de los `.bin` con el binario oficial más cercano y decidir el aislamiento de PSN.
+
 ## 5. Fuentes mencionadas por upstream pero NO auditadas en esta sesión (dependencias de hecho, pendientes)
 
 Cada una aparece citada en los créditos de S-01 o en comentarios de código de S-02. Ninguna se clonó ni se leyó en esta sesión — listarlas aquí es parte de la auditoría, no una afirmación sobre su contenido.
