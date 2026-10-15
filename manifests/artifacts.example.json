@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "path": "artifacts/example.bin",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "size_bytes": 0
+    }
+  ]
+}
