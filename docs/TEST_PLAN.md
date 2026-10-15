@@ -95,3 +95,10 @@ TP-01 -> TP-02 -> TP-03 -> TP-04 -> TP-05 (decisión) -> TP-06 -> TP-07
                                                             v
                                                    TP-10 -> TP-11
 ```
+
+
+## Resultados de ejecución host-side
+
+| Fecha | Suite | Resultado | Alcance/límite |
+|---|---|---|---|
+| 2026-10-15 | `python -m unittest discover -v` sobre el primer verificador de artefactos | **11/11 PASS** en sandbox local | Incluye hashes, tamaño, archivo ausente/vacío, manifiesto inválido y rutas inseguras. No prueba dispositivos físicos ni arranque PS4. El resultado del workflow CI de GitHub debe comprobarse por separado. |
