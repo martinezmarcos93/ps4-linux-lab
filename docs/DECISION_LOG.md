@@ -43,15 +43,15 @@ Las decisiones describen opciones aceptadas y condiciones para revisarlas; no tr
 - **Estado:** ACEPTADA.
 - **Decisión:** comenzar por doctor/inspect/verify/diagnose y tests sobre archivos de prueba, nunca sobre discos reales ni sobre la consola, hasta superar esa etapa.
 
-## D-008 — Ubicación del kernel/initramfs: ¿almacenamiento interno (FTP) o USB-only? **[BLOQUEANTE, PENDIENTE]**
-- **Fecha:** 2026-10-15 (abierta por la auditoría de código de upstream de esta sesión).
-- **Estado:** PENDIENTE — requiere decisión explícita de Marcos antes de ejecutar la Fase 3/5 del roadmap.
+## D-008 — Ubicación del kernel/initramfs: priorizar USB-only
+- **Fecha:** 2026-10-15 (resuelta como dirección de diseño; ejecución aún bloqueada por validación técnica).
+- **Estado:** RESUELTA PARA PLANIFICACIÓN; NO AUTORIZA EJECUCIÓN EN LA CONSOLA.
 - **Contexto (HECHO DOCUMENTADO + OBSERVACIÓN DE CÓDIGO):** el procedimiento oficial de `X-F1REBALL-X/PS4-Linux` (README) instruye subir por FTP el `bzImage` y `initramfs.cpio.gz` a `/data/linux/boot/` en el almacenamiento interno de la consola; el USB solo lleva el rootfs. El código del loader (`main-aio.c`, ver `docs/UPSTREAM_CODE_MAP.md` §1.3 y `docs/BOOT_FLOW.md` Fase 2) sí soporta leer ambos archivos desde el USB con prioridad sobre el almacenamiento interno — un flujo 100% externo es técnicamente posible pero no es el que documenta ni prueba la distribución elegida.
 - **Opciones:**
-  - **A.** Seguir el procedimiento oficial (escribir en `/data/linux/boot/`). Modificación acotada y reversible (borrar una carpeta), pero contradice literalmente el Hito A del `PROJECT_CHARTER.md` ("ninguna modificación del disco interno") y el principio "el almacenamiento interno se considera solo lectura" de `ARCHITECTURE.md`.
-  - **B.** Adaptar `tools/build-img.sh` para colocar el `bzImage` correcto en la partición de arranque del USB (hoy el script lo evita deliberadamente, renombrándolo, para permitir compartir un USB entre consolas de southbridge distinto). Mantiene el principio original pero no tiene ningún reporte de terceros que la haya probado así.
-- **Motivo de que esté bloqueando:** no se puede ejecutar TP-05/TP-06 de `docs/TEST_PLAN.md` sin esta decisión. No es una pregunta retórica — cambia qué script se ejecuta y qué se le pide a Marcos que autorice.
-- **Revisión:** se resuelve antes de la Fase 1 real sobre hardware, aunque puede decidirse antes de tener la consola identificada.
+  - **A.** Escribir en `/data/linux/boot/` por FTP. No se elige como ruta predeterminada: contradice el objetivo de preservar el almacenamiento interno y amplía el impacto de un error.
+  - **B.** Investigar y adaptar el flujo USB-only, colocando el kernel correcto en la partición de arranque del medio externo. **Seleccionada como dirección de diseño**, pero aún no demostrada en hardware y sin asumir que funciona porque el loader lea desde USB.
+- **Motivo:** preservar el almacenamiento interno y mantener el experimento reversible. Si la auditoría o una prueba virtual demuestra que USB-only no es viable, se documentará el bloqueo y se presentará la alternativa; no se cambiará a escritura interna automáticamente.
+- **Condiciones antes de una prueba real:** identificación del modelo/southbridge cuando sea posible; binarios con procedencia revisada; script y hashes verificados; test sobre imagen virtual; aislamiento de internet/PSN; y confirmación específica antes de ejecutar el exploit/payload.
 
 ## D-009 — Numeración de versión del kernel "7.1.7"/"7.0.8": aclarar antes de citarla como versión de Linux
 - **Fecha:** 2026-10-15.
@@ -69,6 +69,31 @@ Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-
 - **Q-003:** ¿qué cambios internos realiza el flujo de arranque elegido? Ver D-008 — ya tiene respuesta parcial (sí los hay, según el procedimiento oficial), falta la decisión de aceptarlos o evitarlos.
 - **Q-004:** ¿qué licencia aplica a cada componente/artefacto? Pendiente por componente — ver `docs/UPSTREAM_CODE_MAP.md` §1.3/§2.8 y la lista de dependencias no auditadas en `docs/EVIDENCE_SOURCES.md` §5.
 - **Q-005:** ¿qué API de cómputo y backend LLM son realmente utilizables? Posterior a validación gráfica — ver `docs/GPU_AND_LLM_RESEARCH.md` §4.
-- **Q-006 (ex-pregunta 1 de esta sesión):** ¿se autoriza, en principio, la Opción A de D-008 (escritura acotada en `/data/linux/boot/`) si no hay otra forma documentada y probada de lograr un primer arranque exitoso? Sin esta respuesta, la Fase 3 no puede ejecutarse aunque todo lo demás esté listo.
+- **Q-006:** RESUELTA PARA PLANIFICACIÓN por D-008: no escribir en `/data/linux/boot/` como opción predeterminada; investigar primero USB-only. Si la vía USB-only resulta inviable, detenerse y documentar alternativas en lugar de cambiar automáticamente a escritura interna.
 - **Q-007:** ¿existe tolerancia a repetir el ciclo de jailbreak varias veces en la misma sesión de prueba? El propio upstream documenta que 2-3 intentos son normales (ver `docs/TROUBLESHOOTING.md` caso 2) — afecta cuánto tiempo de sesión planificar, no es una decisión técnica.
 - **Q-008:** ¿vale la pena, antes de tener la consola, investigar específicamente soporte ROCm/Vulkan-compute para GCN1-GCN4 (vacío identificado en `docs/GPU_AND_LLM_RESEARCH.md` §5) para no descubrir un descarte evitable recién en la Fase de compute/LLM? Es una pregunta de priorización de tiempo, no de autorización.
+
+## D-010 — No ejecutar el payload 13.52 sin revisión estática adicional
+- **Fecha:** 2026-10-15.
+- **Estado:** ACEPTADA como gate de seguridad.
+- **Decisión:** no ejecutar `goldhen.bin` en la consola mientras siga siendo un blob nativo sin fuente y sin desensamblado revisado. El análisis del JavaScript no valida el payload nativo.
+- **Siguiente acción:** análisis offline con Rizin/objdump si ya están disponibles; documentar offsets, regiones no decodificables, llamadas/saltos relevantes y límites. No ejecutar el binario ni cargarlo en la PS4 durante esta etapa.
+- **Revisión:** después de un informe reproducible de análisis estático y de evaluar la procedencia/hash del artefacto. La decisión de ejecutar en hardware seguirá siendo separada.
+
+## D-011 — Posponer REA y no instalar herramientas de agente todavía
+- **Fecha:** 2026-10-15.
+- **Estado:** ACEPTADA.
+- **Decisión:** preferir herramientas locales de análisis binario ya instaladas. No ejecutar `npx rea-agents setup` ni modificar configuración de agentes hasta auditar su paquete y demostrar que agrega valor frente a Rizin/Ghidra directamente.
+- **Motivo:** reducir la superficie de confianza y evitar instalar infraestructura que todavía no necesitamos.
+
+## D-012 — Aislamiento de red antes de cualquier prueba de exploit
+- **Fecha:** 2026-10-15.
+- **Estado:** ACEPTADA como precondición, todavía no completada.
+- **Decisión:** mantener desactivadas las actualizaciones automáticas y no iniciar sesión en PSN para pruebas. Antes de una eventual ejecución, verificar una barrera reversible que permita el acceso local necesario pero impida salida de la PS4 a internet/PSN.
+- **Límite:** este registro no afirma que la consola ya esté aislada; sigue figurando conectada por Wi-Fi según LAB-000 y la auditoría del exploit.
+
+## D-013 — Priorizar herramientas de PC no destructivas
+- **Fecha:** 2026-10-15.
+- **Estado:** ACEPTADA.
+- **Decisión:** avanzar en verificación de artefactos, inspección de imágenes y tests con fixtures mientras el binario y el hardware permanezcan bloqueados.
+- **Motivo:** producir resultados verificables sin depender de identificar el CUH ni ejecutar código en la consola.
