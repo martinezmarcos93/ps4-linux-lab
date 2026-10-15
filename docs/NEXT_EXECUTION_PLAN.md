@@ -30,12 +30,14 @@
 ## Tarea B — Utilidades de PC no destructivas
 **Estado:** PENDIENTE; puede avanzar en paralelo.
 
-1. Implementar primero un verificador de manifiestos SHA-256 que solo lea archivos.
-2. Añadir tests para hash correcto, hash incorrecto, archivo ausente, archivo vacío y manifiesto malformado.
-3. Implementar inspección de imagen en modo solo lectura; no abrir block devices ni escribir medios.
-4. Añadir un `doctor` que informe dependencias y sistema operativo sin instalar ni cambiar nada.
-5. Probar con fixtures creados por tests y directorios temporales.
-6. No implementar aún la escritura física de USB. Diseñar la interfaz y criterios de aborto, pero mantenerla deshabilitada hasta revisar y aprobar todos los tests.
+1. [x] Implementar verificador de manifiestos SHA-256 de solo lectura en `tools/verify_artifacts.py`.
+2. [x] Añadir 11 tests para hash correcto/incorrecto, tamaño, archivo ausente/vacío, manifiesto malformado, rutas inseguras y symlinks.
+3. [x] Ejecutar la suite en sandbox local: 11/11 PASS.
+4. [ ] Diagnosticar el workflow GitHub Actions: el primer run terminó en FAIL sin pasos ni logs disponibles; no asumir que la suite falló ni que pasó.
+5. [ ] Confirmar en CI que se ejecuta `python -m unittest discover -v` y que los tests pasan.
+6. [ ] Implementar inspección de imagen en modo solo lectura; no abrir block devices ni escribir medios.
+7. [ ] Añadir un `doctor` que informe dependencias y sistema operativo sin instalar ni cambiar nada.
+8. [ ] No implementar aún la escritura física de USB. Mantenerla fuera del código ejecutable hasta revisar y aprobar los tests.
 
 **Salida exigida:** código, tests, comandos reproducibles y resultados reales. No marcar pruebas como PASS si no se ejecutaron.
 
