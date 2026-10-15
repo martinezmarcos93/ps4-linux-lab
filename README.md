@@ -78,7 +78,7 @@ Clasificar afirmaciones como UPSTREAM-CLAIM, CODE-OBSERVATION, INFERENCE, HYPOTH
 La primera utilidad implementada es de solo lectura y verifica tamaño opcional y SHA-256 contra un manifiesto JSON:
 
 ```bash
-python3 tools/verify_artifacts.py --manifest manifests/artifacts.json --root .
+python3 tools/verify_artifacts.py --manifest /ruta/a/tu-manifiesto.json --root .
 python3 -m unittest discover -v
 ```
 
