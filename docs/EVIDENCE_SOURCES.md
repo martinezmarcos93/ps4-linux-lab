@@ -44,6 +44,15 @@ El README de `ps4-linux-loader` describe, en su sección de changelog para el re
 
 Ver detalle completo en `docs/UPSTREAM_CODE_MAP.md` §2.7 y `docs/COMPATIBILITY_MATRIX.md` §1 (nota al pie de la fila CUH-2208B). Resumen: el archivo de configuración del kernel en la distribución se autodenomina "7.1.7" (fork "Strawberry" de rmuxnet), mientras un reporte de comunidad habla de "Kernel 5.4.247". **Tratar como HIPÓTESIS no resuelta** que "7.1.7" sea una numeración propia del fork, no una versión real de Linux mainline — no confirmado porque no se auditó el repositorio fuente del kernel "Strawberry" (no identificado con una URL concreta en esta sesión).
 
+### D-C — Existencia de un jailbreak público para 13.52 (consultado 2026-10-15)
+
+Fuentes **de comunidad y blogs, no oficiales, no verificadas contra el código**: PSXHax (portada y búsqueda interna, sin cobertura de 13.52; GoldHEN publicado allí llega a 11.00), GitHub `GoldHEN/GoldHEN` (solo se ven binarios v2.3 para 5.05/6.72/9.00), y varios blogs/tutoriales/vídeos (p. ej. tgames.fr, se7ensins, onejailbreak, gaminglikeaboss) que afirman un exploit de navegador (WebKit) para 13.02/13.04/13.50/13.52 desde ~mediados de septiembre de 2026.
+
+- **Discrepancia:** las fuentes no coinciden en si GoldHEN funciona completo en 13.52 o solo HEN; un reporte menciona GoldHEN 2.4b18.11 y otros advierten que no se asuma.
+- **Estabilidad reportada:** resultados inconsistentes; una consola no completó, una Pro tuvo éxito tras reintentar.
+- **Riesgos reportados:** ban de consola/cuenta si se conecta a PSN; con firmware 14.00 el exploit no funciona (por eso no actualizar).
+- **Estado:** SIN VERIFICAR. No promueve ninguna fila de `COMPATIBILITY_MATRIX.md`. Pendiente: leer la fuente primaria del exploit y del GoldHEN usado, y los avisos de seguridad, antes de cualquier ejecución (ver `SAFETY_AND_TOOLING.md`).
+
 ## 5. Fuentes mencionadas por upstream pero NO auditadas en esta sesión (dependencias de hecho, pendientes)
 
 Cada una aparece citada en los créditos de S-01 o en comentarios de código de S-02. Ninguna se clonó ni se leyó en esta sesión — listarlas aquí es parte de la auditoría, no una afirmación sobre su contenido.
