@@ -1,139 +1,124 @@
 # Roadmap
 
-Estados: `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `VERIFIED`, `REJECTED`.
+Estados: PLANNED, IN_PROGRESS, BLOCKED, VERIFIED y REJECTED. Una puerta de salida requiere evidencia registrada; una declaración upstream no equivale a validación propia.
 
-## Fase 0 — Inicialización del proyecto
-**Estado:** IN_PROGRESS
+## Fase 0 — Inicialización y gobernanza
+**Estado:** COMPLETADA en alcance inicial; mantenimiento continuo.
+- [x] Crear repositorio privado martinezmarcos93/ps4-linux-lab.
+- [x] Incorporar README y documentos base.
+- [x] Registrar riesgos y prioridad de almacenamiento externo.
+- [ ] Revisar enlaces/estados después de cada barrido.
+- [ ] Definir política de protección de main y CI cuando existan checks automáticos.
+- [ ] Definir retención y almacenamiento de logs/artefactos.
+**Salida:** documentos de gobernanza coherentes; no implica soporte de hardware.
 
-- [ ] Crear `martinezmarcos93/ps4-linux-lab` como repositorio privado.
-- [ ] Añadir este esqueleto en un commit inicial revisable.
-- [ ] Proteger `main` y usar una rama temporal para cambios posteriores.
-- [ ] Añadir plantillas de incidencias y un registro de decisiones.
-- [ ] Definir política para artefactos grandes: no versionar imágenes USB ni rootfs.
+## Fase 1 — Identificación de consola
+**Estado:** BLOCKED — no hay inventario de hardware propio.
+- [ ] Registrar modelo CUH y revisión visible.
+- [ ] Registrar firmware exacto sin actualizarlo.
+- [ ] Registrar estado de arranque original y síntomas existentes.
+- [ ] Determinar qué datos requieren respaldo.
+- [ ] Clasificar identificación de southbridge como hecho, inferencia o desconocido.
+**Salida:** ficha de hardware y procedencia de cada dato, sin acciones destructivas.
 
-**Puerta de salida:** repositorio privado creado, estructura revisada y referencias documentadas.
+## Fase 2 — Auditoría upstream/licencias
+**Estado:** IN_PROGRESS.
+- [x] Leer README de ambos upstreams.
+- [x] Inspección inicial de scripts de imagen y escritura USB en PS4-Linux.
+- [x] Registrar límites de la revisión inicial.
+- [ ] Inventariar scripts, dependencias y flujo de arranque completo.
+- [ ] Fijar commits/tags exactos consultados.
+- [ ] Revisar releases, hashes y cambios relevantes.
+- [ ] Determinar licencias de cada componente candidato.
+- [ ] Contrastar compatibilidad por firmware, southbridge, kernel y loader.
+**Salida:** mapa de código y matriz citados con commit/tag y nivel de evidencia.
 
-## Fase 1 — Inventario de la consola
-**Estado:** BLOCKED — falta identificar la consola.
+## Fase 3 — Selección de arranque
+**Estado:** BLOCKED — depende de fases 1 y 2.
+- [ ] Confirmar requisitos del método de carga para el firmware real.
+- [ ] Confirmar kernel/initramfs/rootfs para la revisión de hardware.
+- [ ] Investigar precedencia de rutas internas/USB.
+- [ ] Documentar toda escritura interna y posibilidad de rollback.
+- [ ] Preparar pasos y condiciones de aborto.
+**Salida:** procedimiento específico y revisado para la consola real.
 
-- [ ] Fotografiar la etiqueta de modelo CUH y registrar revisión visible.
-- [ ] Consultar y registrar firmware exacto sin actualizarlo.
-- [ ] Registrar si la consola arranca normalmente y si el lector/disco funcionan.
-- [ ] Registrar síntomas de temperatura, ruido, apagados y conectores.
-- [ ] Identificar capacidad y estado del almacenamiento sin borrarlo.
-- [ ] Decidir si hace falta preservar partidas o datos.
+## Fase 4 — Herramientas USB seguras
+**Estado:** PLANNED.
+- [ ] Implementar doctor, inspect-disks, verify-artifacts e inspect-image.
+- [ ] Crear manifiesto con origen, versión, hash y tamaño.
+- [ ] Construir imágenes en directorio temporal único y limpiar solo archivos propios.
+- [ ] Separar escritura física de inspección y volver a identificar destino justo antes.
+- [ ] Añadir dry-run comprobable.
+- [ ] Probar con fixtures e imágenes; no discos reales.
+- [ ] Verificar escritura y capturar informe.
+**Salida:** tests prueban abortos ante destino ambiguo, disco de sistema, tamaño insuficiente y confirmación ausente.
 
-**Puerta de salida:** ficha de hardware completa; sin acciones destructivas.
+## Fase 5 — Preparación de medio externo
+**Estado:** BLOCKED — depende de 1–4 y de procedencia/licencias.
+- [ ] Construir imagen reproducible en PC.
+- [ ] Verificar hashes, formato, particiones, etiquetas y espacio.
+- [ ] Confirmar correspondencia kernel/initramfs/rootfs.
+- [ ] Evitar kernels ambiguos según loader.
+- [ ] Entender cambios internos del método de carga.
+- [ ] Validar el procedimiento con imagen virtual.
+**Salida:** artefacto USB reproducible y validado antes de conectar a consola.
 
-## Fase 2 — Auditoría de upstream y licencias
-**Estado:** IN_PROGRESS
+## Fase 6 — Primer arranque Linux
+**Estado:** BLOCKED — no hay consola identificada ni medio aprobado.
+- [ ] Ejecutar solo procedimiento específico aprobado.
+- [ ] Registrar vídeo, indicadores, tiempos y logs.
+- [ ] Cambiar una variable por intento.
+- [ ] Clasificar etapa del fallo.
+- [ ] Verificar retorno al sistema original.
+**Salida:** arranque externo reproducible y regreso comprobado.
 
-- [x] Leer los README de PS4-Linux y ps4-linux-loader.
-- [x] Inspeccionar scripts de construcción de imagen y escritura USB.
-- [ ] Revisar historial/release exactos que coincidan con la guía.
-- [ ] Identificar licencia por repositorio y por componente.
-- [ ] Comparar soporte declarado por firmware, southbridge y kernel.
-- [ ] Registrar hashes y versiones de los artefactos elegidos.
-- [ ] No reutilizar código sin confirmar la licencia aplicable.
+## Fase 7 — Estabilidad/periféricos
+**Estado:** PLANNED.
+- [ ] Inventariar CPU, RAM, GPU, kernel, módulos y driver.
+- [ ] Probar red, audio, USB, Bluetooth, HDMI y mandos por separado.
+- [ ] Medir temperatura y estabilidad bajo carga progresiva.
+- [ ] Documentar filesystem y modo rescate.
+**Salida:** perfil estable durante una ventana definida.
 
-**Puerta de salida:** matriz de compatibilidad con fuente y nivel de confianza.
+## Fase 8 — GPU/juegos/emulación
+**Estado:** PLANNED.
+- [ ] Distinguir renderizado hardware/software.
+- [ ] Capturar capacidades reales de OpenGL/Vulkan si están disponibles.
+- [ ] Definir benchmarks breves y reproducibles.
+- [ ] Probar cada aplicación individualmente.
+- [ ] Registrar resolución, settings, FPS, temperatura, duración y fallos.
+**Salida:** matriz basada en mediciones.
 
-## Fase 3 — Selección del método de arranque
-**Estado:** BLOCKED — requiere fase 1.
+## Fase 9 — Compute/LLM
+**Estado:** PLANNED; incertidumbre alta.
+- [ ] Registrar baseline CPU/RAM/temperatura.
+- [ ] Identificar APIs y backend realmente soportados.
+- [ ] Elegir modelo pequeño cuantizado y fijar parámetros.
+- [ ] Medir tokens/s, latencia, memoria, estabilidad y temperatura.
+- [ ] Comparar CPU/GPU con condiciones equivalentes.
+- [ ] Descartar aceleración si el coste técnico supera el beneficio.
+**Salida:** benchmark reproducible y decisión documentada.
 
-- [ ] Confirmar si existe un exploit/payload compatible con el firmware registrado.
-- [ ] Confirmar requisitos y riesgos del método seleccionado.
-- [ ] Elegir kernel según revisión/southbridge; no inferir solo por “Fat/Slim/Pro”.
-- [ ] Definir ruta de rollback para cada paso.
-- [ ] Registrar qué cambios persisten en el sistema original, si los hubiera.
-- [ ] Ensayar el procedimiento documentalmente antes de ejecutarlo.
-
-**Puerta de salida:** procedimiento específico revisado; no genérico.
-
-## Fase 4 — Herramientas seguras de preparación USB
-**Estado:** PLANNED
-
-- [ ] `inspect-host`: sistema operativo, herramientas disponibles, espacio y permisos.
-- [ ] `verify-artifacts`: SHA-256, tamaño, formato y manifiesto.
-- [ ] `inspect-disks`: lista discos con modelo, tamaño, bus, serial y particiones.
-- [ ] `build-usb-image`: construcción en entorno temporal; no borrar archivos arbitrarios.
-- [ ] `write-usb-image`: modo seguro, reidentificación del disco, doble confirmación.
-- [ ] `verify-usb-image`: lectura de muestra o verificación completa posterior a escritura.
-- [ ] `collect-diagnostics`: empaqueta logs sin secretos ni identificadores innecesarios.
-- [ ] Tests con dispositivos virtuales/archivos de imagen; nunca con discos reales por defecto.
-
-**Puerta de salida:** tests automáticos demuestran que los casos ambiguos o peligrosos abortan.
-
-## Fase 5 — Preparación y primer arranque externo
-**Estado:** BLOCKED — depende de fases 1–4.
-
-- [ ] Crear imagen USB en una PC.
-- [ ] Verificar hashes y estructura de particiones.
-- [ ] Comprobar etiqueta de rootfs e initramfs.
-- [ ] Confirmar ausencia de kernels ambiguos que puedan ser seleccionados por error.
-- [ ] Ejecutar payload según procedimiento validado.
-- [ ] Registrar indicador luminoso, pantalla, tiempos y resultado.
-- [ ] Si falla, cambiar una sola variable por intento.
-- [ ] Verificar reinicio normal a OrbisOS.
-
-**Puerta de salida:** arranque Linux reproducible desde USB y retorno al sistema original.
-
-## Fase 6 — Diagnóstico y estabilización
-**Estado:** PLANNED
-
-- [ ] Inventario de CPU, RAM, GPU, kernel, módulos y firmware.
-- [ ] Probar Ethernet, Wi-Fi, Bluetooth, USB, audio HDMI y mando.
-- [ ] Medir temperaturas y comportamiento de ventiladores.
-- [ ] Desactivar suspensión/hibernación si el kernel no la soporta.
-- [ ] Verificar integridad del filesystem tras apagado controlado.
-- [ ] Definir perfiles de carga y límites térmicos conservadores.
-- [ ] Documentar recuperación desde consola/rescue shell.
-
-**Puerta de salida:** sesión estable y periféricos esenciales caracterizados.
-
-## Fase 7 — Rendimiento gráfico y videojuegos
-**Estado:** PLANNED
-
-- [ ] Identificar driver y versión de Mesa.
-- [ ] Capturar `glxinfo -B`, `vulkaninfo --summary` si aplica, `dmesg` y módulos.
-- [ ] Confirmar si el render es hardware o software.
-- [ ] Ejecutar pruebas gráficas breves y reproducibles.
-- [ ] Probar emuladores/juegos individualmente, con FPS, resolución, temperatura y estabilidad.
-- [ ] Distinguir compatibilidad del juego, rendimiento y estabilidad del sistema.
-
-**Puerta de salida:** matriz de resultados; no asumir compatibilidad por tener escritorio.
-
-## Fase 8 — GPU compute y LLM
-**Estado:** PLANNED; investigación de alto riesgo técnico.
-
-- [ ] Identificar APIs de cómputo realmente disponibles en la GPU.
-- [ ] Comprobar compatibilidad de Vulkan/OpenCL/ROCm u otros backends sin asumir soporte.
-- [ ] Evaluar primero inferencia CPU como baseline.
-- [ ] Probar un modelo pequeño cuantizado con parámetros registrados.
-- [ ] Medir tokens/s, RAM disponible, VRAM reservada, latencia, temperatura y errores.
-- [ ] Comparar GPU frente a CPU; abandonar aceleración GPU si el coste de compatibilidad supera el beneficio.
-- [ ] No instalar toolchains pesadas antes de validar la base gráfica.
-
-**Puerta de salida:** benchmark reproducible y conclusión basada en mediciones.
-
-## Fase 9 — Automatización de reparación
-**Estado:** PLANNED
-
+## Fase 10 — Diagnóstico/recuperación
+**Estado:** PLANNED.
 - [ ] Árbol de diagnóstico por síntoma.
-- [ ] Modo `--dry-run` obligatorio en utilidades de reparación.
-- [ ] Backups antes de editar configuración.
-- [ ] Restauración atómica de archivos.
-- [ ] Recolección de logs con redacción de datos sensibles.
-- [ ] Pruebas de fallo inducido sobre imágenes de laboratorio.
-- [ ] Runbook de pantalla negra, kernel incorrecto, USB no detectado, rescue shell, red y filesystem.
-- [ ] Separar recuperación de Linux de recuperación del firmware de PS4.
+- [ ] Herramientas de solo lectura y recolección de logs.
+- [ ] Backup antes de editar; restauración atómica.
+- [ ] Dry-run en acciones futuras con efectos secundarios.
+- [ ] Tests de fallos inducidos en imágenes de laboratorio.
+- [ ] Separar recuperación Linux de recuperación del firmware original.
+**Salida:** cada reparación incluye precondiciones, aborto, verificación y rollback.
 
-**Puerta de salida:** cada reparación tiene precondiciones, validación posterior y rollback.
+## Fase 11 — Decisión de uso final
+**Estado:** PLANNED.
+- [ ] Comparar utilidad como mini-PC, equipo de emulación, servidor o nodo de IA.
+- [ ] Comparar consumo, ruido, limitaciones y mantenimiento contra alternativas.
+- [ ] Identificar tareas que no justifican más investigación.
+- [ ] Documentar limitaciones y conclusión.
+**Salida:** decisión respaldada por evidencia, no expectativas.
 
-## Fase 10 — Decisión de uso final
-**Estado:** PLANNED
-
-- [ ] Comparar utilidad real como mini-PC, consola de emulación y servidor headless.
-- [ ] Comparar coste/consumo/ruido con hardware alternativo disponible.
-- [ ] Definir si vale la pena mantenerlo permanentemente en Linux o usar arranque ocasional.
-- [ ] Documentar limitaciones no resueltas y tareas descartadas.
+## Dependencias críticas
+- Fase 1 bloquea fases 3, 5 y 6.
+- Fase 2 bloquea la selección/reutilización de componentes.
+- Fase 4 puede avanzar en PC usando solo archivos/imágenes virtuales.
+- Fases 8 y 9 esperan arranque y estabilidad reproducibles.
