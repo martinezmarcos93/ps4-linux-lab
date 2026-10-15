@@ -20,7 +20,7 @@ Basado en la lectura de código documentada en [`docs/UPSTREAM_CODE_MAP.md`](UPS
 
 ## Fase 2 — Ubicación del kernel: la decisión que choca con nuestro principio de "no tocar el disco interno"
 
-Esta es la fase que requiere una **DECISIÓN** explícita antes de proceder (ver `docs/DECISION_LOG.md`, entrada pendiente D-006).
+Esta es la fase que requiere una **DECISIÓN** explícita antes de proceder (ver `docs/DECISION_LOG.md`, entrada pendiente D-008).
 
 **HECHO DOCUMENTADO (README de la distribución):** el procedimiento oficial de `X-F1REBALL-X/PS4-Linux` instruye subir por FTP (puerto 2121) el `bzImage` correspondiente al southbridge detectado y `initramfs.cpio.gz` a `/data/linux/boot/` en el **almacenamiento interno** de la consola. El USB solo contiene el rootfs, nunca el kernel, para poder compartir un mismo USB entre consolas con southbridge distinto (el README lo explicita: "Do not put a file named `bzImage` on the USB").
 

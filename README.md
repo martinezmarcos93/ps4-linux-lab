@@ -1,68 +1,69 @@
 # PS4 Linux Lab
 
-Laboratorio privado para estudiar, documentar y probar el arranque de Linux en PlayStation 4, con prioridad en la seguridad del dispositivo, la reproducibilidad y la trazabilidad de las pruebas.
+Laboratorio privado para investigar Linux en PlayStation 4, priorizando seguridad, reproducibilidad y trazabilidad.
 
-**Estado:** planificación e investigación. No hay todavía una PS4 identificada ni una combinación modelo/firmware validada en este laboratorio.
+**Estado:** investigación y preparación documental. No hay todavía una PS4 identificada ni una combinación modelo/firmware validada en este laboratorio. Una declaración upstream no equivale a una prueba propia.
 
 ## Objetivos
-
-- Determinar el método de arranque compatible con el modelo, firmware y southbridge de la consola.
-- Evaluar referencias comunitarias sin asumir que sus instrucciones son universalmente aplicables.
-- Preparar un medio USB externo de prueba y mantener intacto el almacenamiento interno de la PS4.
-- Desarrollar diagnósticos no destructivos, verificaciones de integridad y procedimientos de recuperación.
-- Medir soporte real de GPU, Mesa, OpenGL/Vulkan, audio, red, temperatura y estabilidad.
-- Evaluar juegos y emulación; investigar inferencia LLM solo después de validar el stack gráfico y de cómputo.
-- Registrar resultados reproducibles y separar los hechos verificados de las hipótesis.
+- Identificar un método de arranque compatible con modelo CUH, firmware y southbridge.
+- Auditar código, releases, dependencias y licencias.
+- Preparar y verificar un USB en PC antes de conectarlo a la consola.
+- Mantener intacto el almacenamiento interno durante las primeras fases.
+- Diseñar diagnósticos no destructivos y recuperación.
+- Medir GPU, Mesa, OpenGL/Vulkan, audio, red, temperatura y estabilidad.
+- Evaluar juegos/emulación; investigar LLM solo si existe un backend viable.
 
 ## Referencias upstream
-
 - [X-F1REBALL-X/PS4-Linux](https://github.com/X-F1REBALL-X/PS4-Linux)
 - [ps4-linux/ps4-linux-loader](https://github.com/ps4-linux/ps4-linux-loader)
 
-Consultar [`docs/UPSTREAM_AUDIT.md`](docs/UPSTREAM_AUDIT.md) antes de reutilizar archivos o código. No se copian binarios, kernels, payloads ni imágenes de terceros a este repositorio por defecto.
+Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de licencias](docs/LICENSE_POLICY.md) antes de reutilizar componentes. No se incorporan kernels, payloads, imágenes, rootfs ni binarios de terceros por defecto.
 
 ## Principios de seguridad
+1. Registrar el firmware exacto; no actualizarlo como parte de la investigación inicial.
+2. No escribir en el disco interno de la PS4 durante las primeras fases.
+3. Identificar discos por modelo, tamaño, bus y serie; no confiar solo en un identificador volátil como /dev/sdX.
+4. No ejecutar scripts de terceros sin inspección, procedencia y verificación de integridad.
+5. Una herramienta destructiva futura debe mostrar el destino, volver a identificarlo y exigir confirmación explícita.
+6. Guardar hashes, versiones, logs, condiciones y resultado de cada experimento.
+7. Una pantalla negra no demuestra por sí sola un brick.
+8. Separar declaraciones upstream, observaciones de código, inferencias, hipótesis y pruebas propias.
 
-1. **No actualizar el firmware antes de registrar la versión actual.**
-2. **No escribir en el disco interno de la PS4 durante las primeras fases.**
-3. Identificar discos por modelo, tamaño, bus y número de serie; nunca confiar solo en `/dev/sdX` o un número de disco guardado.
-4. Toda operación destructiva debe mostrar el objetivo y exigir confirmación interactiva explícita.
-5. Verificar hashes y procedencia de imágenes y payloads.
-6. No ejecutar scripts descargados de upstream sin revisarlos.
-7. Mantener un registro de cada prueba, resultado, cambio y criterio de rollback.
-8. No considerar una pantalla negra como prueba suficiente de brick; diagnosticar antes de repetir acciones.
+## Estado del proyecto
+- [x] Repositorio privado creado.
+- [x] Documentación inicial incorporada.
+- [x] Fuentes de referencia y riesgos preliminares registrados.
+- [ ] Identificar modelo CUH, firmware y estado de la consola disponible.
+- [ ] Completar mapa de código y revisar commits/tags exactos.
+- [ ] Resolver licencias de cada componente candidato.
+- [ ] Elegir método de arranque basado en evidencia para el hardware real.
+- [ ] Diseñar/probar utilidades USB usando archivos e imágenes virtuales.
+- [ ] Primer arranque Linux externo y retorno al sistema original.
+- [ ] Caracterizar periféricos, GPU, temperatura y estabilidad.
+- [ ] Decidir con mediciones si gaming, emulación o LLM son viables.
 
-## Estado actual
+## Documentación
+| Documento | Propósito |
+|---|---|
+| [Acta del proyecto](docs/PROJECT_CHARTER.md) | Alcance y criterios de éxito |
+| [Roadmap](docs/ROADMAP.md) | Fases, dependencias y puertas de decisión |
+| [Arquitectura](docs/ARCHITECTURE.md) | Componentes y flujo conceptual |
+| [Auditoría upstream](docs/UPSTREAM_AUDIT.md) | Hallazgos y límites de revisión |
+| [Riesgos](docs/RISK_REGISTER.md) | Riesgos y mitigaciones |
+| [Recuperación](docs/RECOVERY_STRATEGY.md) | Diagnóstico y rollback |
+| [Licencias](docs/LICENSE_POLICY.md) | Procedencia y reutilización |
+| [Decisiones](docs/DECISION_LOG.md) | Decisiones y preguntas pendientes |
+| [Plantilla de experimento](docs/LAB_LOG_TEMPLATE.md) | Registro reproducible |
+| [Flujo de arranque](docs/BOOT_FLOW.md) | Etapas y diagnóstico |
+| [Matriz de compatibilidad](docs/COMPATIBILITY_MATRIX.md) | Evidencia de hardware/firmware |
+| [Plan de pruebas](docs/TEST_PLAN.md) | Casos, resultados y criterios de aborto |
+| [Solución de problemas](docs/TROUBLESHOOTING.md) | Diagnóstico no destructivo |
+| [GPU y LLM](docs/GPU_AND_LLM_RESEARCH.md) | Evaluación basada en mediciones |
+| [Mapa upstream](docs/UPSTREAM_CODE_MAP.md) | Áreas de código a revisar |
+| [Fuentes de evidencia](docs/EVIDENCE_SOURCES.md) | Trazabilidad |
+| [Seguridad de herramientas](docs/SAFETY_AND_TOOLING.md) | Requisitos para scripts futuros |
 
-- [x] Fuentes de referencia iniciales identificadas.
-- [x] Riesgos preliminares documentados.
-- [ ] Crear repositorio privado y cargar este esqueleto.
-- [ ] Identificar modelo CUH, firmware y estado de almacenamiento.
-- [ ] Confirmar licencia de cada componente que se pretenda reutilizar.
-- [ ] Elegir un camino de arranque según evidencia específica del hardware.
-- [ ] Preparar y validar el USB en una PC, sin conectarlo aún a la consola.
-- [ ] Primer arranque Linux sin modificar el disco interno.
-- [ ] Validar GPU, temperatura y estabilidad.
+## Convenciones de evidencia
+Estados: PLANNED, IN_PROGRESS, BLOCKED, VERIFIED y REJECTED. Solo marcar VERIFIED con hardware/firmware identificados, evidencia guardada y procedimiento reproducible.
 
-## Documentos
-
-- [`docs/PROJECT_CHARTER.md`](docs/PROJECT_CHARTER.md): alcance, objetivos y criterios de éxito.
-- [`docs/ROADMAP.md`](docs/ROADMAP.md): fases, entregables y puertas de decisión.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): arquitectura objetivo y flujo de arranque.
-- [`docs/UPSTREAM_AUDIT.md`](docs/UPSTREAM_AUDIT.md): lectura inicial de los repositorios de referencia.
-- [`docs/RISK_REGISTER.md`](docs/RISK_REGISTER.md): riesgos y mitigaciones.
-- [`docs/RECOVERY_STRATEGY.md`](docs/RECOVERY_STRATEGY.md): estrategia de diagnóstico y reparación.
-- [`docs/LICENSE_POLICY.md`](docs/LICENSE_POLICY.md): reglas para reutilización de código y binarios.
-- [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md): decisiones y supuestos.
-- [`docs/LAB_LOG_TEMPLATE.md`](docs/LAB_LOG_TEMPLATE.md): plantilla de experimentos.
-- [`docs/UPSTREAM_CODE_MAP.md`](docs/UPSTREAM_CODE_MAP.md): auditoría de código (no solo README) de ambos upstreams, con cita de archivo/línea/commit.
-- [`docs/COMPATIBILITY_MATRIX.md`](docs/COMPATIBILITY_MATRIX.md): matriz modelo/firmware/southbridge con nivel de evidencia por fila.
-- [`docs/BOOT_FLOW.md`](docs/BOOT_FLOW.md): secuencia de arranque real, del jailbreak al escritorio.
-- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md): árboles de diagnóstico no destructivo para síntomas específicos de esta pila.
-- [`docs/GPU_AND_LLM_RESEARCH.md`](docs/GPU_AND_LLM_RESEARCH.md): protocolo de evaluación gráfica y de inferencia LLM, sin prometer aceleración.
-- [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md): casos de prueba concretos, en orden de dependencia.
-- [`docs/EVIDENCE_SOURCES.md`](docs/EVIDENCE_SOURCES.md): registro de fuentes con URL, commit/fecha y nivel de confiabilidad.
-
-## Regla de estado
-
-Usar `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `VERIFIED` o `REJECTED`. Solo usar `VERIFIED` con evidencia registrada, modelo/firmware identificados y procedimiento reproducible.
+Clasificar afirmaciones como UPSTREAM-CLAIM, CODE-OBSERVATION, INFERENCE, HYPOTHESIS o LAB-VERIFIED. No guardar secretos, logs sensibles ni imágenes de gran tamaño en el repositorio.

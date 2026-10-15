@@ -37,7 +37,7 @@ Ningún caso de este plan se ha ejecutado todavía. Ninguno puede marcarse `VERI
 
 ## TP-05 — Decisión de ubicación del kernel (bloqueante, requiere autorización explícita)
 
-- **Precondición:** TP-01 a TP-04 completos; **decisión D-006 de `docs/DECISION_LOG.md` resuelta** (Opción A: FTP a `/data/linux/boot/`, u Opción B: USB-only).
+- **Precondición:** TP-01 a TP-04 completos; **decisión D-008 de `docs/DECISION_LOG.md` resuelta** (Opción A: FTP a `/data/linux/boot/`, u Opción B: USB-only).
 - **Este caso no tiene "pasos" todavía** — es el punto donde el roadmap se detiene hasta que Marcos decida, porque la Opción A modifica el almacenamiento interno de la consola (ver `docs/BOOT_FLOW.md` Fase 2).
 - **Resultado esperado:** una decisión registrada, no una ejecución.
 
