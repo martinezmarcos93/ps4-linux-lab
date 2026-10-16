@@ -1,0 +1,118 @@
+From: PS4 Linux Lab
+Subject: [PATCH 2/2] harden loader reads and disable optional config files
+
+Apply after loader-usb-only-f70f43a.patch against
+ps4-linux/ps4-linux-loader@f70f43a60a973b3662daeb29c1f115d95408db93.
+
+The candidate policy excludes bootargs.txt and vram.txt. Do not read them at
+all: use compiled-in command-line and VRAM defaults. Harden read_file() so
+failure leaves outputs NULL/zero, validates lseek/mmap, handles partial reads,
+and releases resources on every error path.
+
+This is a source patch only. It is not compiled or executed by this file.
+
+---
+ a/linux/main-aio.c
++++ b/linux/main-aio.c
+@@
+ int read_file(char *path, char **ptr, unsigned long long *sz)
+ {
+     int fd = open(path, O_RDONLY);
+-    if (fd < 0) return -1;
+-    *sz = lseek(fd, 0, SEEK_END);
+-    *ptr = mmap(NULL, *sz, PROT_READ | PROT_WRITE,
+-                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+-    char *p = *ptr;
+-    unsigned long long l = *sz;
+-    lseek(fd, 0, SEEK_SET);
+-    while (l) {
+-        unsigned long long chk = read(fd, p, l);
+-        if (chk <= 0) return -1;
+-        p += chk;
+-        l -= chk;
+-    }
+-    close(fd);
++    off_t end;
++    char *buffer;
++    unsigned long long remaining;
++
++    /* Publish no partially initialized buffer to the caller. */
++    *ptr = NULL;
++    *sz = 0;
++    if (fd < 0)
++        return -1;
++
++    end = lseek(fd, 0, SEEK_END);
++    if (end <= 0)
++        goto fail;
++
++    buffer = mmap(NULL, (size_t)end, PROT_READ | PROT_WRITE,
++                  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++    if (buffer == MAP_FAILED)
++        goto fail;
++
++    if (lseek(fd, 0, SEEK_SET) != 0)
++        goto fail_mmap;
++
++    remaining = (unsigned long long)end;
++    char *cursor = buffer;
++    while (remaining > 0) {
++        size_t chunk = remaining > (unsigned long long)SIZE_MAX
++                     ? SIZE_MAX : (size_t)remaining;
++        ssize_t got = read(fd, cursor, chunk);
++        if (got <= 0)
++            goto fail_mmap;
++        cursor += got;
++        remaining -= (unsigned long long)got;
++    }
++
++    if (close(fd) != 0) {
++        munmap(buffer, (size_t)end);
++        return -1;
++    }
++    *ptr = buffer;
++    *sz = (unsigned long long)end;
+     return 0;
++
++fail_mmap:
++    munmap(buffer, (size_t)end);
++fail:
++    close(fd);
++    return -1;
+ }
+@@
+-    char *cmdline = NULL; unsigned long long cmdline_size = 0;
+-    char *vramstr = NULL; unsigned long long vramstr_size = 0;
+-    int vram_mb = 0;
++    char *cmdline = NULL;
++    int vram_mb = VRAM_MB_DEFAULT;
+@@
+-    /* Opcionales: solo de la MISMA carpeta; si faltan se usan los valores por defecto. */
+-    load_from(boot_dir, "bootargs.txt", &cmdline, &cmdline_size);
+-
+-    if (cmdline && cmdline_size) {
+-        for (int i = 0; i < (int)cmdline_size; i++)
+-            if (cmdline[i] == '\n') { cmdline[i] = '\0'; break; }
+-    } else {
+-        cmdline = "panic=0 clocksource=tsc consoleblank=0 net.ifnames=0 "
+-                  "radeon.dpm=0 amdgpu.dpm=0 drm.debug=0 "
+-                  "console=ttyS0,115200n8 console=tty0 "
+-                  "video=HDMI-A-1:1920x1080@60";
+-    }
+-
+-    load_from(boot_dir, "vram.txt", &vramstr, &vramstr_size);
+-    if (vramstr && vramstr_size) {
+-        vram_mb = my_atoi(vramstr);
+-        if (vram_mb < VRAM_MB_MIN || vram_mb > VRAM_MB_MAX)
+-            vram_mb = VRAM_MB_DEFAULT;
+-    } else {
+-        vram_mb = VRAM_MB_DEFAULT;
+-    }
++    /*
++     * Minimal candidate policy: do not load bootargs.txt or vram.txt.
++     * The host preflight rejects these files; compiled-in defaults are used.
++     */
++    cmdline = "panic=0 clocksource=tsc consoleblank=0 net.ifnames=0 "
++              "radeon.dpm=0 amdgpu.dpm=0 drm.debug=0 "
++              "console=ttyS0,115200n8 console=tty0 "
++              "video=HDMI-A-1:1920x1080@60";
