@@ -30,6 +30,19 @@ class TestPreflightMinimo(unittest.TestCase):
         errores = verificar_configuracion_minima(self.boot)
         self.assertTrue(any("vram.txt" in e and "está presente" in e for e in errores))
 
+    def test_nombre_opcional_con_mayusculas_se_rechaza(self):
+        (self.boot / "BOOTARGS.TXT").write_text("console=tty0\n", encoding="ascii")
+        errores = verificar_configuracion_minima(self.boot)
+        self.assertTrue(any("BOOTARGS.TXT" in e and "nombre reservado" in e for e in errores))
+
+    def test_vram_con_mayusculas_y_symlink_roto_se_rechaza(self):
+        try:
+            (self.boot / "VRAM.TXT").symlink_to(self.boot / "ausente")
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks no soportados en este entorno")
+        errores = verificar_configuracion_minima(self.boot)
+        self.assertTrue(any("VRAM.TXT" in e and "nombre reservado" in e for e in errores))
+
     def test_opcional_vacio_se_rechaza(self):
         (self.boot / "bootargs.txt").write_bytes(b"")
         errores = verificar_configuracion_minima(self.boot)
