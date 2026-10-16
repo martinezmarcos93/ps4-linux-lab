@@ -4,7 +4,9 @@
 
 **Avance estimado de preparación técnica: ~50 % (confianza moderada). Arranque real en PS4: no demostrado.** El porcentaje mide preparación, auditoría, herramientas y documentación; no es una probabilidad de éxito de boot ni una medida lineal de riesgo.
 
-La CI host-side del workstream 05 pasó en runs #61 y #62. El parche C propuesto para el loader sigue sin aplicarse a un checkout limpio ni compilarse. Se mantiene **NO-GO para prueba física**.
+La CI host-side del workstream 05 pasó en runs #61, #62 y #64 (run #64: commit `1355836a08e1e1ef92bbdf36dc66c2fb7c71975d`). El parche C propuesto para el loader sigue sin aplicarse a un checkout limpio ni compilarse. Se mantiene **NO-GO para prueba física**.
+
+La lectura cruzada de WS03/WS04 encontró una discrepancia documental: `COMPATIBILITY_DECISION_2026-10-16.md` registra el southbridge reportado por Marcos como Baikal B1 (`0x30201`), mientras que `UPSTREAM_AUDIT_2026-10-16.md` aún dice que sigue desconocido y que el equipo es CUH-2115B. La referencia integrada debe tratar Baikal B1 como observación reportada por el operador, no como verificación independiente; el bloqueo de compatibilidad sigue siendo el artefacto exacto y la cadena USB-only, no repetir la identificación.
 
 ## Estado por frente
 
@@ -29,7 +31,7 @@ Los porcentajes por frente son estimaciones de gestión, no métricas automatiza
 6. Verificar por análisis del diff que kernel e initramfs salen de una misma carpeta USB y que no quedan fallbacks internos en el loader.
 7. Actualizar R-USB-001 y la decisión del WS05 solo después de evidencia reproducible.
 
-**Bloqueo actual:** el entorno de trabajo anterior no pudo resolver GitHub por DNS. La consulta del código upstream confirma la implementación antigua de `read_file()`, pero no sustituye `git apply --check` ni la compilación. Si el entorno sigue sin red, pedir a Codex que ejecute el bloque de verificación en su entorno con acceso y entregue logs completos, sin ejecutar payloads.
+**Bloqueo actual:** el entorno de trabajo anterior no pudo resolver GitHub por DNS. Se recuperó el código fuente fijado mediante el conector GitHub y se confirmó que el `read_file()` upstream sigue sin validar fallos de `lseek`, `mmap` y reinicio, y retorna sin cerrar recursos ante lectura fallida. También se confirmó que el parche USB-only elimina los fallbacks internos y selecciona una carpeta con ambos archivos obligatorios. Esto permite revisar el contexto del diff, pero no sustituye `git apply --check` ni la compilación. Si el entorno sigue sin red, pedir a Codex que ejecute el bloque de verificación en su entorno con acceso y entregue logs completos, sin ejecutar payloads.
 
 ## Barrido 2 — inventario y aceptación de artefactos
 
