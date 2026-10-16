@@ -36,6 +36,7 @@ Los bloqueos reales que quedan son:
 **Salida G1:** tests verdes o bloqueos externos documentados con evidencia; no se acepta “debería pasar”.
 
 ### G2 — Cadena USB-only e imagen sintética
+- [ ] Verificar independientemente el parche USB-only ya compilado y sus hashes/build logs; confirmar que la salida revisada corresponde al parche y al commit exactos.
 - [ ] Definir una disposición donde kernel, initramfs, configuración y rootfs correspondan al mismo manifiesto.
 - [ ] El diseño debe fallar cerrado si falta cualquier artefacto; nunca tomar silenciosamente un archivo del disco interno.
 - [ ] Inspeccionar particiones, filesystem y contenido de la imagen en PC en modo de solo lectura o mediante herramientas de análisis que no modifiquen la imagen.
@@ -43,7 +44,7 @@ Los bloqueos reales que quedan son:
 - [ ] Verificar por lectura estática los argumentos de arranque y cómo el initramfs localiza la raíz USB.
 - [ ] Documentar recuperación y límites de lo que no puede probarse sin hardware.
 
-**Salida G2:** imagen candidata reproducible/inspeccionada en PC y evidencia de que el diseño no depende de las rutas internas. Si el loader no permite imponer esto, no avanzar con él sin una modificación aislada, auditada y legalmente permitida.
+**Salida G2:** imagen candidata reproducible/inspeccionada en PC y evidencia de que el diseño no depende de las rutas internas. Si la variante parcheada no pasa revisión o no se puede vincular a sus fuentes/build, mantener el NO-GO y corregir/reconstruirla en entorno aislado; no sustituirla por el loader upstream sin parche.
 
 ### G3 — Revisión independiente y autorización
 - [ ] ChatGPT revisa el diff final de Claude, manifiesto, resultados de tests y rutas de lectura/escritura.
