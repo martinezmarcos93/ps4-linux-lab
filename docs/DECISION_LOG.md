@@ -145,3 +145,10 @@ Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-
 - **Q-006:** CERRADA por D-008: la escritura en `/data/linux/boot/` no es una opción. La pregunta vigente pasa a ser si USB-only es demostrable (`USB_ONLY_DESIGN.md` §4).
 - **Q-007:** ¿existe tolerancia a repetir el ciclo de jailbreak varias veces en la misma sesión de prueba? El propio upstream documenta que 2-3 intentos son normales (ver `docs/TROUBLESHOOTING.md` caso 2) — afecta cuánto tiempo de sesión planificar, no es una decisión técnica.
 - **Q-008:** RESPUESTA PARCIAL (rama `chatgpt/research-audits`, integrada): la investigación bibliográfica de `GPU_AND_LLM_RESEARCH.md` §5 concluye que ROCm no tiene soporte oficial para Liverpool/PS4 en la matriz consultada y que Vulkan/RADV con `llama.cpp` es un candidato experimental, todo `INFERENCE` sin prueba en la consola. Pregunta original: ¿vale la pena, antes de tener la consola, investigar específicamente soporte ROCm/Vulkan-compute para GCN1-GCN4 (vacío identificado en `docs/GPU_AND_LLM_RESEARCH.md` §5) para no descubrir un descarte evitable recién en la Fase de compute/LLM? Es una pregunta de priorización de tiempo, no de autorización.
+
+
+## D-023 — Licencia MIT para el código propio del repositorio
+- **Fecha:** 2026-10-16. **Estado:** ACEPTADA.
+- **Contexto:** el repositorio no tenía licencia definida para el código propio; se documentó la decisión de licenciar los componentes propios y se agregó `LICENSE` a la raíz.
+- **Decisión:** el código y la documentación propios (`tools/`, `tests/`, `scripts/`, `docs/`, `README.md`) se publican bajo MIT.
+- **Límite:** no se extiende a componentes de terceros (loader, kernels, payloads, rootfs, parches ni binarios upstream); cada uno mantiene su propia licencia y condiciones. La licencia del laboratorio no autoriza redistribuir artefactos externos.
