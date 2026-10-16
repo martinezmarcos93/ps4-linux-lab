@@ -61,3 +61,10 @@
 2. Desactivar descargas automáticas de actualización y no aceptar ninguna.
 3. D-008 y Q-006 están resueltas como política (USB-only; no se escribe en el interno); lo pendiente es demostrar USB-only (`docs/USB_ONLY_DESIGN.md` §4) antes de cualquier ejecución.
 4. Diagnosticar el HDMI con el monitor (probar otra entrada/cable, modo seguro → cambiar resolución).
+
+
+## Actualización de autorización — 2026-10-16
+Marcos autorizó expresamente todas las acciones técnicas necesarias para descubrir el kernel compatible, incluida la identificación del southbridge por software mediante GoldHEN o lectura de `hw.sce_subsys_subid`, y la ejecución del exploit/payload necesario para esa lectura. Esta autorización **no** equivale a autorizar escritura en almacenamiento interno, escritura física de una imagen USB o arranque Linux.
+Procedimiento y límites: [`docs/AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md`](../AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md).
+- Southbridge: pendiente de lectura observada.
+- Estado de laboratorio: no se ha ejecutado nada en la consola en esta sesión; hace falta la operación local en la PS4.
