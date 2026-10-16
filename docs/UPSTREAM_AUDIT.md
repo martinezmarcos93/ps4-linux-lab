@@ -44,7 +44,7 @@
 - `X-F1REBALL-X/PS4-Linux` contiene un archivo `LICENSE` con GNU GPL versión 3.
 - No se encontró `LICENSE` en la raíz del repositorio `ps4-linux/ps4-linux-loader` mediante la ruta comprobada; eso no prueba que todos los archivos carezcan de licencia. No copiar código hasta revisar metadatos, cabeceras y licencias de dependencias/archivos.
 - La imagen rootfs, los kernels, payloads, initramfs y paquetes pueden tener licencias y autores distintos. Mantener inventario por artefacto.
-- Preferir inicialmente integración por documentación, descarga desde release upstream y verificación de hashes; no subir binarios de terceros al repo privado salvo que licencia y procedencia lo permitan.
+- Preferir inicialmente integración por documentación, descarga desde release upstream y verificación de hashes; no subir binarios de terceros al repositorio salvo que licencia y procedencia lo permitan (el repositorio es público desde la auditoría de publicación de 2026-10-16; ver `docs/PUBLICATION_AUDIT.md`).
 - Conservar avisos de copyright y licencia cuando se reutilice código de forma permitida. Marcar las modificaciones.
 
 ## Próximos pasos de auditoría

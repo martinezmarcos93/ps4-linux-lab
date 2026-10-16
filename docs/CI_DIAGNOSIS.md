@@ -28,3 +28,12 @@ Ese diagnóstico es histórico. No debe usarse para explicar los runs actuales, 
 `scripts/check.sh` ejecuta `compileall`, `unittest discover -v` y `tools/check_docs.py`. Los resultados deben registrarse con el comando exacto y la salida real del entorno en que se ejecuten.
 
 No declarar CI resuelto hasta que un run posterior confirme el resultado. Un test aprobado tampoco demuestra que Linux arranque en la PS4.
+
+## Nota de consolidación (merge a main, 2026-10-16)
+
+`workstream/01-docs-governance` llevaba un diagnóstico histórico anterior al run 31 y al PR #2 (no conocía esos eventos). Se conserva la versión de arriba porque está mejor evidenciada; el checklist de próximas comprobaciones de esa rama sigue vigente como guía general:
+
+1. Consultar el estado más reciente de GitHub Actions para `main` y para una rama de trabajo.
+2. Confirmar si el job obtuvo runner y ejecutó pasos.
+3. Registrar el resultado real de tests y documentación, no solo si el job arrancó.
+4. No publicar un badge verde ni marcar CI como resuelto hasta ver una ejecución satisfactoria posterior al fix del PR #2.

@@ -133,6 +133,17 @@ Las decisiones describen opciones aceptadas y condiciones para revisarlas; no tr
 - **Visible y pendiente:** 30 avisos de pila ejecutable y 20 de segmento RWX del enlazador por variante (R-20); no se silenciaron.
 - **No demuestra:** que el loader arranque, que USB-only esté garantizado en ejecución, ni compatibilidad de hardware. Detalle: `docs/LOADER_BUILD_REPRO.md`.
 
+## D-022 — Autorización de publicación del repositorio (registro retroactivo)
+- **Fecha de registro:** 2026-10-16. **Estado:** ACEPTADA.
+- **Contexto:** D-014 (actualización 2026-10-15) registraba que hacer público el repositorio seguía sin autorización. El repositorio está confirmado público desde la auditoría de publicación (`docs/PUBLICATION_AUDIT.md`, 2026-10-16) sin que existiera una entrada posterior que registrara el cambio de visibilidad. Hallazgo F06 de `docs/workstreams/01-docs-governance/ROADMAP.md`.
+- **Decisión:** Marcos confirmó en esta sesión (2026-10-16) que autorizó la publicación del repositorio. Se registra aquí retroactivamente para cerrar la discrepancia entre D-014 y el estado real. No cambia ninguna otra restricción vigente de D-014 (sigue sin autorizar ejecutar payloads, modificar almacenamiento interno, escribir imágenes en dispositivos físicos, ni pruebas destructivas).
+
+## D-023 — Licencia MIT para el código propio del repositorio
+- **Fecha:** 2026-10-16. **Estado:** ACEPTADA.
+- **Contexto:** `docs/LICENSE_POLICY.md` no tenía licencia definida para el código propio (hallazgo F04 de `docs/workstreams/01-docs-governance/ROADMAP.md`); el repositorio no tenía archivo `LICENSE` en la raíz.
+- **Decisión:** Marcos eligió MIT para el código y la documentación propios (`tools/`, `tests/`, `scripts/`, `docs/`, `README.md`). Se agrega `LICENSE` en la raíz y se actualiza `docs/LICENSE_POLICY.md`.
+- **Límite:** no se extiende a componentes de terceros (loader, kernels, payloads, rootfs, parches, binarios upstream); cada uno mantiene su propia licencia según el inventario existente.
+
 ## Preguntas abiertas
 
 Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-008) surgen de la auditoría de código de esta sesión y son más específicas.

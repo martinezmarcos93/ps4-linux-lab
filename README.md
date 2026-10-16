@@ -83,7 +83,7 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Diagnóstico de CI](docs/CI_DIAGNOSIS.md) | Estado del workflow y alternativas |
 | [Informe de estado público](docs/PUBLIC_PROJECT_STATUS.md) | Relevamiento de avances y pendientes |
 | [Auditoría de publicación pública](docs/PUBLICATION_AUDIT.md) | Revisión de documentación para un repositorio público |
-| [Auditoría de recursos externos y plan revisado](docs/AUDITORIA_RECURSOS_EXTERNOS_Y_PLAN_2026-10-16.md) | Análisis de kernels, loader v25.1, initramfs, distros, herramientas y próximos pasos |
+| [Auditoría de recursos externos y plan revisado](docs/AUDITORIA_RECURSOS_EXTERNOS_Y_PLAN_2026-10-16.md) | Análisis de todos los recursos propuestos, selección de kernel/initramfs y nuevas puertas de decisión |
 | [Auditoría de cadena Baikal](docs/AUDITORIA_CADENA_BAIKAL.md) | Auditoría integrada de compatibilidad y bloqueos |
 | [Selección de kernel](docs/KERNEL_SELECTION.md) | Comparación de candidatos y criterios de selección |
 | [Plan de validación Baikal](docs/PLAN_VALIDACION_BAIKAL.md) | Puertas de validación por etapas |
@@ -91,7 +91,8 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Revisión independiente OpenCode](docs/OPENCODE_REVIEW_2026-10-16.md) | Hallazgos técnicos de revisión cruzada |
 | [Revisión cruzada documental](docs/CROSS_DOC_AUDIT_2026-10-16.md) | Contradicciones y tareas de consolidación |
 | [Integración de ramas](docs/INTEGRACION_RAMAS_2026-10-16.md) | Merges, portado manual, conflictos y límites de consolidación |
-| [Auditoría de recursos externos y plan revisado](docs/AUDITORIA_RECURSOS_EXTERNOS_Y_PLAN_2026-10-16.md) | Análisis de todos los recursos propuestos, selección de kernel/initramfs y nuevas puertas de decisión |
+| [Workstreams activos](docs/WORKSTREAMS.md) | Las cinco categorías de trabajo en curso, su rama y responsable |
+| [Plan de workstreams](docs/WORKSTREAM_PLAN.md) | Orden de ejecución, dependencias y protocolo entre categorías |
 
 ## Herramientas locales
 
