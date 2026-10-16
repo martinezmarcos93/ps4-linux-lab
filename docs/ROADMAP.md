@@ -154,7 +154,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Salida:** benchmark reproducible y decisión documentada en `docs/DECISION_LOG.md`, sea cual sea el resultado.
 
 ## Fase 10 — Diagnóstico y recuperación
-**Estado:** PLANNED. Árboles de diagnóstico específicos para esta pila (no genéricos) ya redactados en [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md), con casos derivados de issues reales del upstream (LED blanca/sin handoff, rootfs no monta, bug de EDID). Ver también [`docs/RECOVERY_STRATEGY.md`](RECOVERY_STRATEGY.md) para los niveles generales de recuperación.
+**Estado:** PLANNED. Árboles de diagnóstico específicos para esta pila (no genéricos) ya redactados en [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md), con casos derivados de issues reales del upstream (LED blanca/sin handoff, rootfs no monta, bug de EDID). Ver también [`docs/RECOVERY_STRATEGY.md`](RECOVERY_STRATEGY.md) para los niveles generales de recuperación. El protocolo de aborto, paquete de diagnóstico y recuperación para el primer intento está en [`docs/RECOVERY_PLAN.md`](RECOVERY_PLAN.md); es documental y no se ha ensayado en hardware.
 - [ ] `PENDIENTE` Árbol de diagnóstico por síntoma (ya cubierto para los síntomas conocidos en `TROUBLESHOOTING.md`; ampliar con los que aparezcan en pruebas propias).
 - [ ] `PENDIENTE` Herramientas de solo lectura para recolección de logs.
 - [ ] `PENDIENTE` Backup antes de editar cualquier configuración; restauración atómica.
