@@ -1,12 +1,13 @@
 # Plan de validación por etapas — kernel Baikal 7.0.8 en la CUH-2115B (FW 13.52)
 
-Estado: **plan; nada de esto está autorizado ni ejecutado.** Una etapa que toque la consola exige la autorización específica de Marcos para esa etapa (D-014; `AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md` cubrió solo la identificación del southbridge). Complementa `RECOVERY_PLAN.md` (límites, criterios de aborto y paquete de diagnóstico generales) y `AUDITORIA_CADENA_BAIKAL.md` (hallazgos). Cada etapa termina en `APROBADA`, `ABORTADA` o `FALLIDA`; no se pasa a la siguiente sin la anterior. **Ninguna etapa se marca `VERIFIED` sin registro `LAB` con hashes** (D-020).
+Estado: **V0 en curso; evidencia visual recibida y registrada, artefactos de imagen aún no verificados.** El trabajo de PC/archivos regulares sigue en curso. Una etapa que toque la consola exige autorización específica de Marcos para esa etapa (D-014). Complementa `RECOVERY_PLAN.md` (límites, criterios de aborto y paquete de diagnóstico generales) y `AUDITORIA_CADENA_BAIKAL.md` (hallazgos). Cada etapa termina en `APROBADA`, `ABORTADA` o `FALLIDA`; no se pasa a la siguiente sin la anterior. **Ninguna etapa se marca `VERIFIED` sin registro `LAB` con hashes** (D-020).
 
 Reglas comunes: un solo cambio de variable por intento; máximo 3 intentos por etapa con la misma combinación; nunca escribir en el almacenamiento interno; nunca ejecutar `install-psxitarch.sh`; hashes de todos los artefactos registrados antes de cada intento; no incluir claves ni credenciales en los registros.
 
 ## V0 — Cierre de evidencia en la PC (sin consola)
-- **Hacer:** (1) archivar la captura de *Información del sistema* con el southbridge y la de *About GoldHEN* y registrar su SHA-256 en `LAB-001`; (2) decidir el payload (distribución vs. parcheado propio, `AUDITORIA` §3.5) y registrar la decisión; (3) preparar la imagen candidata por la ruta A de `USB_ONLY_DESIGN.md` §8 **solo como archivo**: copia de `psxitarch-usb.img` + `bzImage` Baikal en la FAT con `tools/fat32_add_file.py`; (4) verificar con `fsck.vfat -n`, `e2fsck -fn …?offset=`, `tools/verify_boot_chain.py --catalogo … --southbridge baikal --requerir estructura,integridad,formato,compatibilidad` y `tools/inspect_image.py`; (5) generar el informe y los hashes.
-- **Aceptación:** captura archivada con hash; todos los niveles en OK; ni un `bzImage.*` sobrante en la FAT; hash de la imagen igual al informe; `bootargs.txt` y `vram.txt` válidos si existen.
+- **Hecho:** capturas recibidas y SHA-256 registrados en `LAB-001`; payload candidato decidido por D-025: loader parcheado USB-only.
+- **Pendiente:** comprobar que los artefactos están disponibles en el entorno de trabajo; ejecutar las verificaciones de kernel/initramfs/rootfs/loader y construir la imagen candidata como archivo regular en la PC si los insumos existen. No escribir un dispositivo físico.
+- **Aceptación:** capturas registradas con hash; artefactos presentes y catalogados; todos los niveles de verificación en OK; ni un `bzImage.*` sobrante en la FAT; hash de imagen igual al informe; `bootargs.txt` y `vram.txt` válidos si existen.
 - **Aborto:** discrepancia southbridge (el ID no es 0x30201), hash distinto del catálogo, nivel en FALLO, falta de espacio.
 - **Rollback:** borrar el archivo de imagen de trabajo; no hay nada en la consola.
 
