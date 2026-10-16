@@ -148,6 +148,30 @@ class TestValidaciones(Base):
 
 
 @unittest.skipIf(ES_ROOT or FALTAN, f"root o faltan herramientas: {FALTAN}")
+class TestPublicacionAtomica(unittest.TestCase):
+    def test_no_sobrescribe_destino_que_aparece_durante_build(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            parcial = raiz / ".imagen.img.parcial"
+            destino = raiz / "imagen.img"
+            parcial.write_bytes(b"imagen-generada")
+            destino.write_bytes(b"archivo-ajeno")
+            with self.assertRaisesRegex(bu.BuildError, "no se sobrescribe"):
+                bu._publicar_sin_sobrescribir(parcial, destino)
+            self.assertEqual(destino.read_bytes(), b"archivo-ajeno")
+            self.assertEqual(parcial.read_bytes(), b"imagen-generada")
+
+    def test_publica_sin_reemplazo_y_quita_temporal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            parcial = raiz / ".imagen.img.parcial"
+            destino = raiz / "imagen.img"
+            parcial.write_bytes(b"imagen-generada")
+            bu._publicar_sin_sobrescribir(parcial, destino)
+            self.assertEqual(destino.read_bytes(), b"imagen-generada")
+            self.assertFalse(parcial.exists())
+
+
 class TestConstruccion(Base):
     def test_construye_imagen_verificable(self):
         plan = bu.planificar(self.args())
