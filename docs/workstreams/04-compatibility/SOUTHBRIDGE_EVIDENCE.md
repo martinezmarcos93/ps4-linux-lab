@@ -1,7 +1,7 @@
 # Southbridge: evidencia específica para CUH-2115B
 
 **Fecha de consulta:** 2026-10-16  
-**Resultado:** la evidencia pública consultada refuerza que el modelo comercial por sí solo no permite seleccionar un kernel. El southbridge del equipo del laboratorio sigue **sin confirmar**.
+**Resultado:** Marcos reportó que la pantalla de información del sistema mostraba **Baikal B1 (`0x30201`)**. En el código upstream auditado, `GetSouthbridgeName()` asigna ese ID a Baikal B1. Esta es evidencia reportada por el operador, no una repetición independiente en esta sesión.
 
 ## Hallazgo nuevo
 
@@ -19,7 +19,7 @@ Fuente adicional: [PS4 Developer wiki — Southbridge](https://www.psdevwiki.com
 |---|---|---|
 | Modelo comunicado CUH-2115B | OBSERVADO/COMUNICADO | Se mantiene como baseline del laboratorio |
 | Firmware 13.52 | OBSERVADO | Se mantiene; no actualizar |
-| Southbridge de esta unidad | DESCONOCIDO | No elegir kernel |
+| Southbridge de esta unidad | REPORTADO-OBSERVADO: Baikal B1 (`0x30201`) mostrado en información del sistema | Permite evaluar el kernel Baikal como candidato documental; no demuestra arranque Linux |
 | Evidencia pública sobre CUH-2115B | CONFLICTIVA: la wiki asocia el mismo identificador a Baikal y Belize2 | No inferir por CUH; buscar evidencia específica de placa/revisión o dejarlo bloqueado |
 | Compatibilidad de loader para Belize2 | El README del loader incluye Belize(2) entre las familias objetivo | No demuestra que un kernel particular sea compatible ni que el procedimiento USB-only sea seguro |
 
@@ -27,8 +27,8 @@ Fuente adicional: [PS4 Developer wiki — Southbridge](https://www.psdevwiki.com
 
 1. Claude debe comprobar si los archivos locales del laboratorio contienen una revisión de placa, etiqueta interna o fuente primaria que no esté reflejada en el resumen.
 2. Buscar una fuente técnica con evidencia de placa/modelo exactos y registrar fecha, URL y alcance. Si solo hay wikis/comentarios comunitarios contradictorios, conservar el estado DESCONOCIDO.
-3. No abrir la consola, modificar firmware ni ejecutar un payload como parte de esta tarea documental.
-4. Mantener la decisión **INDETERMINADO / NO-GO para selección de kernel** hasta resolver la revisión de placa y las condiciones de arranque USB-only.
+3. No abrir la consola, modificar firmware ni volver a ejecutar un payload solo para repetir el dato ya registrado.
+4. El candidato de kernel puede pasar a evaluación documental como Baikal (`bzImage-baikal-7.0.8`), pero mantener **NO-GO para ejecución** hasta cerrar la cadena USB-only, procedencia/licencias y los criterios de preparación del laboratorio.
 
 ## Clasificación de fuente
 
