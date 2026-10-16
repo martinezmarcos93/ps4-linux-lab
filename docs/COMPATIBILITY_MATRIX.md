@@ -27,9 +27,9 @@ No extrapolar una fila a modelos/revisiones vecinos. "Slim CUH-2xxx" y "Pro CUH-
 
 | Modelo CUH | Familia | Southbridge | Firmware | Capacidad | Estado | Evidencia | Registro |
 |---|---|---|---|---|---|---|---|
-| **DESCONOCIDO** (sin etiqueta en la base) | Slim (inferida de foto) | **DESCONOCIDO** | 13.52 | 861,4 GB (clase 1 TB) | Sin arranque probado | OBSERVADO-LABORATORIO (firmware, MAC, capacidad); INFERENCIA (familia) | `docs/lab-logs/LAB-000-identificacion-consola.md` |
+| **CUH-2115B** | Slim | **DESCONOCIDO** | 13.52 | 861,4 GB (clase 1 TB observada; disco posiblemente reemplazado) | Sin arranque probado | CUH comunicado por Marcos tras leer la etiqueta; firmware y capacidad observados; southbridge desconocido | `docs/lab-logs/LAB-000-identificacion-consola.md` |
 
-Esta fila **no** es `REPRODUCIDO-LABORATORIO`: no se ejecutó ningún payload ni arranque. Solo documenta qué se sabe de la consola real.
+Esta fila **no** es `REPRODUCIDO-LABORATORIO`: no se ejecutó ningún payload ni arranque. El CUH identifica el modelo, pero no confirma el southbridge ni valida un kernel.
 
 **Nota:** se recibieron listas de CUH candidatos (p. ej. 2014/2114/2214 con sufijo A/B) generadas por terceros a partir de una foto. Se descartan: el CUH no se deduce de una foto frontal, los códigos regionales citados se contradicen entre sí y no hay fuente verificable. Hasta tener el dato real, no extrapolar ninguna fila de §1 a esta consola (regla D-002).
 
@@ -73,13 +73,13 @@ Fuente: `linux/Makefile` y `linux/fw_offsets.h` de `ps4-linux/ps4-linux-loader` 
 
 ## 7. Identificación de la consola y tabla de decisión kernel/loader (no selecciona binario para esta consola)
 
-**El firmware 13.52 es un dato del software; no identifica el hardware.** Para esta consola: firmware 13.52 *observado*, familia Slim *inferida* de una foto, CUH y southbridge *desconocidos* (`LAB-000`). **No se elige kernel hasta confirmar el southbridge.**
+**El firmware 13.52 es un dato del software; no identifica el hardware.** Para esta consola: firmware 13.52 *observado*, modelo **CUH-2115B confirmado**, familia Slim confirmada por el modelo y southbridge *desconocido* (`LAB-000`). **No se elige kernel hasta resolver la compatibilidad con evidencia suficiente.**
 
 ### 7.1 Datos que se pueden obtener sin ejecutar un payload ni tocar el almacenamiento interno
 
 | Dato | Fuente | Qué permite | Qué NO garantiza | Estado |
 |---|---|---|---|---|
-| Modelo CUH con sufijo (CUH-2xxxA/B…) | Etiqueta trasera/inferior, caja, factura | Acotar la familia de placas y buscar reportes del mismo modelo | El southbridge: Slim y Pro tienen revisiones con Belize o Baikal (README de la distribución: "el número de modelo por sí solo no basta") | **Falta** (sin etiqueta en la base) |
+| Modelo CUH con sufijo (CUH-2xxxA/B…) | Etiqueta trasera/inferior, caja, factura | Acotar la familia de placas y buscar reportes del mismo modelo | El southbridge: Slim y Pro tienen revisiones con Belize o Baikal (README de la distribución: "el número de modelo por sí solo no basta") | **Confirmado: CUH-2115B** |
 | Región/sufijo de la etiqueta | Etiqueta | Distinguir variantes del mismo CUH | El southbridge | Falta |
 | Número de serie | Etiqueta | Identificar la unidad | Ninguna correspondencia con southbridge publicada y verificada | No registrado |
 | Firmware | Ajustes → Sistema → Información del sistema | Elegir entrada de offsets del loader (13.52 tiene fila propia) | El hardware | Observado: 13.52 |
@@ -89,7 +89,7 @@ Fuente: `linux/Makefile` y `linux/fw_offsets.h` de `ps4-linux/ps4-linux-loader` 
 | Southbridge (`hw.sce_subsys_subid`) | Solo ejecutando el payload (`GetSouthbridgeName()`) o GoldHEN ≥ 2.2.3 ("Southbridge info") | **Es el dato que decide el kernel** | – | **No obtenible sin ejecución autorizada** (D-010/D-014) |
 | Revisión de placa por inspección interna | Abrir la consola | Posible lectura directa | – | No es una primera opción (sellos, riesgo); no se hace |
 
-Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: no hay fuente verificable.
+Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el modelo ya fue leído directamente por el operador.
 
 ### 7.2 Qué kernel y loader corresponden a cada southbridge (según documentación; nada probado por nosotros)
 
@@ -104,5 +104,5 @@ Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: no
 Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El verificador (`tools/verify_boot_chain.py --southbridge …`) devuelve `NO_EVALUADO` en compatibilidad si el southbridge es desconocido y `FALLO` si no coincide con el catálogo.
 
 ### 7.3 Siguiente paso concreto para reducir la incertidumbre
-1. Marcos busca el CUH (etiqueta trasera/inferior, caja, factura) y lo registra en `LAB-000`. Con el CUH exacto se pueden buscar reportes del mismo modelo, que acotan pero no confirman el southbridge.
+1. CUH-2115B registrado en `LAB-000`. Los reportes del mismo modelo pueden acotar, pero no confirmar el southbridge.
 2. Solo con autorización explícita y las condiciones de `PLAN_INMEDIATO.md` Etapa 3 se obtiene el southbridge real del log del payload.
