@@ -23,7 +23,7 @@ No extrapolar una fila a modelos/revisiones vecinos. "Slim CUH-2xxx" y "Pro CUH-
 
 **Nota sobre la versión de kernel en la fila CUH-2208B (resuelta por D-009):** el reporte dice "Kernel 5.4.247 Baikal build". Los kernels del catálogo de este proyecto traen en su cabecera de arranque la cadena `7.0.8-Strawberry-FullLTO-Baikal-+` y `7.1.7-Strawberry-General-FullLTO+`: son Linux 7.0.8 y 7.1.7 reales, **no** una numeración propia. Por tanto el issue #10 es una compilación distinta (5.4.x) y **no respalda** los kernels 7.x del catálogo; solo refuerza la combinación hardware/firmware/southbridge.
 
-## 1b. Consola del laboratorio (observada, no probada)
+## 1b. Consola del laboratorio (identificación reportada; Linux no probado)
 
 | Modelo CUH | Familia | Southbridge | Firmware | Capacidad | Estado | Evidencia | Registro |
 |---|---|---|---|---|---|---|---|
@@ -73,7 +73,7 @@ Fuente: `linux/Makefile` y `linux/fw_offsets.h` de `ps4-linux/ps4-linux-loader` 
 
 ## 7. Identificación de la consola y tabla de decisión kernel/loader (no selecciona binario para esta consola)
 
-**El firmware 13.52 es un dato del software; no identifica el hardware.** Para esta consola: firmware 13.52 *observado*, modelo **CUH-2115B confirmado**, familia Slim confirmada por el modelo y southbridge *desconocido* (`LAB-000`). **No se elige kernel hasta resolver la compatibilidad con evidencia suficiente.**
+**El firmware 13.52 es un dato del software; no identifica el hardware.** Para esta consola: firmware 13.52 *observado*, modelo **CUH-2115B confirmado**, familia Slim confirmada por el modelo y southbridge **reportado como Baikal B1 (`0x30201`) en la pantalla de información del sistema**, según el operador. El código upstream mapea `0x30201` a Baikal B1. Esto habilita la evaluación documental de `bzImage-baikal-7.0.8`; **no demuestra arranque Linux ni aprueba aún la ejecución**.
 
 ### 7.1 Datos que se pueden obtener sin ejecutar un payload ni tocar el almacenamiento interno
 
@@ -86,7 +86,7 @@ Fuente: `linux/Makefile` y `linux/fw_offsets.h` de `ps4-linux/ps4-linux-loader` 
 | Nombre, MAC LAN/Wi-Fi, IP | Información del sistema, `nmap`/`avahi` (LAB-000) | Inventario de red | Modelo o southbridge | Observado |
 | Apariencia (Slim: una sola altura, bordes redondeados) | Foto | Familia | Revisión o southbridge | Inferido |
 | Capacidad del disco (861,4 GB observados) | Ajustes → Almacenamiento | Clase nominal de capacidad | Modelo: el disco pudo reemplazarse | Observado; no usar para inferir CUH |
-| Southbridge (`hw.sce_subsys_subid`) | Solo ejecutando el payload (`GetSouthbridgeName()`) o GoldHEN ≥ 2.2.3 ("Southbridge info") | **Es el dato que decide el kernel** | – | **No obtenible sin ejecución autorizada** (D-010/D-014) |
+| Southbridge (`hw.sce_subsys_subid`) | Información del sistema consultada por Marcos; código upstream `GetSouthbridgeName()` para mapear ID | `0x30201` corresponde a Baikal B1 | No prueba Linux ni compatibilidad de kernel | **Reportado por el operador; no repetido en esta sesión** |
 | Revisión de placa por inspección interna | Abrir la consola | Posible lectura directa | – | No es una primera opción (sellos, riesgo); no se hace |
 
 Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el modelo ya fue leído directamente por el operador.
@@ -95,14 +95,14 @@ Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el
 
 | Southbridge confirmado | Kernel del catálogo (`manifests/arranque-catalogo.json`) | Loader / payload | Evidencia existente | ¿Se puede elegir hoy para esta consola? |
 |---|---|---|---|---|
-| Baikal | `bzImage-baikal-7.0.8` (Linux 7.0.8, sha256 `46c835f7…ba8`) | Loader v25.1 (`f70f43a`); payload `linux-1024mb.elf` de la distribución (sha256 `623c3b68…98f`, **procedencia no reproducida**) | CUH-2116A: README-UPSTREAM; CUH-2208B: TERCEROS con kernel 5.4.247 (otra compilación) | **No** (southbridge desconocido) |
+| Baikal | `bzImage-baikal-7.0.8` (Linux 7.0.8, sha256 `46c835f7…ba8`) | Loader v25.1 (`f70f43a`); payload `linux-1024mb.elf` de la distribución (sha256 `623c3b68…98f`, **procedencia no reproducida**) | CUH-2116A: README-UPSTREAM; CUH-2208B: TERCEROS con kernel 5.4.247 (otra compilación) | **Candidato documental, no aprobado para ejecutar** (Baikal B1 reportado; cadena USB-only pendiente) |
 | Belize | `bzImage-belize-7.1.7` (Linux 7.1.7, sha256 `07211389…480`) | idem | CUH-7116B: README-UPSTREAM; Slim Belize del issue #11: falla inicial sin diagnóstico; CUH-7216B (southbridge no indicado): falla sin diagnóstico | **No** |
 | Aeolia (Fat CUH-10xx/11xx) | `bzImage-belize-7.1.7` según el README ("debería") | idem | Ninguna prueba | **No** |
 | Belize2 (`SB_BELIZE2`, 0x4) | El README no declara cuál | idem | Ninguna | **No** |
-| **Desconocido (esta consola)** | **Ninguno seleccionado** | – | – | **No: no se elige ni se ejecuta un payload solo para averiguarlo sin autorización de Marcos** |
+| **Baikal B1 reportado (esta consola)** | **Candidato: `bzImage-baikal-7.0.8`** | Loader v25.1 + payload con procedencia/licencia por cerrar | `0x30201` reportado por Marcos; arranque Linux propio no probado | **No: USB-only y validación de artefactos aún bloquean ejecución** |
 
-Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El verificador (`tools/verify_boot_chain.py --southbridge …`) devuelve `NO_EVALUADO` en compatibilidad si el southbridge es desconocido y `FALLO` si no coincide con el catálogo.
+Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El verificador (`tools/verify_boot_chain.py --southbridge …`) debe recibir el valor `baikal` para evaluar el candidato; confirmar en pruebas host-side que el catálogo asocia el alias correctamente y que la matriz registra el estado como candidato, no como compatibilidad probada.
 
 ### 7.3 Siguiente paso concreto para reducir la incertidumbre
-1. CUH-2115B registrado en `LAB-000`. Los reportes del mismo modelo pueden acotar, pero no confirmar el southbridge.
-2. Solo con autorización explícita y las condiciones de `PLAN_INMEDIATO.md` Etapa 3 se obtiene el southbridge real del log del payload.
+1. CUH-2115B y firmware 13.52 registrados en `LAB-000`; el southbridge Baikal B1 (`0x30201`) fue reportado por Marcos desde la pantalla de información.
+2. No hace falta volver a ejecutar un payload para repetir este dato. El próximo bloqueo es la cadena de arranque USB-only y la validación de artefactos.
