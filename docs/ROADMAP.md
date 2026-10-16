@@ -88,7 +88,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 - [x] `TESTS` `verify_boot_chain.py`: cinco niveles independientes (estructura, integridad, formato, compatibilidad, arranque) con catálogo de procedencia (`manifests/arranque-catalogo.json`) y detección de mezcla de releases; 59 tests. **Un resultado OK no prueba que la consola arranque.**
 - [x] `TESTS` `inspect_image.py`: MBR/GPT de imágenes (24 tests, con pruebas de mutación).
 - [x] `TESTS` `fat32_add_file.py`: agrega archivos a la FAT de una imagen sin root, contrastado con `fsck.vfat -n` y 7z (12 tests).
-- [x] `TESTS` `build_usb_image.py`: construye un `.img` (nunca un dispositivo), sin root, con validación de rutas/entradas/tamaños y limpieza ante fallo (20 tests con imágenes de 72 MiB). **No ejecutado con el rootfs real** (requiere `fakeroot` para propietarios correctos).
+- [x] `TESTS` `build_usb_image.py` (hallazgo R-IMG-01 cerrado: sin `fsck.vfat`/`e2fsck` la construcción falla salvo `--omitir-fsck`, que queda registrado como NO verificada; ext4 verificado con `e2fsck -fn`; informe `.informe.json`): construye un `.img` (nunca un dispositivo), sin root, con validación de rutas/entradas/tamaños y limpieza ante fallo (20 tests con imágenes de 72 MiB). **No ejecutado con el rootfs real** (requiere `fakeroot` para propietarios correctos).
 - [x] `TESTS` `verify_loader_build.py` + `scripts/build_loader_isolated.sh`: compilación aislada que **no puede reportar éxito falso** (propaga el código de `make`, exige 9 ELF + 9 BIN + 20 `kexec.bin` válidos); 15 pruebas de inyección de fallos (23 en `tests/test_loader_build_script.py`) y 6 mutaciones detectadas. Entorno fijado por digest, snapshot y lock de paquetes (`docs/LOADER_BUILD_REPRO.md`).
 - [x] `TESTS` `plan_usb_image_build.py` (origen: rama `chatgpt/image-build-preflight`, integrada): planificador de solo lectura del pipeline upstream, 13 tests; auditoría del pipeline en [`docs/BUILD_PIPELINE_SAFETY_AUDIT.md`](BUILD_PIPELINE_SAFETY_AUDIT.md).
 - [x] `TESTS` `payload_static.py` y `elf_audit.py`: análisis estático de solo lectura de payloads y ELF (16 + 10 tests).
@@ -103,7 +103,8 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 
 ## Fase 5 — Preparación de medio externo
 **Estado:** BLOCKED — depende de la Fase 1 (southbridge → kernel) y de la procedencia/licencias. Ejecutable como casos **TP-02 a TP-04** de `docs/TEST_PLAN.md`.
-- [ ] `PENDIENTE` Construir imagen reproducible en PC: la herramienta existe (`tools/build_usb_image.py`); falta ejecutarla con el rootfs real bajo `fakeroot` y con el kernel que corresponda.
+- [ ] `BLOQUEADO` Construir/preparar la imagen de esta consola: **no se construyó** (D-022). Faltan el kernel (southbridge desconocido) y, para `build_usb_image.py`, un rootfs como directorio; la ruta A (`USB_ONLY_DESIGN.md` §8) parte de la imagen publicada y solo necesita el kernel elegido.
+- [x] `TESTS` Inventario real de artefactos locales con hash, procedencia y formato (`tools/inventariar_artefactos.py`, 9 tests; `manifests/inventario-local-2026-10-16.json`). Imagen publicada verificada en solo lectura: `fsck.vfat -n` y `e2fsck -fn` rc 0.
 - [x] `TESTS` Verificar formato, particiones y filesystem de la imagen de prueba (`fsck.vfat -n` sobre p1, lectura de p2 con `debugfs`).
 - [ ] `BLOQUEADO` Confirmar correspondencia kernel/initramfs/rootfs con el hardware identificado: southbridge desconocido.
 - [x] `IMPLEMENTADO` Política de kernel en el USB: el `bzImage` va **dentro de la FAT** (USB-only, D-008); no se usan kernels de repuesto renombrados para esta consola.

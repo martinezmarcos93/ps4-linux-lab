@@ -106,3 +106,17 @@ Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El
 ### 7.3 Siguiente paso concreto para reducir la incertidumbre
 1. CUH-2115B registrado en `LAB-000`. Los reportes del mismo modelo pueden acotar, pero no confirmar el southbridge.
 2. Solo con autorización explícita y las condiciones de `PLAN_INMEDIATO.md` Etapa 3 se obtiene el southbridge real del log del payload.
+
+### 7.4 Evidencia para CUH-2115B, firmware 13.52 y cada kernel candidato (2026-10-16)
+
+| Pregunta | Evidencia encontrada | Conclusión |
+|---|---|---|
+| ¿Hay reportes de CUH-2115B? | Búsqueda de "CUH-2115" y "2115B" en issues/PR de `ps4-linux/ps4-linux-loader` y `X-F1REBALL-X/PS4-Linux` (API de GitHub, 2026-10-16): **0 resultados**; ningún README lo menciona | **Ninguna.** No hay reporte positivo ni negativo del modelo exacto |
+| ¿Modelos "vecinos"? | CUH-2116A (Baikal, README de la distribución), CUH-2208B (Baikal, issue #10), Slim Belize sin CUH (issue #11) | **No sirven para esta consola** (D-002): el sufijo y el número de revisión pueden cambiar de placa; un mismo rango tiene Belize y Baikal |
+| ¿Southbridge de CUH-2115B? | Ninguna fuente verificable. Solo se obtiene con `hw.sce_subsys_subid` ejecutando código | **DESCONOCIDO** |
+| ¿Firmware 13.52 soportado? | Fila 13.52 en `fw_table` (verificado en el ELF y en el código); reportes de terceros de arranque en otros modelos | Soporte en código; **sin prueba en esta consola** |
+| Kernel Baikal `bzImage-baikal-7.0.8` | Declarado por el README de la distribución para CUH-2116A | Candidato **solo si** el southbridge fuera Baikal; sin evidencia para esta consola |
+| Kernel Belize `bzImage-belize-7.1.7` | Declarado para CUH-7116B (Pro); falla reportada sin diagnóstico en un Slim Belize (issue #11) y en CUH-7216B | Candidato **solo si** el southbridge fuera Belize/Aeolia; sin evidencia para esta consola |
+
+**Decisión:** no se selecciona ningún kernel. Elegir por analogía con CUH vecinos (p. ej. "2115B se parece a 2116A → Baikal") está descartado.
+

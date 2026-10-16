@@ -133,6 +133,12 @@ Las decisiones describen opciones aceptadas y condiciones para revisarlas; no tr
 - **Visible y pendiente:** 30 avisos de pila ejecutable y 20 de segmento RWX del enlazador por variante (R-20); no se silenciaron.
 - **No demuestra:** que el loader arranque, que USB-only esté garantizado en ejecución, ni compatibilidad de hardware. Detalle: `docs/LOADER_BUILD_REPRO.md`.
 
+## D-022 — Inventario local cerrado; no se construye imagen mientras el kernel no pueda elegirse
+- **Fecha:** 2026-10-16. **Estado:** ACEPTADA.
+- **Hechos:** CUH-2115B confirmado por Marcos (LAB-000); southbridge desconocido; 0 reportes del modelo exacto en los repositorios upstream consultados. Inventario real de 20 archivos en `manifests/inventario-local-2026-10-16.json` (sin descargas nuevas). Hallazgo R-IMG-01 de `docs/REVIEW_BUILD_USB_IMAGE.md` confirmado y corregido.
+- **Decisión:** no se selecciona kernel por analogía con CUH vecinos ni se construye una imagen "de demostración" con un kernel arbitrario. La imagen se prepara por la ruta A de `USB_ONLY_DESIGN.md` §8 cuando el southbridge esté resuelto.
+- **Límite:** el inventario prueba qué archivos hay y sus hashes, no que sean auténticos ni compatibles.
+
 ## Preguntas abiertas
 
 Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-008) surgen de la auditoría de código de esta sesión y son más específicas.

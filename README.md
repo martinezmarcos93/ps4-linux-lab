@@ -90,6 +90,7 @@ python3 tools/plan_usb_image_build.py rootfs.tar.xz initramfs.cpio.gz salida.img
 python3 tools/build_usb_image.py --salida img.img --initramfs ... --kernel ... --rootfs-dir ... --dry-run
 python3 tools/payload_static.py goldhen.bin --referencia <oficial>   # análisis estático, sin ejecutar
 python3 tools/elf_audit.py linux-1024mb.elf --fuente fw_offsets.h    # ELF vs. código fuente fijado
+python3 tools/inventariar_artefactos.py --raiz etiqueta=ruta --catalogo manifests/arranque-catalogo.json --markdown  # hashes y procedencia, solo lectura
 python3 tools/check_docs.py                 # enlaces, referencias, estados del roadmap
 bash scripts/build_loader_isolated.sh <src-loader> <salida-nueva> [--patch p] # compila el loader en contenedor sin red; falla si falta algún artefacto
 ```
