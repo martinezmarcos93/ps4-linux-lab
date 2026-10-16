@@ -95,7 +95,7 @@ Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el
 
 | Southbridge confirmado | Kernel del catálogo (`manifests/arranque-catalogo.json`) | Loader / payload | Evidencia existente | ¿Se puede elegir hoy para esta consola? |
 |---|---|---|---|---|
-| Baikal | `bzImage-baikal-7.0.8` (Linux 7.0.8, sha256 `46c835f7…ba8`) | Loader v25.1 (`f70f43a`); payload `linux-1024mb.elf` de la distribución (sha256 `623c3b68…98f`, **procedencia no reproducida**) | CUH-2116A: README-UPSTREAM; CUH-2208B: TERCEROS con kernel 5.4.247 (otra compilación) | **No** (southbridge desconocido) |
+| Baikal | `bzImage-baikal-7.0.8` (Linux 7.0.8, sha256 `46c835f7…ba8`) | Loader v25.1 (`f70f43a`); payload `linux-1024mb.elf` de la distribución (sha256 `623c3b68…98f`, **procedencia no reproducida**) | CUH-2116A: README-UPSTREAM; CUH-2208B: TERCEROS con kernel 5.4.247 (otra compilación) | **Candidato prioritario para CUH-2115B; no aprobado para ejecución** |
 | Belize | `bzImage-belize-7.1.7` (Linux 7.1.7, sha256 `07211389…480`) | idem | CUH-7116B: README-UPSTREAM; Slim Belize del issue #11: falla inicial sin diagnóstico; CUH-7216B (southbridge no indicado): falla sin diagnóstico | **No** |
 | Aeolia (Fat CUH-10xx/11xx) | `bzImage-belize-7.1.7` según el README ("debería") | idem | Ninguna prueba | **No** |
 | Belize2 (`SB_BELIZE2`, 0x4) | El README no declara cuál | idem | Ninguna | **No** |
@@ -104,5 +104,5 @@ Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el
 Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El verificador (`tools/verify_boot_chain.py --southbridge …`) devuelve `NO_EVALUADO` en compatibilidad si el southbridge es desconocido y `FALLO` si no coincide con el catálogo.
 
 ### 7.3 Siguiente paso concreto para reducir la incertidumbre
-1. CUH-2115B registrado en `LAB-000`. Los reportes del mismo modelo pueden acotar, pero no confirmar el southbridge.
-2. Solo con autorización explícita y las condiciones de `PLAN_INMEDIATO.md` Etapa 3 se obtiene el southbridge real del log del payload.
+1. CUH-2115B y southbridge Baikal B1 (`0x30201`) registrados en `LAB-000` y `LAB-001` a nivel observacional.
+2. Siguiente incertidumbre: validar procedencia, hashes y coherencia de kernel/initramfs/rootfs; después comprobar el diseño USB-only.
