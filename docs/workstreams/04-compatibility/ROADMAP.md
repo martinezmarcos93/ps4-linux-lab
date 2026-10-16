@@ -17,13 +17,13 @@
 ## Tareas hasta el 100 %
 
 - [x] C01 — Auditar el log de identificación y clasificar cada dato como confirmado, observado, inferido o desconocido. Southbridge reportado como Baikal B1 (`0x30201`); el log canónico debe sincronizarse sin volver a ejecutar payloads.
-- [ ] C02 — Determinar qué métodos no invasivos permiten identificar revisión de placa/southbridge y documentar riesgos y requisitos.
-- [ ] C03 — Reunir fuentes primarias por modelo, firmware, southbridge, exploit/payload, loader y kernel; fijar versiones y fechas.
+- [x] C02 — Evaluar la identificación del southbridge. Marcos ya reportó Baikal B1 (`0x30201`) desde la pantalla de información; no se requiere otra ejecución para repetirlo.
+- [ ] C03 — Reunir y fijar fuentes por modelo, firmware, southbridge, loader y kernel; revisar procedencia/licencia de los artefactos candidatos y registrar fechas.
 - [ ] C04 — Crear una matriz de compatibilidad cruzada, no una lista aislada de compatibilidad por firmware.
 - [ ] C05 — Separar compatibilidad reportada por terceros, inferida por código y probada en esta consola.
 - [ ] C06 — Revisar las condiciones de firmware y evitar recomendar actualizaciones o acciones irreversibles.
 - [x] C07 — Definir evidencia mínima: `bzImage-baikal-7.0.8` pasa a candidato documental; no aprobado para ejecución hasta cerrar USB-only, procedencia/licencias y validación host-side.
-- [ ] C08 — Identificar bloqueos irresolubles por documentación pública y describir la siguiente observación necesaria.
+- [x] C08 — Identificar bloqueos documentales: no queda pendiente la lectura del southbridge; sí quedan procedencia/licencias, USB-only y evidencia de arranque.
 - [ ] C09 — Actualizar COMPATIBILITY_MATRIX, LAB-000 y ROADMAP sin convertir hipótesis en hechos.
 - [ ] C10 — Revisar independientemente las conclusiones de upstream audit y documentar discrepancias.
 - [ ] C11 — Emitir una decisión técnica: candidato viable, no viable o indeterminado, con justificación por fila.
