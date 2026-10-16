@@ -27,9 +27,9 @@ No extrapolar una fila a modelos/revisiones vecinos. "Slim CUH-2xxx" y "Pro CUH-
 
 | Modelo CUH | Familia | Southbridge | Firmware | Capacidad | Estado | Evidencia | Registro |
 |---|---|---|---|---|---|---|---|
-| **CUH-2115B** | Slim | **DESCONOCIDO** | 13.52 | 861,4 GB (clase 1 TB observada; disco posiblemente reemplazado) | Sin arranque probado | CUH comunicado por Marcos tras leer la etiqueta; firmware y capacidad observados; southbridge desconocido | `docs/lab-logs/LAB-000-identificacion-consola.md` |
+| **CUH-2115B** | Slim | **Baikal B1 (`0x30201`)** | 13.52 | 861,4 GB (clase 1 TB observada; disco posiblemente reemplazado) | Sin arranque probado | Modelo y firmware observados; southbridge leído por el operador en la interfaz de GoldHEN v2.2.3 el 2026-10-16. Sin prueba de arranque ni captura con hash en el repo. | `docs/lab-logs/LAB-001-southbridge.md` |
 
-Esta fila **no** es `REPRODUCIDO-LABORATORIO`: no se ejecutó ningún payload ni arranque. El CUH identifica el modelo, pero no confirma el southbridge ni valida un kernel.
+Esta fila documenta identificación observacional de hardware, no un arranque reproducido. El southbridge fue leído mediante GoldHEN; no se ha probado kernel alguno.
 
 **Nota:** se recibieron listas de CUH candidatos (p. ej. 2014/2114/2214 con sufijo A/B) generadas por terceros a partir de una foto. Se descartan: el CUH no se deduce de una foto frontal, los códigos regionales citados se contradicen entre sí y no hay fuente verificable. Hasta tener el dato real, no extrapolar ninguna fila de §1 a esta consola (regla D-002).
 
@@ -73,7 +73,7 @@ Fuente: `linux/Makefile` y `linux/fw_offsets.h` de `ps4-linux/ps4-linux-loader` 
 
 ## 7. Identificación de la consola y tabla de decisión kernel/loader (no selecciona binario para esta consola)
 
-**El firmware 13.52 es un dato del software; no identifica el hardware.** Para esta consola: firmware 13.52 *observado*, modelo **CUH-2115B confirmado**, familia Slim confirmada por el modelo y southbridge *desconocido* (`LAB-000`). **No se elige kernel hasta resolver la compatibilidad con evidencia suficiente.**
+**El firmware 13.52 es un dato del software; no identifica el hardware.** Para esta consola: firmware 13.52 observado, modelo **CUH-2115B confirmado**, familia Slim y southbridge **Baikal B1 (`0x30201`) observado** (`LAB-001`). El kernel aún no se considera verificado: falta validar procedencia y la cadena kernel/initramfs/rootfs.
 
 ### 7.1 Datos que se pueden obtener sin ejecutar un payload ni tocar el almacenamiento interno
 
@@ -86,7 +86,7 @@ Fuente: `linux/Makefile` y `linux/fw_offsets.h` de `ps4-linux/ps4-linux-loader` 
 | Nombre, MAC LAN/Wi-Fi, IP | Información del sistema, `nmap`/`avahi` (LAB-000) | Inventario de red | Modelo o southbridge | Observado |
 | Apariencia (Slim: una sola altura, bordes redondeados) | Foto | Familia | Revisión o southbridge | Inferido |
 | Capacidad del disco (861,4 GB observados) | Ajustes → Almacenamiento | Clase nominal de capacidad | Modelo: el disco pudo reemplazarse | Observado; no usar para inferir CUH |
-| Southbridge (`hw.sce_subsys_subid`) | Solo ejecutando el payload (`GetSouthbridgeName()`) o GoldHEN ≥ 2.2.3 ("Southbridge info") | **Es el dato que decide el kernel** | – | **No obtenible sin ejecución autorizada** (D-010/D-014) |
+| Southbridge (`hw.sce_subsys_subid`) | GoldHEN ≥ 2.2.3 ("Southbridge info") o lector auditado | **Es el dato que orienta el kernel** | – | **Observado: Baikal B1 (`0x30201`), LAB-001** |
 | Revisión de placa por inspección interna | Abrir la consola | Posible lectura directa | – | No es una primera opción (sellos, riesgo); no se hace |
 
 Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el modelo ya fue leído directamente por el operador.
@@ -99,7 +99,7 @@ Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el
 | Belize | `bzImage-belize-7.1.7` (Linux 7.1.7, sha256 `07211389…480`) | idem | CUH-7116B: README-UPSTREAM; Slim Belize del issue #11: falla inicial sin diagnóstico; CUH-7216B (southbridge no indicado): falla sin diagnóstico | **No** |
 | Aeolia (Fat CUH-10xx/11xx) | `bzImage-belize-7.1.7` según el README ("debería") | idem | Ninguna prueba | **No** |
 | Belize2 (`SB_BELIZE2`, 0x4) | El README no declara cuál | idem | Ninguna | **No** |
-| **Desconocido (esta consola)** | **Ninguno seleccionado** | – | – | **No: no se elige ni se ejecuta un payload solo para averiguarlo sin autorización de Marcos** |
+| **Baikal B1 (esta consola)** | `bzImage-baikal-7.0.8` candidato prioritario, pendiente de auditoría final | Loader/payload y cadena de arranque aún pendientes de validar para USB-only | Southbridge observado; no hay prueba de arranque | **Candidato para revisión, no aprobado para ejecución** |
 
 Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El verificador (`tools/verify_boot_chain.py --southbridge …`) devuelve `NO_EVALUADO` en compatibilidad si el southbridge es desconocido y `FALLO` si no coincide con el catálogo.
 
