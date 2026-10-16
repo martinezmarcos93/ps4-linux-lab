@@ -63,7 +63,9 @@ GitHub reportó conflictos en archivos compartidos. Se integraron manualmente `L
 
 Los commits directos a `main` dispararon GitHub Actions. Algunas ejecuciones iniciales fallaron en `tests.test_check_docs.TestDocumentacionReal.test_la_documentacion_del_repositorio_es_coherente` porque los documentos importados referían D-022, D-023 y D-025 sin entradas en el registro de decisiones. D-023, D-022 y D-025 se añadieron a `docs/DECISION_LOG.md`; el workflow del commit posterior debe revisarse antes de declarar CI verde.
 
-Último HEAD conocido al redactar este documento: consultar el commit `main` y la ejecución más reciente de Actions. No asumir que una ejecución en curso terminó con éxito.
+Tras agregar D-022/D-023/D-025 y redactar identificadores de red en `LAB-000`, el workflow de `main` para commit `50be9bbbd868cf853a9e2368475b126efc2530d5` terminó **SUCCESS**: https://github.com/martinezmarcos93/ps4-linux-lab/actions/runs/38938659754. Esta ejecución incluye tests unitarios y el validador documental; no demuestra compatibilidad ni arranque en PS4.
+
+**Nota de privacidad:** la copia actual de `LAB-000` tiene MAC, hostname e IP redactados. Los valores existieron en commits anteriores; el borrado del archivo actual no los elimina del historial Git. Si el objetivo es retirarlos también del historial público, hará falta una operación de reescritura de historial coordinada y revisión de clones/cachés; no se ejecutó porque es destructiva y no puede hacerse con seguridad desde las herramientas disponibles en esta sesión.
 
 ## Ramas
 
