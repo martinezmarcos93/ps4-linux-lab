@@ -12,6 +12,7 @@ import os
 import shutil
 import stat
 import sys
+import tempfile
 from pathlib import Path
 from typing import Sequence
 
@@ -74,7 +75,7 @@ def build_plan(
     if destination in inputs:
         raise PreflightError("output path collides with an input")
 
-    temporary = Path(temp_dir).expanduser().resolve(strict=True) if temp_dir else Path(__import__("tempfile").gettempdir()).resolve(strict=True)
+    temporary = Path(temp_dir).expanduser().resolve(strict=True) if temp_dir else Path(tempfile.gettempdir()).resolve(strict=True)
     if not temporary.is_dir():
         raise PreflightError(f"temporary path is not a directory: {temporary}")
 
