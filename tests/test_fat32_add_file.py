@@ -111,7 +111,7 @@ class TestFat32(unittest.TestCase):
         entrada_fat = reserved_sectors * 512 + root_cluster * 4
         with open(self.img, "r+b") as f:
             f.seek(entrada_fat)
-            f.write(b"\\x00\\x00\\x00\\x00")
+            f.write(b"\x00\x00\x00\x00")
         antes = self.sha_img()
         with self.assertRaisesRegex(fa.FatError, "valor FAT inválido"):
             self.agregar("nuevo.bin", b"contenido")
