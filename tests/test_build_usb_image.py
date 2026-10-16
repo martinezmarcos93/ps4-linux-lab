@@ -147,7 +147,6 @@ class TestValidaciones(Base):
             self.assertEqual(bu.main(["--salida", "/dev/x.img"] + base[2:]), 2)
 
 
-@unittest.skipIf(ES_ROOT or FALTAN, f"root o faltan herramientas: {FALTAN}")
 class TestPublicacionAtomica(unittest.TestCase):
     def test_no_sobrescribe_destino_que_aparece_durante_build(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -172,6 +171,7 @@ class TestPublicacionAtomica(unittest.TestCase):
             self.assertFalse(parcial.exists())
 
 
+@unittest.skipIf(ES_ROOT or FALTAN, f"root o faltan herramientas: {FALTAN}")
 class TestConstruccion(Base):
     def test_construye_imagen_verificable(self):
         plan = bu.planificar(self.args())
