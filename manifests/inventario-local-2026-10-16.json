@@ -1,6 +1,10 @@
 {
+  "aviso": "`formato: OK` significa solo que la estructura del archivo es coherente con lo que dice ser (cabecera x86, gzip+cpio, MBR/GPT, tabla del ELF). NO significa compatibilidad con ninguna consola, autenticidad ni que arranque. `procedencia` compara hashes con las referencias aportadas; una lista publicada por el mismo autor no es independiente.",
   "raices": {
-    "artefactos": "/media/marcos/A68072A880727F1D/01-Marcos/00-Programacion/00-Proyectos/PS4-Linux-artefactos"
+    "artefactos": {
+      "directorio": "PS4-Linux-artefactos",
+      "ruta_absoluta": "(omitida; use --incluir-ruta-absoluta)"
+    }
   },
   "archivos": [
     {

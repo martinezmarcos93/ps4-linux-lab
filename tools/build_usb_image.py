@@ -151,6 +151,9 @@ def planificar(args) -> dict:
         err, _ = vbc.comprobar_initramfs(initramfs)
         if err:
             raise BuildError("el initramfs no pasa la comprobación de formato: " + "; ".join(err))
+    informe = salida.with_name(salida.name + ".informe.json")
+    if os.path.lexists(informe):
+        raise BuildError(f"ya existe '{informe}'; no se sobrescribe (bórrelo usted si es de una construcción descartada)")
     return {"omitir_fsck": bool(getattr(args, "omitir_fsck", False)), "salida": str(salida), "p1_mib": p1, "p2_mib": p2, "tamano_total_mib": total,
             "initramfs": str(initramfs), "kernel": str(kernel), "rootfs_dir": str(rootfs),
             "bytes_a_copiar": usado}
@@ -165,9 +168,17 @@ def _ejecutar(cmd: list[str]) -> None:
 def construir(plan: dict) -> Path:
     sfdisk, mkvfat, mkext4 = _herramienta("sfdisk"), _herramienta("mkfs.vfat"), _herramienta("mkfs.ext4")
     destino = Path(plan["salida"])
+    informe_final = destino.with_name(destino.name + ".informe.json")
     parcial = destino.with_name(f".{destino.name}.parcial")
-    if os.path.lexists(parcial):
-        raise BuildError(f"existe un temporal previo '{parcial}'; revíselo y bórrelo manualmente")
+    informe_parcial = destino.with_name(f".{destino.name}.informe.json.parcial")
+    for previo in (parcial, informe_parcial):
+        if os.path.lexists(previo):
+            raise BuildError(f"existe un temporal previo '{previo}'; revíselo y bórrelo manualmente")
+    for existente in (destino, informe_final):
+        if os.path.lexists(existente):
+            raise BuildError(f"ya existe '{existente}'; no se sobrescribe")
+    exito = False
+    publicados: list[Path] = []  # archivos finales creados por ESTA ejecución (para revertir si algo falla después)
     try:
         fd = os.open(parcial, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
         try:
@@ -185,16 +196,42 @@ def construir(plan: dict) -> Path:
         _ejecutar([mkext4, "-q", "-F", "-L", "psxitarch", "-E", f"offset={off2}", "-d", plan["rootfs_dir"],
                    str(parcial), str(size2 // 1024)])
         verificaciones = _verificar_sistemas_de_archivos(parcial, off1, size1, off2, plan.get("omitir_fsck", False))
-        os.replace(parcial, destino)
-        _escribir_informe(destino, plan, verificaciones)
+        # El informe se prepara (hash de la imagen incluido) ANTES de publicar nada y se publica PRIMERO:
+        # si algo falla, nunca queda una imagen final sin su informe de verificación.
+        _preparar_informe(informe_parcial, parcial, destino, plan, verificaciones)
+        _publicar(informe_parcial, informe_final)
+        publicados.append(informe_final)
+        _publicar(parcial, destino)
+        publicados.append(destino)
+        exito = True
         return destino
     except subprocess.CalledProcessError as exc:
         raise BuildError(f"falló {exc.cmd[0]}: {(exc.stderr or exc.stdout or '').strip()[:400]}") from exc
     except (fat.FatError, OSError) as exc:
         raise BuildError(str(exc)) from exc
     finally:
-        if os.path.lexists(parcial):
-            os.unlink(parcial)
+        if not exito:
+            for p in publicados:  # se retira lo que ESTA ejecución llegó a publicar: nada queda a medias
+                if os.path.lexists(p):
+                    os.unlink(p)
+        for temporal in (parcial, informe_parcial):
+            if os.path.lexists(temporal):
+                os.unlink(temporal)
+
+
+def _publicar(origen: Path, destino: Path) -> None:
+    """Publica `origen` como `destino` SIN sobrescribir: enlace duro (falla si existe) y, si el sistema de archivos
+    no admite enlaces duros, comprobación previa + os.replace (ventana mínima de carrera)."""
+    try:
+        os.link(origen, destino)
+    except FileExistsError as exc:
+        raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe") from exc
+    except OSError:
+        if os.path.lexists(destino):
+            raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe")
+        os.replace(origen, destino)
+        return
+    os.unlink(origen)
 
 
 def _verificar_sistemas_de_archivos(imagen: Path, off1: int, size1: int, off2: int, omitir: bool) -> dict:
@@ -250,12 +287,13 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def _escribir_informe(destino: Path, plan: dict, verificaciones: dict) -> None:
-    """Informe junto a la imagen: entradas con hash, hash de la imagen y verificaciones realmente ejecutadas."""
+def _preparar_informe(informe_parcial: Path, imagen_parcial: Path, destino: Path, plan: dict, verificaciones: dict) -> None:
+    """Escribe el informe en un temporal (nuevo, nunca sobrescribe): entradas con hash, hash de la imagen terminada y
+    verificaciones realmente ejecutadas. El hash se calcula sobre la imagen parcial, que es la que se publicará."""
     informe = {
         "imagen": destino.name,
-        "sha256_imagen": _sha256(destino),
-        "bytes_imagen": destino.stat().st_size,
+        "sha256_imagen": _sha256(imagen_parcial),
+        "bytes_imagen": imagen_parcial.stat().st_size,
         "entradas": {n: {"archivo": plan[n], "sha256": _sha256(Path(plan[n])), "bytes": Path(plan[n]).stat().st_size}
                      for n in ("initramfs", "kernel")},
         "rootfs_dir": plan["rootfs_dir"],
@@ -264,9 +302,11 @@ def _escribir_informe(destino: Path, plan: dict, verificaciones: dict) -> None:
         "totalmente_verificada": all(v["estado"] == "OK" for v in verificaciones.values()),
         "nota": "Una imagen verificada no prueba compatibilidad con la consola ni que arranque; el rootfs puede ser ficticio.",
     }
-    with open(destino.with_name(destino.name + ".informe.json"), "x", encoding="utf-8") as f:
+    with open(informe_parcial, "x", encoding="utf-8") as f:
         json.dump(informe, f, indent=2, ensure_ascii=False)
         f.write("\n")
+        f.flush()
+        os.fsync(f.fileno())
 
 
 def main(argv: list[str] | None = None) -> int:

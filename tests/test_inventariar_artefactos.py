@@ -104,13 +104,36 @@ class TestProcedenciaYCLI(Base):
         self.assertEqual(prov[sha(self.i)][0]["nivel"], "manifiesto")
         self.assertEqual(prov["0" * 64][0]["nombre"], "otro")
 
+    def test_ruta_absoluta_solo_si_se_pide(self):
+        out = Path(self._t.name) / "abs.json"
+        with contextlib.redirect_stdout(io.StringIO()):
+            inv.main(["--raiz", f"t={self.r}", "--json", str(out), "--incluir-ruta-absoluta"])
+        self.assertEqual(json.loads(out.read_text())["raices"]["t"]["ruta_absoluta"], str(self.r))
+
+    def test_el_hash_cubre_el_archivo_completo(self):
+        # un archivo más grande que el bloque de lectura (8 MiB) con un byte distinto al final
+        grande = self.r / "boot" / "bzImage.grande"
+        datos = bytearray(b"\0" * (9 * 1024 * 1024))
+        grande.write_bytes(bytes(datos))
+        h1 = self.correr()["boot/bzImage.grande"]["sha256"]
+        datos[-1] = 1
+        grande.write_bytes(bytes(datos))
+        h2 = self.correr()["boot/bzImage.grande"]["sha256"]
+        self.assertNotEqual(h1, h2)
+        self.assertEqual(h2, sha(bytes(datos)))
+
     def test_cli(self):
         out = Path(self._t.name) / "inv.json"
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             self.assertEqual(inv.main(["--raiz", f"t={self.r}", "--json", str(out), "--markdown"]), 0)
         self.assertIn("| t | `boot/bzImage` | kernel |", buf.getvalue())
-        self.assertEqual(len(json.loads(out.read_text())["archivos"]), 2)
+        doc = json.loads(out.read_text())
+        self.assertEqual(len(doc["archivos"]), 2)
+        self.assertIn("NO significa compatibilidad", doc["aviso"])
+        self.assertEqual(doc["raices"]["t"]["directorio"], "raiz")
+        self.assertNotIn(str(self.r), out.read_text(), "el JSON no debe contener la ruta absoluta de la raíz")
+        self.assertIn("(omitida", doc["raices"]["t"]["ruta_absoluta"])
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(inv.main(["--raiz", f"t={self.r}", "--json", str(out)]), 2)  # no sobrescribe
             self.assertEqual(inv.main(["--raiz", "sin_igual"]), 2)

@@ -318,6 +318,133 @@ class TestConstruccion(Base):
             self.assertEqual(bu.main(base), 2)
         self.assertEqual(list((self.dir / "out").iterdir()), [])
 
+    # ---- publicación atómica del par imagen + informe
+    def _carpeta_limpia(self):
+        return sorted(p.name for p in (self.dir / "out").iterdir())
+
+    def test_informe_preexistente_se_rechaza_en_el_plan_y_no_se_toca(self):
+        previo = self.dir / "out" / "prueba.img.informe.json"
+        previo.write_text("ajeno")
+        with self.assertRaisesRegex(bu.BuildError, "ya existe .*informe"):
+            bu.planificar(self.args())
+        self.assertEqual(previo.read_text(), "ajeno")
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img.informe.json"])
+
+    def test_informe_que_aparece_despues_del_plan_no_se_sobrescribe_ni_se_publica_la_imagen(self):
+        plan = bu.planificar(self.args())
+        previo = self.dir / "out" / "prueba.img.informe.json"
+        previo.write_text("ajeno")
+        with self.assertRaisesRegex(bu.BuildError, "ya existe"):
+            bu.construir(plan)
+        self.assertEqual(previo.read_text(), "ajeno")
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img.informe.json"])
+
+    def test_el_informe_aparece_durante_la_construccion(self):
+        plan = bu.planificar(self.args())
+        previo = self.dir / "out" / "prueba.img.informe.json"
+        real = bu._verificar_sistemas_de_archivos
+
+        def con_carrera(*a, **k):
+            previo.write_text("ajeno")
+            return real(*a, **k)
+
+        with mock.patch.object(bu, "_verificar_sistemas_de_archivos", side_effect=con_carrera):
+            with self.assertRaisesRegex(bu.BuildError, "apareció durante la construcción"):
+                bu.construir(plan)
+        self.assertEqual(previo.read_text(), "ajeno")
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img.informe.json"])
+
+    def test_el_destino_aparece_durante_la_construccion_no_se_sobrescribe_y_se_retira_el_informe_propio(self):
+        plan = bu.planificar(self.args())
+        destino = self.dir / "out" / "prueba.img"
+        real = bu._verificar_sistemas_de_archivos
+
+        def con_carrera(*a, **k):
+            destino.write_text("ajeno")
+            return real(*a, **k)
+
+        with mock.patch.object(bu, "_verificar_sistemas_de_archivos", side_effect=con_carrera):
+            with self.assertRaisesRegex(bu.BuildError, "apareció durante la construcción"):
+                bu.construir(plan)
+        self.assertEqual(destino.read_text(), "ajeno")
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img"], "debe quedar solo el archivo ajeno, sin informe huérfano ni temporales")
+
+    def test_error_al_escribir_el_informe_no_deja_imagen_publicada(self):
+        plan = bu.planificar(self.args())
+        with mock.patch.object(bu, "_preparar_informe", side_effect=OSError("disco lleno simulado")):
+            with self.assertRaisesRegex(bu.BuildError, "disco lleno"):
+                bu.construir(plan)
+        self.assertEqual(self._carpeta_limpia(), [])
+
+    def test_error_a_mitad_del_informe_deja_el_directorio_limpio(self):
+        plan = bu.planificar(self.args())
+        with mock.patch.object(bu, "_sha256", side_effect=OSError("lectura fallida simulada")):
+            with self.assertRaises(bu.BuildError):
+                bu.construir(plan)
+        self.assertEqual(self._carpeta_limpia(), [])
+
+    def test_fallo_al_publicar_la_imagen_retira_el_informe_ya_publicado(self):
+        plan = bu.planificar(self.args())
+        real = bu._publicar
+        llamadas = []
+
+        def segunda_falla(o, d):
+            llamadas.append(d.name)
+            if len(llamadas) == 2:
+                raise bu.BuildError("fallo simulado al publicar la imagen")
+            return real(o, d)
+
+        with mock.patch.object(bu, "_publicar", side_effect=segunda_falla):
+            with self.assertRaisesRegex(bu.BuildError, "fallo simulado"):
+                bu.construir(plan)
+        self.assertEqual(llamadas, ["prueba.img.informe.json", "prueba.img"], "el informe se publica primero")
+        self.assertEqual(self._carpeta_limpia(), [])
+
+    def test_el_informe_describe_exactamente_las_comprobaciones_ejecutadas(self):
+        real = subprocess.run
+        invocadas = []
+
+        def registra(cmd, *a, **k):
+            invocadas.append(os.path.basename(str(cmd[0])))
+            return real(cmd, *a, **k)
+
+        with mock.patch("tools.build_usb_image.subprocess.run", side_effect=registra):
+            destino = bu.construir(bu.planificar(self.args()))
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertIn("fsck.vfat", invocadas)
+        self.assertIn("e2fsck", invocadas)
+        self.assertEqual({k: v["estado"] for k, v in inf["verificaciones"].items()}, {"fat": "OK", "ext4": "OK"})
+        # y a la inversa: lo omitido no ejecuta la herramienta ni consta como OK
+        shutil.rmtree(self.dir / "out")
+        (self.dir / "out").mkdir()
+        invocadas.clear()
+        with self._sin("fsck.vfat", "e2fsck"), mock.patch("tools.build_usb_image.subprocess.run", side_effect=registra):
+            destino = bu.construir(bu.planificar(self.args(omitir_fsck=True)))
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertNotIn("fsck.vfat", invocadas)
+        self.assertNotIn("e2fsck", invocadas)
+        self.assertTrue(all(v["estado"] == "OMITIDA" for v in inf["verificaciones"].values()))
+        self.assertFalse(inf["totalmente_verificada"])
+
+    def test_hash_del_informe_es_el_de_la_imagen_publicada(self):
+        import hashlib
+        destino = bu.construir(bu.planificar(self.args()))
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertEqual(inf["sha256_imagen"], hashlib.sha256(destino.read_bytes()).hexdigest())
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img", "prueba.img.informe.json"])
+
+    def test_publicar_sin_enlaces_duros_sigue_sin_sobrescribir(self):
+        a, b = self.dir / "a", self.dir / "b"
+        a.write_text("nuevo")
+        with mock.patch("os.link", side_effect=OSError("sin enlaces duros")):
+            bu._publicar(a, b)
+            self.assertEqual(b.read_text(), "nuevo")
+            self.assertFalse(a.exists())
+            a.write_text("otro")
+            with self.assertRaisesRegex(bu.BuildError, "apareció"):
+                bu._publicar(a, b)
+        self.assertEqual(b.read_text(), "nuevo")
+
     def test_herramienta_faltante(self):
         with mock.patch("shutil.which", return_value=None), mock.patch("os.path.exists", return_value=False):
             with self.assertRaisesRegex(bu.BuildError, "falta la herramienta"):

@@ -132,8 +132,21 @@ def inventariar(raices: dict[str, Path], procedencia: dict[str, list[dict]]) -> 
     return filas
 
 
+AVISO = ("`formato: OK` significa solo que la estructura del archivo es coherente con lo que dice ser (cabecera x86, gzip+cpio, "
+         "MBR/GPT, tabla del ELF). NO significa compatibilidad con ninguna consola, autenticidad ni que arranque. `procedencia` "
+         "compara hashes con las referencias aportadas; una lista publicada por el mismo autor no es independiente.")
+
+
+def documento(raices: dict[str, Path], filas: list[dict], incluir_ruta_absoluta: bool) -> dict:
+    """Estructura publicable. Por defecto NO incluye rutas absolutas del equipo: cada archivo ya lleva su ruta relativa y la
+    etiqueta de su raíz; de la raíz solo se conserva el nombre del directorio."""
+    r = {k: ({"directorio": v.name, "ruta_absoluta": str(v)} if incluir_ruta_absoluta else
+             {"directorio": v.name, "ruta_absoluta": "(omitida; use --incluir-ruta-absoluta)"}) for k, v in raices.items()}
+    return {"aviso": AVISO, "raices": r, "archivos": filas}
+
+
 def a_markdown(filas: list[dict]) -> str:
-    out = ["| Raíz | Ruta | Rol | Bytes | SHA-256 | Procedencia | Formato |", "|---|---|---|---:|---|---|---|"]
+    out = ["| Raíz | Ruta | Rol | Bytes | SHA-256 | Procedencia | Formato (no es compatibilidad) |", "|---|---|---|---:|---|---|---|"]
     for f in filas:
         if "omitido" in f:
             out.append(f"| {f['raiz']} | `{f['ruta']}` | {f['rol']} | {f.get('bytes', '–')} | – | omitido: {f['omitido']} | – |")
@@ -151,6 +164,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sumas", action="append", default=[], type=Path, help="archivo estilo sha256sum publicado por el autor")
     ap.add_argument("--json", type=Path, help="escribe el inventario completo (archivo NUEVO)")
     ap.add_argument("--markdown", action="store_true")
+    ap.add_argument("--incluir-ruta-absoluta", action="store_true", help="guardar en el JSON la ruta absoluta de cada raíz (por defecto se omite)")
     args = ap.parse_args(argv)
     raices: dict[str, Path] = {}
     for r in args.raiz:
@@ -173,7 +187,7 @@ def main(argv: list[str] | None = None) -> int:
     filas = inventariar(raices, prov)
     if args.json:
         with open(args.json, "x", encoding="utf-8") as f:
-            json.dump({"raices": {k: str(v) for k, v in raices.items()}, "archivos": filas}, f, indent=2, ensure_ascii=False)
+            json.dump(documento(raices, filas, args.incluir_ruta_absoluta), f, indent=2, ensure_ascii=False)
             f.write("\n")
     print(a_markdown(filas) if args.markdown else json.dumps(filas, indent=2, ensure_ascii=False))
     return 0
