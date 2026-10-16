@@ -16,6 +16,7 @@ import gzip
 import hashlib
 import json
 import lzma
+import os
 import re
 import shutil
 import struct
@@ -76,7 +77,7 @@ def _descomprimir(carga: bytes) -> tuple[str, bytes]:
                             proc.kill()
                             proc.wait()
                             raise KernelError("zstd excedió el tiempo límite de 300 s")
-                        bloque = proc.stdout.read(min(64 * 1024, TOPE - total + 1))
+                        bloque = os.read(proc.stdout.fileno(), min(64 * 1024, TOPE - total + 1))
                         if not bloque:
                             break
                         total += len(bloque)
