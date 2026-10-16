@@ -2,7 +2,7 @@
 # Compila ps4-linux-loader (revisión fijada) dentro de un contenedor Docker sin red, sin dispositivos,
 # con raíz de solo lectura y sin capacidades. NO ejecuta ningún ELF resultante.
 #
-# Uso: scripts/build_loader_isolated.sh <dir-fuentes-limpio> <dir-salida> [--patch archivo.patch] [--manifiesto m.json --variante original|parcheado]
+# Uso: scripts/build_loader_isolated.sh <dir-fuentes-limpio> <dir-salida> [--patch archivo.patch ...] [--manifiesto m.json --variante original|parcheado]
 # Código de salida: 0 SOLO si make terminó con 0 Y el conjunto completo de artefactos (9 ELF, 9 BIN, 20 kexec.bin)
 # existe, no está vacío y no tiene duplicados/inesperados. Cualquier otra cosa: distinto de 0, con los logs conservados.
 # Variable DOCKER (por defecto "docker"): solo para pruebas con un docker simulado.
@@ -17,20 +17,16 @@ falla() { echo "FALLO: $1" >&2; exit "${2:-1}"; }
 SRC=${1:-}; OUT=${2:-}
 if [ -z "$SRC" ] || [ -z "$OUT" ]; then falla "uso: $0 <dir-fuentes-limpio> <dir-salida> [--patch f] [--manifiesto m --variante v]" 2; fi
 shift 2
-PARCHE=""; MANIFIESTO=""; VARIANTE=""
+PARCHEES=(); MANIFIESTO=""; VARIANTE=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --patch) PARCHE=${2:?falta archivo.patch}; shift 2;;
+    --patch) PARCHE=${2:?falta archivo.patch}; [ -f "$PARCHE" ] || falla "el parche $PARCHE no existe" 2; PARCHEES+=("$(readlink -f "$PARCHE")"); shift 2;;
     --manifiesto) MANIFIESTO=${2:?falta manifiesto}; shift 2;;
     --variante) VARIANTE=${2:?falta variante}; shift 2;;
     *) falla "argumento desconocido: $1" 2;;
   esac
 done
 
-if [ -n "$PARCHE" ]; then
-  [ -f "$PARCHE" ] || falla "el parche $PARCHE no existe" 2
-  PARCHE=$(readlink -f "$PARCHE")   # ruta absoluta: git apply se ejecuta desde otro directorio
-fi
 { [ -d "$SRC/linux" ] && [ -d "$SRC/lib" ]; } || falla "$SRC no parece el loader" 2
 [ ! -e "$OUT" ] || falla "$OUT ya existe; use un directorio nuevo" 2
 case "$(readlink -f "$OUT")" in /dev/*|/proc/*|/sys/*|/etc/*|/usr/*|/boot/*) falla "salida en ruta del sistema" 2;; esac
@@ -38,9 +34,13 @@ case "$(readlink -f "$OUT")" in /dev/*|/proc/*|/sys/*|/etc/*|/usr/*|/boot/*) fal
 mkdir -m 700 "$OUT" || falla "no se pudo crear $OUT" 2
 cp -a "$SRC" "$OUT/src" || falla "no se pudo copiar las fuentes" 2
 rm -rf "$OUT/src/.git"
-if [ -n "$PARCHE" ]; then
-  (cd "$OUT/src" && git apply --check "$PARCHE" && git apply "$PARCHE") || falla "el parche no aplica limpio" 2
-  echo "parche aplicado: $PARCHE (sha256 $(sha256sum "$PARCHE" | cut -d' ' -f1))" | tee "$OUT/parche.txt"
+if [ "${#PARCHEES[@]}" -gt 0 ]; then
+  : > "$OUT/parches.txt"
+  for PARCHE in "${PARCHEES[@]}"; do
+    # Validar y aplicar en orden: cada parche posterior puede depender del anterior.
+    (cd "$OUT/src" && git apply --check "$PARCHE" && git apply "$PARCHE") || falla "el parche no aplica limpio: $PARCHE" 2
+    echo "parche aplicado: $PARCHE (sha256 $(sha256sum "$PARCHE" | cut -d' ' -f1))" | tee -a "$OUT/parches.txt"
+  done
 fi
 
 if ! "$DOCKER" image inspect "$IMAGEN" >/dev/null 2>&1; then
