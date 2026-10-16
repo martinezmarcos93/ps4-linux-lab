@@ -70,6 +70,7 @@ Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `T
 | [Auditoría del pipeline de imagen](docs/BUILD_PIPELINE_SAFETY_AUDIT.md) | Riesgos de `build-img.sh`/`write-img.ps1` y su mitigación |
 | [Preflight de imagen](docs/USB_IMAGE_BUILD_PREFLIGHT.md) | Planificador de solo lectura del pipeline upstream |
 | [Compilación aislada del loader](docs/LOADER_BUILD_REPRO.md) | Revisión de la cadena, entorno sin red, resultados y límites |
+| [Selección del kernel](docs/KERNEL_SELECTION.md) | Evidencia de southbridge para CUH-2115B, criterios de aceptación/rechazo y conclusión |
 | [Diseño USB-only](docs/USB_ONLY_DESIGN.md) | Propiedades verificables, qué está demostrado, bloqueos y arquitectura recomendada |
 | [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes, licencias y nivel de confianza de cada binario |
 | [Diagnóstico del CI](docs/CI_DIAGNOSIS.md) | Por qué falla Actions (facturación) y la alternativa local |

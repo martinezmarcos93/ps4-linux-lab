@@ -97,7 +97,7 @@ Seguridad del payload GoldHEN, red/PSN (D-012/D-016), elección del kernel (depe
 
 | # | Falta | Estado | Cómo se desbloquea |
 |---|---|---|---|
-| 1 | **Kernel elegido.** Hay dos candidatos locales (Baikal 7.0.8 y Belize 7.1.7) y el southbridge de la CUH-2115B es desconocido; no hay ningún reporte del modelo exacto (`COMPATIBILITY_MATRIX.md` §7.4) | BLOQUEANTE | Southbridge confirmado con evidencia fiable; hoy solo se obtiene ejecutando código en la consola (no autorizado) |
+| 1 | **Kernel elegido.** Hay dos candidatos locales (Baikal 7.0.8 y Belize 7.1.7); el southbridge de la CUH-2115B es desconocido y la wiki lo da como **Baikal B1 o Belize2 A0** (el modelo no lo decide); ningún kernel local declara soporte Belize 2 (`KERNEL_SELECTION.md`, `COMPATIBILITY_MATRIX.md` §7.4) | BLOQUEANTE | Southbridge confirmado con evidencia fiable; hoy solo se obtiene ejecutando código en la consola (no autorizado) |
 | 2 | **Rootfs como entrada.** No existe como archivo/tarball/directorio; solo dentro de p2 de la imagen publicada (ext4, `e2fsck -fn` OK) | No bloqueante si se parte de la imagen publicada | Ver ruta A |
 | 3 | `bzImage` dentro de la FAT del USB: la imagen publicada trae `bzImage.belize` (renombrado), no `bzImage` | Resuelto por herramienta (`fat32_add_file.py`), pendiente del punto 1 | – |
 

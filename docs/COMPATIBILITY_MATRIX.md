@@ -98,7 +98,7 @@ Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el
 | Baikal | `bzImage-baikal-7.0.8` (Linux 7.0.8, sha256 `46c835f7…ba8`) | Loader v25.1 (`f70f43a`); payload `linux-1024mb.elf` de la distribución (sha256 `623c3b68…98f`, **procedencia no reproducida**) | CUH-2116A: README-UPSTREAM; CUH-2208B: TERCEROS con kernel 5.4.247 (otra compilación) | **No** (southbridge desconocido) |
 | Belize | `bzImage-belize-7.1.7` (Linux 7.1.7, sha256 `07211389…480`) | idem | CUH-7116B: README-UPSTREAM; Slim Belize del issue #11: falla inicial sin diagnóstico; CUH-7216B (southbridge no indicado): falla sin diagnóstico | **No** |
 | Aeolia (Fat CUH-10xx/11xx) | `bzImage-belize-7.1.7` según el README ("debería") | idem | Ninguna prueba | **No** |
-| Belize2 (`SB_BELIZE2`, 0x4) | El README no declara cuál | idem | Ninguna | **No** |
+| Belize2 (`SB_BELIZE2`, 0x4) | El README no declara cuál; **ningún kernel local declara soporte** | idem | Ninguna con SB confirmado. **Posible southbridge de la CUH-2115B** (wiki) | **No** |
 | **Desconocido (esta consola)** | **Ninguno seleccionado** | – | – | **No: no se elige ni se ejecuta un payload solo para averiguarlo sin autorización de Marcos** |
 
 Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El verificador (`tools/verify_boot_chain.py --southbridge …`) devuelve `NO_EVALUADO` en compatibilidad si el southbridge es desconocido y `FALLO` si no coincide con el catálogo.
@@ -111,12 +111,12 @@ Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El
 
 | Pregunta | Evidencia encontrada | Conclusión |
 |---|---|---|
-| ¿Hay reportes de CUH-2115B? | Búsqueda de "CUH-2115" y "2115B" en issues/PR de `ps4-linux/ps4-linux-loader` y `X-F1REBALL-X/PS4-Linux` (API de GitHub, 2026-10-16): **0 resultados**; ningún README lo menciona | **Ninguna.** No hay reporte positivo ni negativo del modelo exacto |
+| ¿Hay reportes de CUH-2115B? | Issues/PR de `ps4-linux-loader`, `X-F1REBALL-X/PS4-Linux` y `feeRnt/ps4-linux-12xx` (API de GitHub, 2026-10-16): **0 resultados** para "2115". **Única mención:** la release `v5.4.247__baikal` (2025-08-29) de `feeRnt/ps4-linux-12xx` dice "CUH-21xx (CUH-2115B): Tested functional" con un kernel **Baikal 5.4.247** | **TERCEROS, débil:** declaración del mantenedor sin logs, **firmware no indicado** (anterior al exploit 13.52). No sirve para 13.52 ni para los kernels 7.x locales. Contradice además su propia afirmación para CUH-7116B frente al README de la distribución (`KERNEL_SELECTION.md` #9) |
 | ¿Modelos "vecinos"? | CUH-2116A (Baikal, README de la distribución), CUH-2208B (Baikal, issue #10), Slim Belize sin CUH (issue #11) | **No sirven para esta consola** (D-002): el sufijo y el número de revisión pueden cambiar de placa; un mismo rango tiene Belize y Baikal |
-| ¿Southbridge de CUH-2115B? | Ninguna fuente verificable. Solo se obtiene con `hw.sce_subsys_subid` ejecutando código | **DESCONOCIDO** |
+| ¿Southbridge de CUH-2115B? | **psdevwiki** (*Hardware Info*, copia Wayback 2025-12-18): CUH-2115B figura con **Baikal B1 (30201)** y con **Belize2 A0 (40100)**; CUH-2115A con Belize2 A0. *Southbridge* (Wayback 2026-03-03): chasis 2100 = Belize 2 (placas SAE-001/003) o Baikal (SAE-002/004). Lectura directa solo con `hw.sce_subsys_subid` (ejecutando código) o con el código de placa (abriendo la consola) | **DESCONOCIDO, pero ahora acotado a dos valores:** Baikal B1 o Belize2 A0 (HECHO según la wiki, colaborativa). El modelo no lo decide |
 | ¿Firmware 13.52 soportado? | Fila 13.52 en `fw_table` (verificado en el ELF y en el código); reportes de terceros de arranque en otros modelos | Soporte en código; **sin prueba en esta consola** |
 | Kernel Baikal `bzImage-baikal-7.0.8` | Declarado por el README de la distribución para CUH-2116A | Candidato **solo si** el southbridge fuera Baikal; sin evidencia para esta consola |
 | Kernel Belize `bzImage-belize-7.1.7` | Declarado para CUH-7116B (Pro); falla reportada sin diagnóstico en un Slim Belize (issue #11) y en CUH-7216B | Candidato **solo si** el southbridge fuera Belize/Aeolia; sin evidencia para esta consola |
 
-**Decisión:** no se selecciona ningún kernel. Elegir por analogía con CUH vecinos (p. ej. "2115B se parece a 2116A → Baikal") está descartado.
+**Decisión:** no se selecciona ningún kernel. Procedimiento, criterios de aceptación/rechazo y estado por southbridge en [`KERNEL_SELECTION.md`](KERNEL_SELECTION.md). Elegir por analogía con CUH vecinos (p. ej. "2115B se parece a 2116A → Baikal") está descartado.
 

@@ -139,6 +139,12 @@ Las decisiones describen opciones aceptadas y condiciones para revisarlas; no tr
 - **Decisión:** no se selecciona kernel por analogía con CUH vecinos ni se construye una imagen "de demostración" con un kernel arbitrario. La imagen se prepara por la ruta A de `USB_ONLY_DESIGN.md` §8 cuando el southbridge esté resuelto.
 - **Límite:** el inventario prueba qué archivos hay y sus hashes, no que sean auténticos ni compatibles.
 
+## D-023 — El CUH-2115B no determina el southbridge; selección de kernel por procedimiento con criterios
+- **Fecha:** 2026-10-16. **Estado:** ACEPTADA.
+- **Hecho nuevo:** la wiki PS4 Developer lista CUH-2115B con **dos** southbridges (Baikal B1 y Belize2 A0) y el chasis 2100 usa Belize 2 o Baikal según la placa (S-17, S-18). Ningún kernel local declara soporte Belize 2.
+- **Decisión:** no se elige kernel ni se construye una imagen candidata hasta tener el southbridge `CONFIRMADO` (lectura directa). Procedimiento, criterios de aceptación/rechazo y veredicto por southbridge: `docs/KERNEL_SELECTION.md`. La fecha de fabricación y el modelo son inferencias que acotan, no confirman.
+- **No se autoriza:** identificar el southbridge ejecutando código en la consola; sigue sujeto al "sí" de Marcos (D-010, D-014).
+
 ## Preguntas abiertas
 
 Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-008) surgen de la auditoría de código de esta sesión y son más específicas.
@@ -151,3 +157,5 @@ Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-
 - **Q-006:** CERRADA por D-008: la escritura en `/data/linux/boot/` no es una opción. La pregunta vigente pasa a ser si USB-only es demostrable (`USB_ONLY_DESIGN.md` §4).
 - **Q-007:** ¿existe tolerancia a repetir el ciclo de jailbreak varias veces en la misma sesión de prueba? El propio upstream documenta que 2-3 intentos son normales (ver `docs/TROUBLESHOOTING.md` caso 2) — afecta cuánto tiempo de sesión planificar, no es una decisión técnica.
 - **Q-008:** RESPUESTA PARCIAL (rama `chatgpt/research-audits`, integrada): la investigación bibliográfica de `GPU_AND_LLM_RESEARCH.md` §5 concluye que ROCm no tiene soporte oficial para Liverpool/PS4 en la matriz consultada y que Vulkan/RADV con `llama.cpp` es un candidato experimental, todo `INFERENCE` sin prueba en la consola. Pregunta original: ¿vale la pena, antes de tener la consola, investigar específicamente soporte ROCm/Vulkan-compute para GCN1-GCN4 (vacío identificado en `docs/GPU_AND_LLM_RESEARCH.md` §5) para no descubrir un descarte evitable recién en la Fase de compute/LLM? Es una pregunta de priorización de tiempo, no de autorización.
+- **Q-009:** ¿el southbridge de esta CUH-2115B es Baikal B1 o Belize2 A0? ABIERTA. Acota: fecha de fabricación (si figura en etiqueta/caja), código de placa SAE-00x (exige abrir) o `hw.sce_subsys_subid` (exige ejecutar código autorizado). Ver `KERNEL_SELECTION.md` §3.
+

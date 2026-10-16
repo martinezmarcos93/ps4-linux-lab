@@ -85,3 +85,19 @@ Alcance: se buscó por nombre en `/home/marcos`, `/media/marcos` (disco externo)
 
 Sobre la imagen `.img` publicada: contiene `initramfs.cpio.gz` y `bzImage.belize` (kernel Belize renombrado) en p1, **sin `bzImage` a secas**: tal como viene, el loader no encontraría kernel en el USB.
 
+## 7. Candidatos NO obtenidos y condiciones de uso (investigación del 2026-10-16)
+
+Metadatos por la API pública de GitHub (solo texto; **no se descargó ningún binario**). `NOASSERTION` = GitHub no reconoció una licencia única (los forks de Linux traen `COPYING` con GPL-2.0).
+
+| Candidato | Dónde | Estado/fecha | Licencia declarada | Observaciones |
+|---|---|---|---|---|
+| Kernel Baikal 5.4.247 (`bzImage*`, 9,1-9,9 MB; configs) | `feeRnt/ps4-linux-12xx`, releases `v5.4.247__neocine-1.1` (2026-03-10) y `v5.4.247__baikal*` (2025) | Base `DFAUS-git/ps4-baikal-5.4.247-kernel` (último push 2023-07-04) | NOASSERTION (kernel Linux ⇒ GPL-2.0) | Es la compilación 5.4.247 que menciona el issue #10. Declara "CUH-2115B tested functional" (S-20). **No obtenido; sin hash local** |
+| Kernel Belize 5.15.15 | idem, `v5.15.15__obsidianx-4.0` | base `codedwrench/ps4-linux` (push 2022-03-23) | NOASSERTION | Probado en CUH-1216; "will crash on Aeolia". **No obtenido** |
+| Kernel Aeolia/Belize 6.15.4 | idem, `v6.15.4__crashnt-4.8.3` (2026-10-12) | base `crashniels/linux` | NOASSERTION | Probado en CUH-1216. **No obtenido** |
+| `ps4-which-southbridge` | `tomfitzhenry/ps4-which-southbridge` | 1 commit, 2026-09-25 | **ninguna** | Es un payload (código que se ejecutaría en la consola): requiere auditoría previa si algún día se usa. **No obtenido** |
+
+Condiciones de uso de lo que sí está en disco:
+- `bzImage-*` (GPL-2.0): para uso privado no hay restricción práctica; **redistribuirlos** exige ofrecer las fuentes, que la distribución no enlaza. Este repositorio no los redistribuye (D-004).
+- `LICENSE` de la distribución: es GPL-3.0 pero está guardado en **UTF-16** (71 648 B, el doble de lo normal), por lo que `grep`/lectores simples no lo ven como texto; se identificó leyéndolo con la codificación correcta.
+- `ps4-linux-loader` y GoldHEN no declaran licencia; el código `ps4-kexec-common` es BSD de 2 cláusulas (archivo `LICENSE` del propio directorio).
+

@@ -34,6 +34,19 @@ Toda fuente usada en esta auditoría (sesión del 2026-10-15), con URL, versión
 | S-16 | [ps4-linux-loader#1](https://github.com/ps4-linux/ps4-linux-loader/issues/1) | Issue (cerrado) | Cerrado | 2026-02-14 | "master: Add fixed offset for gpu_devid_is_9924 for 12.50 FW" — evidencia histórica de que la detección Pro/no-Pro requirió offsets específicos por firmware | Título solamente, cuerpo no auditado |
 | — | Issues de PS4-Linux (S-01) | — | — | — | Se consultó la API; **no hay issues registrados** en ese repositorio a la fecha de consulta | N/A |
 
+## 3b. Fuentes consultadas el 2026-10-16 para identificar el southbridge y buscar kernels
+
+| # | Fuente | Qué aporta | Cómo se leyó | Nivel |
+|---|---|---|---|---|
+| S-17 | PS4 Developer wiki, *Hardware Info* (https://www.psdevwiki.com/ps4/Hardware_Info) | Tabla `[APU, SouthBridge SubSystem, hw_model]`: CUH-2115A → Belize2 A0; **CUH-2115B → Baikal B1 y también Belize2 A0** (dos filas) | El acceso directo devuelve **HTTP 403** a clientes automáticos (no se eludió); se leyó la copia pública `web.archive.org/web/20251218182117/…/Hardware_Info`, parseada por filas HTML | HECHO según una wiki colaborativa (página marcada "for rewrite"); sin autoría ni método de la tabla |
+| S-18 | PS4 Developer wiki, *Southbridge* | Placas y chasis: 2100 → Belize 2 (SAE-001/003, fab. 2017-11..12) o Baikal (SAE-002/004, fab. 2017-06..12); códigos CXD90025G/36G/46GG/42GG | Wayback `20260303210730` | idem |
+| S-19 | `tomfitzhenry/ps4-which-southbridge` | Payload de espacio de usuario que lee `hw.sce_subsys_subid`; tabla de IDs tomada del loader | README vía GitHub; binario **no** descargado ni auditado | TERCEROS (1 commit, 0 estrellas, sin licencia) |
+| S-20 | `feeRnt/ps4-linux-12xx` (releases e issues, API de GitHub) | Kernels Aeolia/Belize 6.15.4, Belize 5.15.15, Baikal 5.4.247; la release `v5.4.247__baikal` (2025-08-29) afirma "CUH-2115B: Tested functional" y "CUH-7116B: Tested functional"; `v5.4.247__neocine-1.1`: "CUH-7216B tested working"; issue #14: Baikal Slim CUH-2215B sin lector Blu-ray; issue #3: kernel Baikal 6.15.4 con LED blanco | API pública, solo texto; binarios no descargados | TERCEROS; mantenedor sin logs; firmware no indicado |
+| S-21 | https://ps4linux.com/fix-mt7668-wifi-bluetooth-ps4-7215-7216-belize-baikal/ | Identifica Belize/Baikal ejecutando el payload "WhosThatSouthBridge" y leyendo la notificación; no asocia modelos | WebFetch | TERCEROS |
+| S-22 | Búsquedas web (resumen de motor) sobre "Belize 2" y kernel | Un comentario no verificado habla de una "CUH-2112B belize2 A0" con kernel 5.15.15 | **Solo resumen de búsqueda; no se abrió la fuente** | No se usa como evidencia |
+
+Limitación: las tablas de la wiki son lo mejor disponible sin abrir la consola, pero son contribuciones de la comunidad. Que una unidad concreta coincida con una fila no está demostrado hasta leer su ID o su placa.
+
 ## 4. Discrepancias encontradas (requieren resolución antes de citar como hecho firme)
 
 ### D-A — "Automatic boot files placement" del changelog vs. código y artefactos inspeccionados
@@ -65,6 +78,9 @@ La API (consulta 2026-10-15) da para `refs/tags/v1.0` el commit `26a6451817c35d0
 
 ### D-E — Procedencia de los releases del loader
 (1) El README del loader enlaza a `ArabPixel/ps4-linux-payloads` (releases y "How to Compile"); la API devuelve para ese nombre el repositorio `ps4-linux/ps4-linux-loader` (renombre/transferencia; creado 2025-12-19 con historial desde 2022). (2) El workflow `.github/workflows/build.yml` sube artefactos de Actions pero **no crea releases**; los zips de *Releases* (con `sha256` que publica GitHub, p. ej. v25.1 `7ee03018…da74`) no quedan ligados a un build verificable. (3) `lib/syscalls.py` consulta `syscalls.master` (GitHub) y una página de `web.archive.org` (HTTP) solo si `syscalls.asm` se regenera; ese archivo está versionado y se verificó byte-idéntico (2026-10-16). Consecuencia: el loader **sí se puede compilar** sin red (`LOADER_BUILD_REPRO.md`), pero no se reprodujo bit a bit el binario de la distribución.
+
+### D-G — ¿Qué kernel usa la CUH-7116B?
+README de la distribución: kernel **Belize** 7.1.7 "funciona" (FW 13.52). `feeRnt` (release Baikal 5.4.247, 2025-08-29): "CUH-7116B tested functional" con kernel **Baikal**. La wiki (S-17) da `CUH-7116B B01Y` con Belize2 A0. Las tres fuentes no se pueden reconciliar con lo que tenemos (¿otro firmware?, ¿otra revisión de placa?, ¿declaración imprecisa?). **Sin resolver.** Además, `feeRnt` dice que CUH-7216B funciona con su kernel Baikal 5.4.247, mientras un usuario del issue #10 de `ps4-linux-loader` dice que su CUH-7216B no funciona (sin detalle). Consecuencia: ninguna de estas declaraciones sirve de prueba para otro modelo.
 
 ### D-F — Exploit y video
 El video de referencia (`https://www.youtube.com/watch?v=Juf2IOxOQcY`) no pudo leerse más allá de su título ("¡POR FIN! Jailbreak PS4 hasta 13.52 con GoldHEN | Tutorial Paso a Paso"): sin canal, fecha, descripción ni transcripción. No se atribuye ningún paso al video. Hay una disputa pública de crédito del exploit (acusaciones de que el núcleo JS copia a OOMfie) citada por blogs, **sin confirmar ni refutar**.
