@@ -2,7 +2,7 @@
 
 Laboratorio privado para investigar Linux en PlayStation 4, priorizando seguridad, reproducibilidad y trazabilidad.
 
-**Estado:** investigación y preparación. La consola del laboratorio es una PS4 Slim (familia **inferida** de una foto), firmware 13.52 **observado** y capacidad de 861,4 GB **observada**; CUH y southbridge **desconocidos** (la selección de kernel no está resuelta) y ningún arranque probado. La arquitectura objetivo es **USB-only** (D-008): está decidida, pero el flujo completo **no está validado**. Una declaración upstream no equivale a una prueba propia.
+**Estado:** investigación y preparación. La consola del laboratorio es una PS4 Slim (familia **inferida** de una foto), firmware 13.52 **observado** y capacidad de 861,4 GB **observada**; modelo **CUH-2115B confirmado** y southbridge **desconocido** (la selección de kernel no está resuelta) y ningún arranque probado. La arquitectura objetivo es **USB-only** (D-008): está decidida, pero el flujo completo **no está validado**. Una declaración upstream no equivale a una prueba propia.
 
 ## Objetivos
 - Identificar un método de arranque compatible con modelo CUH, firmware y southbridge.
@@ -32,7 +32,7 @@ Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de li
 ## Estado del proyecto
 Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `TESTS`, `CÓDIGO`, `TERCEROS`, `LAB`, `PENDIENTE`, `BLOQUEADO`. Ninguna tarea tiene `LAB` todavía.
 - [x] `IMPLEMENTADO` Repositorio privado creado, documentación inicial, fuentes y riesgos registrados.
-- [ ] `PENDIENTE` Completar identificación del modelo CUH y southbridge. *(parcial: firmware 13.52 observado, Slim inferida, capacidad de clase 1 TB; ver LAB-000)*
+- [ ] `PENDIENTE` Completar identificación del southbridge. *(CUH-2115B confirmado; firmware 13.52 y capacidad 861,4 GB observados; southbridge desconocido; ver LAB-000 y KERNEL_SELECTION.md)*
 - [x] `CÓDIGO` Mapa de código y commits/tags exactos (loader `f70f43a`, distribución `66e21cb`); historial del loader revisado.
 - [ ] `PENDIENTE` Resolver licencias de cada componente candidato (inventario en [ARTIFACT_INVENTORY](docs/ARTIFACT_INVENTORY.md)).
 - [ ] `BLOQUEADO` Elegir método/kernel basado en evidencia para el hardware real (falta el southbridge).
