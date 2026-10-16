@@ -11,7 +11,7 @@
 
 **Hallazgo:** TP-03 recomendaba ejecutar `tools/build-img.sh`, aunque la documentación de seguridad identifica riesgos concretos en el script upstream (ruta de salida no validada, eliminación en ruta fija, limpieza incompleta y puntos de montaje fijos). La recomendación tampoco coincidía con la arquitectura de herramientas de solo archivo del proyecto.
 
-**Cambio:** TP-03 ahora exige el generador auditado `tools/build_usb_image.py`, primero en `--dry-run`, con un kernel compatible y procedencia validada como precondiciones. Se aclara que el resultado host-side no prueba el arranque.
+**Cambio:** TP-03 exige el generador auditado `tools/build_usb_image.py`, primero en `--dry-run`, con un kernel compatible y procedencia validada como precondiciones. `BOOT_FLOW.md` también deja de recomendar el generador upstream como alternativa. Se aclara que el resultado host-side no prueba el arranque.
 
 ### A-002 — El plan de pruebas trataba la escritura física como paso operativo inmediato
 
