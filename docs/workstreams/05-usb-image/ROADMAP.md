@@ -62,3 +62,6 @@ No editar `main` directamente. No escribir USB físico, no ejecutar payloads y n
 - [ ] No se declara aprobado el rootfs: faltan auditoría de paquetes, servicios, usuarios, scripts y acceso al almacenamiento interno.
 - [ ] No se declara resuelta la licencia global del loader; la licencia BSD-2-Clause del subcomponente `ps4-kexec-common` no se extiende automáticamente al repositorio entero.
 - **Decisión:** NO-GO para prueba física con el conjunto actual; GO para continuar análisis estático y pruebas sintéticas. No se descargaron ni ejecutaron binarios durante esta revisión.
+
+
+- Revisión adicional del preflight (2026-10-16): detecté que la política de ausencia de `bootargs.txt`/`vram.txt` solo comprobaba nombres exactos. Para no depender de diferencias de mayúsculas entre el filesystem del host y FAT, `tools/strict_usb_preflight.py` ahora rechaza variantes de caso (`BOOTARGS.TXT`, `VRAM.TXT`) y symlinks rotos con esos nombres reservados. Se agregaron dos tests y se actualizó `USB_MINIMAL_CONFIG_TEST_PLAN.md`. Commits: `45c3302` (corrección) y `f988159` (tests). La consulta disponible de runs asociados al commit no devolvió ejecuciones; la suite sigue pendiente de validación CI, no se declara verde.
