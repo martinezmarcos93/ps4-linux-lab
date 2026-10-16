@@ -66,6 +66,8 @@ Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `T
 | [Seguridad de herramientas](docs/SAFETY_AND_TOOLING.md) | Requisitos para scripts futuros |
 | [Plan de ejecución siguiente](docs/NEXT_EXECUTION_PLAN.md) | Tareas inmediatas, responsables y puertas de seguridad |
 | [Manifiestos de artefactos](docs/ARTIFACT_MANIFEST.md) | Formato y uso del verificador de integridad |
+| [Auditoría del pipeline de imagen](docs/BUILD_PIPELINE_SAFETY_AUDIT.md) | Riesgos de `build-img.sh`/`write-img.ps1` y su mitigación |
+| [Preflight de imagen](docs/USB_IMAGE_BUILD_PREFLIGHT.md) | Planificador de solo lectura del pipeline upstream |
 | [Diseño USB-only](docs/USB_ONLY_DESIGN.md) | Propiedades verificables, qué está demostrado, bloqueos y arquitectura recomendada |
 | [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes, licencias y nivel de confianza de cada binario |
 | [Diagnóstico del CI](docs/CI_DIAGNOSIS.md) | Por qué falla Actions (facturación) y la alternativa local |
@@ -82,6 +84,7 @@ Todas son de solo archivo (no abren dispositivos de bloque, no montan, no ejecut
 bash scripts/check.sh                       # compileall + tests + validación de documentación
 python3 tools/verify_boot_chain.py <carpeta-con-bzImage-e-initramfs> --catalogo manifests/arranque-catalogo.json
 python3 tools/verify_artifacts.py --manifest /ruta/a/tu-manifiesto.json --root .
+python3 tools/plan_usb_image_build.py rootfs.tar.xz initramfs.cpio.gz salida.img  # preflight upstream, solo lectura
 python3 tools/build_usb_image.py --salida img.img --initramfs ... --kernel ... --rootfs-dir ... --dry-run
 python3 tools/payload_static.py goldhen.bin --referencia <oficial>   # análisis estático, sin ejecutar
 python3 tools/elf_audit.py linux-1024mb.elf --fuente fw_offsets.h    # ELF vs. código fuente fijado

@@ -3,6 +3,7 @@
   "descripcion": "Catálogo de procedencia para tools/verify_boot_chain.py. Solo registra artefactos que existen y cuyo hash fue recalculado localmente (2026-10-15). No contiene binarios. Una entrada es una referencia de igualdad, no una prueba de autenticidad ni de compatibilidad con una consola concreta.",
   "fuente": "https://github.com/X-F1REBALL-X/PS4-Linux",
   "commit_fuente": "66e21cb8c15f20189254e2608c6e9bf957eb8078",
+  "nota_tag": "los binarios son idénticos a los del commit al que apunta hoy el tag v1.0 (26a6451); el tag se movió tras publicar el release (docs/EVIDENCE_SOURCES.md D-D2)",
   "contraste": "sha256 calculado localmente sobre una copia fuera del repo; coincide con los digest sha256 que la API de GitHub publica para los assets del release v1.0 (mismo origen, no una fuente independiente del publicador)",
   "artefactos": [
     {

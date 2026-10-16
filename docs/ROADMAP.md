@@ -89,6 +89,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 - [x] `TESTS` `inspect_image.py`: MBR/GPT de imágenes (24 tests, con pruebas de mutación).
 - [x] `TESTS` `fat32_add_file.py`: agrega archivos a la FAT de una imagen sin root, contrastado con `fsck.vfat -n` y 7z (12 tests).
 - [x] `TESTS` `build_usb_image.py`: construye un `.img` (nunca un dispositivo), sin root, con validación de rutas/entradas/tamaños y limpieza ante fallo (20 tests con imágenes de 72 MiB). **No ejecutado con el rootfs real** (requiere `fakeroot` para propietarios correctos).
+- [x] `TESTS` `plan_usb_image_build.py` (origen: rama `chatgpt/image-build-preflight`, integrada): planificador de solo lectura del pipeline upstream, 13 tests; auditoría del pipeline en [`docs/BUILD_PIPELINE_SAFETY_AUDIT.md`](BUILD_PIPELINE_SAFETY_AUDIT.md).
 - [x] `TESTS` `payload_static.py` y `elf_audit.py`: análisis estático de solo lectura de payloads y ELF (16 + 10 tests).
 - [x] `TESTS` `loader_model.py`: modelo de la resolución de rutas upstream y de la variante USB-only (21 tests; incluye el parche).
 - [ ] `PENDIENTE` `inspect-disks`: lista discos con modelo, tamaño, bus, serial y particiones.
@@ -140,7 +141,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Salida:** matriz de resultados basada en mediciones propias, no en reportes de terceros.
 
 ## Fase 9 — Cómputo GPU y LLM
-**Estado:** PLANNED; incertidumbre alta. Protocolo completo (orden obligatorio CPU-baseline → exploración GPU, qué no instalar sin evidencia previa, criterio de descarte explícito) en [`docs/GPU_AND_LLM_RESEARCH.md`](GPU_AND_LLM_RESEARCH.md) §4. **Pendiente adicional (pregunta Q-008 de `DECISION_LOG.md`):** no se investigó en la auditoría de esta sesión si existe soporte ROCm o Vulkan-compute maduro para esta generación GCN — es el primer vacío a cerrar antes de cualquier prueba. Ejecutable como casos **TP-10/TP-11**.
+**Estado:** PLANNED; incertidumbre alta. Protocolo completo (orden obligatorio CPU-baseline → exploración GPU, qué no instalar sin evidencia previa, criterio de descarte explícito) en [`docs/GPU_AND_LLM_RESEARCH.md`](GPU_AND_LLM_RESEARCH.md) §4. **Pendiente adicional (pregunta Q-008 de `DECISION_LOG.md`):** la investigación bibliográfica (`GPU_AND_LLM_RESEARCH.md` §5) indica que ROCm no tiene soporte oficial para Liverpool y que Vulkan/RADV es un candidato experimental; es evidencia de terceros (`TERCEROS`) sin prueba en la consola. Ejecutable como casos **TP-10/TP-11**.
 - [ ] `PENDIENTE` Registrar baseline de CPU: tokens/s, RAM, temperatura, sin ningún backend GPU.
 - [ ] `PENDIENTE` Identificar APIs de cómputo realmente disponibles en la GPU (no asumir soporte de Vulkan-compute/OpenCL/ROCm).
 - [ ] `PENDIENTE` Elegir un modelo pequeño cuantizado y fijar sus parámetros para que la comparación CPU/GPU sea válida.
