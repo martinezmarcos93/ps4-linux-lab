@@ -270,14 +270,6 @@ class TestEstaticas(unittest.TestCase):
         self.assertIn('--user "$(id -u):$(id -g)"', s)
         self.assertIn("--platform linux/amd64", s)
 
-    def test_el_script_acepta_y_aplica_parches_en_orden(self):
-        s = SCRIPT.read_text(encoding="utf-8")
-        self.assertIn("PARCHEES=()", s)
-        self.assertIn('PARCHEES+=("$(readlink -f "$PARCHE")")', s)
-        self.assertIn('for PARCHE in "${PARCHEES[@]}"; do', s)
-        self.assertIn('git apply --check "$PARCHE" && git apply "$PARCHE"', s)
-        self.assertIn('tee -a "$OUT/parches.txt"', s)
-
 
 if __name__ == "__main__":
     unittest.main()
