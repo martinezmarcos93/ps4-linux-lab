@@ -65,6 +65,13 @@ class TestCheckDocs(Base):
         self.escribir("docs/ROADMAP.md", ROADMAP_OK + "- [x] Hecho sin etiqueta\n")
         self.assertTrue(any("sin etiqueta" in x for x in cd.revisar(self.raiz)))
 
+    def test_etiqueta_observado_es_valida(self):
+        # Regresión: OBSERVADO se agregó a la escala de evidencia del roadmap
+        # (dato leído en consola, sin hash ni prueba de arranque) pero el
+        # validador no la reconocía y marcaba falsamente "sin etiqueta".
+        self.escribir("docs/ROADMAP.md", ROADMAP_OK + "- [x] `OBSERVADO` Southbridge leído por el operador\n")
+        self.assertEqual(cd.revisar(self.raiz), [])
+
     def test_hecha_con_etiqueta_pendiente(self):
         self.escribir("docs/ROADMAP.md", ROADMAP_OK + "- [x] `PENDIENTE` contradictoria\n")
         self.assertTrue(any("PENDIENTE/BLOQUEADO" in x for x in cd.revisar(self.raiz)))

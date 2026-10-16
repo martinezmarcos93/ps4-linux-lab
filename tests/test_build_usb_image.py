@@ -248,6 +248,31 @@ class TestConstruccion(Base):
             bu.construir(plan)
         self.assertEqual(previo.read_bytes(), b"ajeno")
 
+    def test_temporal_json_previo_se_respeta_y_no_se_borra(self):
+        # Regresión OCH-001: el .json.parcial debe tratarse con la misma
+        # cautela que el .img.parcial, no sobrescribirse en silencio.
+        plan = bu.planificar(self.args())
+        previo = self.dir / "out" / "prueba.json.parcial"
+        previo.write_bytes(b"ajeno")
+        with self.assertRaisesRegex(bu.BuildError, "temporal previo"):
+            bu.construir(plan)
+        self.assertEqual(previo.read_bytes(), b"ajeno")
+
+    def test_temporal_json_no_sigue_symlink(self):
+        # Regresión OCH-001: si ".json.parcial" es un symlink a otro archivo,
+        # construir() no debe escribir a través de él.
+        plan = bu.planificar(self.args())
+        objetivo = self.dir / "fuera_de_out.txt"
+        objetivo.write_bytes(b"contenido ajeno")
+        enlace = self.dir / "out" / "prueba.json.parcial"
+        try:
+            enlace.symlink_to(objetivo)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks no soportados")
+        with self.assertRaisesRegex(bu.BuildError, "temporal previo"):
+            bu.construir(plan)
+        self.assertEqual(objetivo.read_bytes(), b"contenido ajeno")
+
     def test_herramienta_faltante(self):
         with mock.patch("shutil.which", return_value=None), mock.patch("os.path.exists", return_value=False):
             with self.assertRaisesRegex(bu.BuildError, "falta la herramienta"):

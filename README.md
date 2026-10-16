@@ -2,7 +2,7 @@
 
 Laboratorio público de investigación para ejecutar Linux desde almacenamiento externo en una PlayStation 4, con énfasis en auditoría técnica, reproducibilidad, seguridad y trazabilidad.
 
-**Estado actual: investigación y preparación; todavía no se ha demostrado un arranque Linux propio en la consola.** El equipo de laboratorio es una PS4 Slim **CUH-2115B**, firmware **13.52** y capacidad observada de **861,4 GB**. El southbridge reportado por el operador es **Baikal B1 (`0x30201`)**; aún debe tratarse como observación del operador, no como verificación independiente. La selección final de kernel/método sigue bloqueada. La arquitectura objetivo es **USB-only**: mantener intacto el almacenamiento interno durante las primeras fases. Es una decisión de diseño, no una propiedad ya verificada en hardware.
+**Estado actual: investigación y preparación; todavía no se ha demostrado un arranque Linux propio en la consola.** El equipo de laboratorio es una PS4 Slim **CUH-2115B confirmada**, firmware **13.52 observado** y capacidad observada de **861,4 GB**. El southbridge está **observado** como **Baikal B1 (`0x30201`)** mediante GoldHEN v2.2.3 (ver [`docs/lab-logs/LAB-001-southbridge.md`](docs/lab-logs/LAB-001-southbridge.md)); es una observación del operador a nivel `OBSERVADO`, no una verificación `LAB`/`VERIFIED`, y la selección final de kernel/método sigue bloqueada. La arquitectura objetivo es **USB-only** (D-008): mantener intacto el almacenamiento interno durante las primeras fases es una decisión de diseño, no una propiedad ya verificada en hardware.
 
 > Proyecto experimental y comunitario. No se garantiza compatibilidad, estabilidad ni ausencia de riesgos. No se deben ejecutar payloads, escribir imágenes en dispositivos físicos ni modificar la consola sin revisar las auditorías, los riesgos y los criterios de salida.
 
@@ -72,14 +72,15 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Mapa upstream](docs/UPSTREAM_CODE_MAP.md) | Áreas de código revisadas |
 | [Fuentes de evidencia](docs/EVIDENCE_SOURCES.md) | Trazabilidad de las fuentes |
 | [Seguridad de herramientas](docs/SAFETY_AND_TOOLING.md) | Requisitos para scripts futuros |
-| [Plan de ejecución siguiente](docs/NEXT_EXECUTION_PLAN.md) | Tareas inmediatas y puertas de seguridad |
-| [Plan de acción inmediata](docs/PLAN_ACCION_INMEDIATA.md) | Secuencia operativa |
-| [Manifiestos](docs/ARTIFACT_MANIFEST.md) | Formato de verificación de integridad |
-| [Auditoría del pipeline de imagen](docs/BUILD_PIPELINE_SAFETY_AUDIT.md) | Riesgos del pipeline upstream |
-| [Preflight de imagen](docs/USB_IMAGE_BUILD_PREFLIGHT.md) | Planificación de solo lectura |
-| [Compilación aislada del loader](docs/LOADER_BUILD_REPRO.md) | Entorno de compilación aislado y límites |
-| [Diseño USB-only](docs/USB_ONLY_DESIGN.md) | Propiedades, pruebas y bloqueos |
-| [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes y licencias |
+| [Plan de ejecución siguiente](docs/NEXT_EXECUTION_PLAN.md) | Tareas inmediatas, responsables y puertas de seguridad |
+| [Plan de acción inmediata](docs/PLAN_ACCION_INMEDIATA.md) | Secuencia de cierre, preparación de imagen y puertas operativas |
+| [Plan de recuperación](docs/RECOVERY_PLAN.md) | Criterios de aborto, diagnóstico por etapas y límites de recuperación |
+| [Manifiestos de artefactos](docs/ARTIFACT_MANIFEST.md) | Formato y uso del verificador de integridad |
+| [Auditoría del pipeline de imagen](docs/BUILD_PIPELINE_SAFETY_AUDIT.md) | Riesgos de `build-img.sh`/`write-img.ps1` y su mitigación |
+| [Preflight de imagen](docs/USB_IMAGE_BUILD_PREFLIGHT.md) | Planificador de solo lectura del pipeline upstream |
+| [Compilación aislada del loader](docs/LOADER_BUILD_REPRO.md) | Revisión de la cadena, entorno sin red, resultados y límites |
+| [Diseño USB-only](docs/USB_ONLY_DESIGN.md) | Propiedades verificables, qué está demostrado, bloqueos y arquitectura recomendada |
+| [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes, licencias y nivel de confianza de cada binario |
 | [Diagnóstico de CI](docs/CI_DIAGNOSIS.md) | Estado del workflow y alternativas |
 | [Informe de estado público](docs/PUBLIC_PROJECT_STATUS.md) | Relevamiento de avances y pendientes |
 | [Auditoría de publicación pública](docs/PUBLICATION_AUDIT.md) | Revisión de documentación para un repositorio público |
@@ -90,6 +91,7 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Revisión de kernel_inspect](docs/REVIEW_KERNEL_INSPECT_ZSTD_2026-10-16.md) | Límites de la inspección estática del kernel |
 | [Revisión independiente OpenCode](docs/OPENCODE_REVIEW_2026-10-16.md) | Hallazgos técnicos de revisión cruzada |
 | [Revisión cruzada documental](docs/CROSS_DOC_AUDIT_2026-10-16.md) | Contradicciones y tareas de consolidación |
+| [Revisión cruzada de rama Claude](docs/BRANCH_REVIEW_CLAUDE_2026-10-16.md) | Hallazgos estáticos sobre el inventario, la publicación del constructor y la divergencia de ramas |
 | [Integración de ramas](docs/INTEGRACION_RAMAS_2026-10-16.md) | Merges, portado manual, conflictos y límites de consolidación |
 | [Workstreams activos](docs/WORKSTREAMS.md) | Las cinco categorías de trabajo en curso, su rama y responsable |
 | [Plan de workstreams](docs/WORKSTREAM_PLAN.md) | Orden de ejecución, dependencias y protocolo entre categorías |

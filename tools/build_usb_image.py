@@ -185,6 +185,8 @@ def construir(plan: dict) -> Path:
     
     if os.path.lexists(parcial_img):
         raise BuildError(f"existe un temporal previo '{parcial_img}'; revíselo y bórrelo manualmente")
+    if os.path.lexists(parcial_json):
+        raise BuildError(f"existe un temporal previo '{parcial_json}'; revíselo y bórrelo manualmente")
     try:
         fd = os.open(parcial_img, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
         try:
@@ -208,7 +210,11 @@ def construir(plan: dict) -> Path:
         for k in ("salida", "initramfs", "kernel", "rootfs_dir"):
             plan_anon[k] = str(Path(plan_anon[k]).name)
         informe = {"imagen": destino.name, "plan": plan_anon, "estado": "ok"}
-        with open(parcial_json, "w", encoding="utf-8") as f:
+        # Igual que parcial_img: O_EXCL + O_NOFOLLOW evita pisar un archivo
+        # preexistente o escribir a través de un symlink plantado en esa ruta
+        # (hallazgo OCH-001 de la revisión de la rama opencode original).
+        fd_json = os.open(parcial_json, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
+        with os.fdopen(fd_json, "w", encoding="utf-8") as f:
             json.dump(informe, f, indent=2, ensure_ascii=False)
             f.flush()
             os.fsync(f.fileno())

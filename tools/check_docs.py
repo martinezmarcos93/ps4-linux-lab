@@ -16,7 +16,7 @@ import re
 import sys
 from pathlib import Path
 
-ETIQUETAS = ("PENDIENTE", "BLOQUEADO", "IMPLEMENTADO", "TERCEROS", "CÓDIGO", "TESTS", "LAB")
+ETIQUETAS = ("PENDIENTE", "BLOQUEADO", "IMPLEMENTADO", "TERCEROS", "CÓDIGO", "TESTS", "OBSERVADO", "LAB")
 FRASES_OBSOLETAS = (
     "Estructura USB-only válida",
     "Opción A (",
