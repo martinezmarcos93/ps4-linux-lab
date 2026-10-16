@@ -18,6 +18,17 @@ Las herramientas están diseñadas para trabajar sobre archivos de imagen, sin m
 
 **Estado:** corrección implementada; pendiente resultado de CI del commit actualizado. La revisión no afirma todavía que el build completo se haya ejecutado en esta sesión.
 
+### H-FAT-002 — geometría FAT declarada inconsistente
+
+**Severidad:** media.  
+**Archivo:** `tools/fat32_add_file.py`, inicialización de `_Fat32`.
+
+La validación del BPB comprobaba que el volumen declarado cupiera en la partición, pero no exigía que la región FAT tuviera entradas suficientes para los clusters declarados ni que las regiones reservada/FAT quedaran dentro del volumen. Un BPB malformado podía hacer que el editor interpretara offsets incorrectos dentro del archivo de imagen.
+
+**Corrección aplicada en esta rama:** se rechaza tamaño total inválido, una región FAT de cero sectores, regiones reservadas/FAT que alcancen o excedan el volumen y FAT insuficiente para el número de clusters. Se añadió un test que reduce artificialmente el tamaño de FAT, verifica el rechazo y compara el hash de la imagen después del fallo.
+
+**Estado:** código y test publicados; CI posterior aún pendiente. Solo se usan archivos de imagen temporales.
+
 ### H-FAT-001 — terminador inválido aceptado en una cadena FAT
 
 **Severidad:** media.  
