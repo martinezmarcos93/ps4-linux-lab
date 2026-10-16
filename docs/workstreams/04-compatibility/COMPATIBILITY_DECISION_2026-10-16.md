@@ -2,7 +2,7 @@
 
 **Rama:** `workstream/04-compatibility`  
 **Responsable:** ChatGPT; verificación local pendiente de Claude Code.  
-**Equipo objetivo:** PS4 Slim CUH-2115B, firmware 13.52, capacidad observada 861,4 GB; southbridge desconocido.  
+**Equipo objetivo:** PS4 Slim CUH-2115B, firmware 13.52, capacidad observada 861,4 GB; southbridge reportado como Baikal B1 (`0x30201`) en la pantalla de información consultada por Marcos.  
 **Decisión actual:** **INDETERMINADO / NO-GO para seleccionar o ejecutar una cadena de arranque.** La evidencia pública justifica continuar la investigación, pero no elegir kernel ni afirmar compatibilidad con esta unidad.
 
 ## 1. Evidencia actual
@@ -21,14 +21,14 @@
 
 | Modelo objetivo | Firmware | Southbridge | Loader | Kernel candidato | USB-only estricto | Decisión |
 |---|---|---|---|---|---|---|
-| CUH-2115B | 13.52 | Desconocido | v25.1 o fuente `master` de ps4-linux-loader | No seleccionado | No demostrado; la distribución consultada indica almacenar kernel/initramfs en el disco interno | **INDETERMINADO; no ejecutar** |
+| CUH-2115B | 13.52 | Baikal B1 (`0x30201`, reportado por el operador) | v25.1 / código fijado pendiente de revisión final | `bzImage-baikal-7.0.8` es candidato documental, no aprobado | No demostrado; la distribución consultada indica almacenar kernel/initramfs en el disco interno y el loader tiene fallback a rutas internas | **Candidato técnico identificado; NO-GO hasta cerrar USB-only y gate de artefactos** |
 | CUH-2116A (caso publicado) | 13.52 | Baikal (según distribución) | loader asociado a PS4-Linux v1.0 | `bzImage-baikal-7.0.8` (declarado por el distribuidor) | No; instrucciones publicadas requieren kernel/initramfs internos | Solo afirmación upstream, no transferible al objetivo |
 | CUH-7116B (caso publicado) | 13.52 | Belize (según distribución) | loader asociado a PS4-Linux v1.0 | `bzImage-belize-7.1.7` (declarado por el distribuidor) | No; instrucciones publicadas requieren kernel/initramfs internos | Solo afirmación upstream, no transferible al objetivo |
 | CUH-2208B (reporte comunitario) | 13.52 | Baikal (reportado) | v25 | Kernel 5.4.247 Baikal (reportado; no es el 7.0.8 de la distribución) | No establecido por el issue | Evidencia de tercero; no usar como equivalencia |
 
 ## 3. Bloqueo principal: southbridge
 
-El número CUH-2115B, por sí solo, no aporta en las fuentes auditadas evidencia primaria suficiente para fijar el southbridge de esta unidad. El README de PS4-Linux afirma explícitamente que otros modelos Slim CUH-2xxx pueden variar según la placa. No elegir kernel por analogía con CUH-2116A, CUH-2208B ni por la etiqueta “Slim”.
+El CUH-2115B por sí solo no identifica el southbridge; sin embargo, Marcos reportó una lectura de información del sistema que muestra `Baikal B1`, ID `0x30201`. En el código upstream auditado, `GetSouthbridgeName()` asigna explícitamente `0x30201` a `Baikal B1`. Esto eleva el dato a **REPORTADO-OBSERVADO por el operador**, no a una medición repetida e independiente en esta sesión. La tabla comunitaria de PS4 Developer Wiki presenta filas contradictorias para el identificador de modelo, pero esa ambigüedad general no invalida automáticamente la lectura de runtime de esta unidad. No volver a ejecutar un payload solo para repetir una observación ya registrada.
 
 Siguiente observación admisible, sin intervención en la consola:
 1. Buscar documentación primaria fiable que relacione **CUH-2115B exacto** y revisión de placa/southbridge; registrar URL, fecha y qué identifica realmente.
@@ -58,6 +58,6 @@ La documentación upstream menciona prioridad de USB para los archivos de boot s
 
 ## 6. Límites y conclusión
 
-No actualizar firmware, no ejecutar payloads, no escribir una imagen en un USB físico, no modificar el disco interno y no probar en hardware. La recomendación presente es **no seleccionar kernel todavía**. El bloqueo se debe al southbridge desconocido, a la falta de evidencia específica para CUH-2115B y a que el flujo de distribución consultado depende del almacenamiento interno. Esto no significa que Linux sea imposible en esta consola; significa que la documentación actual no basta para decidir con rigor.
+No actualizar firmware, no ejecutar payloads, no escribir una imagen en un USB físico, no modificar el disco interno y no probar en hardware. La recomendación presente es **no seleccionar kernel todavía**. El bloqueo restante ya no es principalmente la identificación del southbridge: es demostrar la cadena USB-only, fijar y validar artefactos exactos, resolver licencias/procedencia y revisar riesgos del payload de entrada. No se ha demostrado arranque Linux propio en CUH-2115B. Esto no significa que Linux sea imposible en esta consola; significa que la documentación actual no basta para decidir con rigor.
 
 Pendiente para cerrar el workstream: Claude debe contrastar localmente el log de identificación, las fuentes y commits, y la matriz existente; registrar cualquier discrepancia antes de marcar tareas como completadas.
