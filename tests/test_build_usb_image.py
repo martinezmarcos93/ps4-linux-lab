@@ -3,6 +3,7 @@
 No se usan dispositivos ni privilegios. Se omiten si faltan sfdisk/mkfs.vfat/mkfs.ext4.
 """
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -37,7 +38,7 @@ class Base(unittest.TestCase):
 
     def args(self, **cambios):
         base = dict(salida=self.dir / "out" / "prueba.img", initramfs=self.initramfs, kernel=self.kernel,
-                    rootfs_dir=self.rootfs, p1_mib=40, tamano_mib=72, omitir_verificacion=False, dry_run=False)
+                    rootfs_dir=self.rootfs, p1_mib=40, tamano_mib=72, omitir_verificacion=False, omitir_fsck=False, dry_run=False)
         base.update(cambios)
         return argparse.Namespace(**base)
 
@@ -153,7 +154,7 @@ class TestConstruccion(Base):
         plan = bu.planificar(self.args())
         destino = bu.construir(plan)
         self.assertTrue(destino.is_file())
-        self.assertEqual(sorted(p.name for p in (self.dir / "out").iterdir()), ["prueba.img"])  # sin temporales
+        self.assertEqual(sorted(p.name for p in (self.dir / "out").iterdir()), ["prueba.img", "prueba.img.informe.json"])  # sin temporales
         off1, size1 = fat.particion_mbr(destino, 1)
         off2, size2 = fat.particion_mbr(destino, 2)
         self.assertEqual(off1, 2048 * 512)
@@ -222,6 +223,100 @@ class TestConstruccion(Base):
         with self.assertRaisesRegex(bu.BuildError, "temporal previo"):
             bu.construir(plan)
         self.assertEqual(previo.read_bytes(), b"ajeno")
+
+    def _sin(self, *nombres):
+        real = bu._buscar
+        return mock.patch.object(bu, "_buscar", side_effect=lambda n: None if n in nombres else real(n))
+
+    def test_sin_fsck_vfat_la_construccion_falla_y_no_publica_nada(self):
+        plan = bu.planificar(self.args())
+        with self._sin("fsck.vfat"):
+            with self.assertRaisesRegex(bu.BuildError, "falta fsck.vfat"):
+                bu.construir(plan)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
+
+    def test_sin_e2fsck_la_construccion_falla_y_no_publica_nada(self):
+        plan = bu.planificar(self.args())
+        with self._sin("e2fsck"):
+            with self.assertRaisesRegex(bu.BuildError, "falta e2fsck"):
+                bu.construir(plan)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
+
+    def test_omitir_fsck_explicito_queda_registrado_como_no_verificada(self):
+        plan = bu.planificar(self.args(omitir_fsck=True))
+        with self._sin("fsck.vfat", "e2fsck"):
+            destino = bu.construir(plan)
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertFalse(inf["totalmente_verificada"])
+        self.assertEqual(inf["verificaciones"]["fat"]["estado"], "OMITIDA")
+        self.assertEqual(inf["verificaciones"]["ext4"]["estado"], "OMITIDA")
+        self.assertNotIn("herramienta", inf["verificaciones"]["fat"])
+
+    def test_omitir_fsck_solo_omite_lo_que_falta(self):
+        plan = bu.planificar(self.args(omitir_fsck=True))
+        with self._sin("fsck.vfat"):
+            destino = bu.construir(plan)
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertEqual(inf["verificaciones"]["fat"]["estado"], "OMITIDA")
+        self.assertEqual(inf["verificaciones"]["ext4"]["estado"], "OK")
+        self.assertFalse(inf["totalmente_verificada"])
+
+    def test_fallo_de_fsck_no_publica_la_imagen(self):
+        plan = bu.planificar(self.args())
+        real = subprocess.run
+
+        def falso(cmd, *a, **k):
+            if cmd and str(cmd[0]).endswith("fsck.vfat"):
+                return subprocess.CompletedProcess(cmd, 4, "daño simulado", "")
+            return real(cmd, *a, **k)
+
+        with mock.patch("tools.build_usb_image.subprocess.run", side_effect=falso):
+            with self.assertRaisesRegex(bu.BuildError, "fsck.vfat reporta problemas"):
+                bu.construir(plan)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
+
+    def test_fallo_de_e2fsck_no_publica_la_imagen(self):
+        plan = bu.planificar(self.args())
+        real = subprocess.run
+
+        def falso(cmd, *a, **k):
+            if cmd and str(cmd[0]).endswith("e2fsck"):
+                return subprocess.CompletedProcess(cmd, 4, "daño simulado", "")
+            return real(cmd, *a, **k)
+
+        with mock.patch("tools.build_usb_image.subprocess.run", side_effect=falso):
+            with self.assertRaisesRegex(bu.BuildError, "e2fsck reporta problemas"):
+                bu.construir(plan)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
+
+    def test_informe_de_una_construccion_completa(self):
+        import hashlib
+        destino = bu.construir(bu.planificar(self.args()))
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertTrue(inf["totalmente_verificada"])
+        self.assertEqual(inf["verificaciones"]["fat"]["herramienta"], "fsck.vfat -n")
+        self.assertEqual(inf["verificaciones"]["ext4"]["herramienta"], "e2fsck -fn")
+        self.assertEqual(inf["sha256_imagen"], hashlib.sha256(destino.read_bytes()).hexdigest())
+        self.assertEqual(inf["entradas"]["kernel"]["sha256"], hashlib.sha256(self.kernel.read_bytes()).hexdigest())
+
+    def test_cli_no_dice_verificada_si_se_omitio(self):
+        import io, contextlib
+        base = ["--salida", str(self.dir / "out" / "cli2.img"), "--initramfs", str(self.initramfs), "--kernel", str(self.kernel),
+                "--rootfs-dir", str(self.rootfs), "--p1-mib", "40", "--tamano-mib", "72", "--omitir-fsck"]
+        out, err = io.StringIO(), io.StringIO()
+        with self._sin("fsck.vfat", "e2fsck"), contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = bu.main(base)
+        self.assertEqual(rc, 0)
+        self.assertNotIn("verificados ->", out.getvalue())
+        self.assertIn("NO totalmente verificada", err.getvalue())
+
+    def test_cli_sin_fsck_falla_con_codigo_2(self):
+        import io, contextlib
+        base = ["--salida", str(self.dir / "out" / "cli3.img"), "--initramfs", str(self.initramfs), "--kernel", str(self.kernel),
+                "--rootfs-dir", str(self.rootfs), "--p1-mib", "40", "--tamano-mib", "72"]
+        with self._sin("fsck.vfat"), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(bu.main(base), 2)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
 
     def test_herramienta_faltante(self):
         with mock.patch("shutil.which", return_value=None), mock.patch("os.path.exists", return_value=False):

@@ -14,6 +14,7 @@ rootfs real, prepare el directorio y ejecute esta herramienta bajo `fakeroot`.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -36,15 +37,20 @@ P1_MIN_MIB = 40  # mkfs.fat necesita >= 65525 clusters; con clusters de 512 B so
 P2_MIN_MIB = 16
 TOTAL_MAX_MIB = 64 * 1024
 PREFIJOS_PROHIBIDOS = ("/dev", "/proc", "/sys", "/run", "/boot", "/etc", "/bin", "/sbin", "/usr", "/lib", "/var/lib")
-HERRAMIENTAS = {"sfdisk": "/usr/sbin/sfdisk", "mkfs.vfat": "/usr/sbin/mkfs.vfat", "mkfs.ext4": "/usr/sbin/mkfs.ext4"}
+HERRAMIENTAS = {"sfdisk": "/usr/sbin/sfdisk", "mkfs.vfat": "/usr/sbin/mkfs.vfat", "mkfs.ext4": "/usr/sbin/mkfs.ext4",
+                "fsck.vfat": "/usr/sbin/fsck.vfat", "e2fsck": "/usr/sbin/e2fsck"}
 
 
 class BuildError(Exception):
     pass
 
 
+def _buscar(nombre: str) -> str | None:
+    return shutil.which(nombre) or (HERRAMIENTAS[nombre] if os.path.exists(HERRAMIENTAS[nombre]) else None)
+
+
 def _herramienta(nombre: str) -> str:
-    ruta = shutil.which(nombre) or (HERRAMIENTAS[nombre] if os.path.exists(HERRAMIENTAS[nombre]) else None)
+    ruta = _buscar(nombre)
     if not ruta:
         raise BuildError(f"falta la herramienta '{nombre}' (paquetes util-linux, dosfstools, e2fsprogs)")
     return ruta
@@ -145,7 +151,7 @@ def planificar(args) -> dict:
         err, _ = vbc.comprobar_initramfs(initramfs)
         if err:
             raise BuildError("el initramfs no pasa la comprobación de formato: " + "; ".join(err))
-    return {"salida": str(salida), "p1_mib": p1, "p2_mib": p2, "tamano_total_mib": total,
+    return {"omitir_fsck": bool(getattr(args, "omitir_fsck", False)), "salida": str(salida), "p1_mib": p1, "p2_mib": p2, "tamano_total_mib": total,
             "initramfs": str(initramfs), "kernel": str(kernel), "rootfs_dir": str(rootfs),
             "bytes_a_copiar": usado}
 
@@ -178,8 +184,9 @@ def construir(plan: dict) -> Path:
         off2, size2 = fat.particion_mbr(parcial, 2)
         _ejecutar([mkext4, "-q", "-F", "-L", "psxitarch", "-E", f"offset={off2}", "-d", plan["rootfs_dir"],
                    str(parcial), str(size2 // 1024)])
-        _verificar_p1(parcial, off1, size1)
+        verificaciones = _verificar_sistemas_de_archivos(parcial, off1, size1, off2, plan.get("omitir_fsck", False))
         os.replace(parcial, destino)
+        _escribir_informe(destino, plan, verificaciones)
         return destino
     except subprocess.CalledProcessError as exc:
         raise BuildError(f"falló {exc.cmd[0]}: {(exc.stderr or exc.stdout or '').strip()[:400]}") from exc
@@ -190,24 +197,76 @@ def construir(plan: dict) -> Path:
             os.unlink(parcial)
 
 
-def _verificar_p1(imagen: Path, off: int, size: int) -> None:
-    fsck = shutil.which("fsck.vfat") or ("/usr/sbin/fsck.vfat" if os.path.exists("/usr/sbin/fsck.vfat") else None)
-    if not fsck:
-        return
-    with tempfile.TemporaryDirectory(dir=imagen.parent, prefix=".p1-") as t:
-        extraida = Path(t) / "p1.img"
-        with open(imagen, "rb") as src, open(extraida, "wb") as dst:
-            src.seek(off)
-            restante = size
-            while restante:
-                bloque = src.read(min(restante, 8 * MIB))
-                if not bloque:
-                    break
-                dst.write(bloque)
-                restante -= len(bloque)
-        r = subprocess.run([fsck, "-n", str(extraida)], capture_output=True, text=True, timeout=600)
+def _verificar_sistemas_de_archivos(imagen: Path, off1: int, size1: int, off2: int, omitir: bool) -> dict:
+    """Comprueba FAT (fsck.vfat -n) y ext4 (e2fsck -fn) sin escribir. Devuelve qué se ejecutó DE VERDAD.
+
+    Si falta una herramienta, la construcción FALLA salvo que se pidiera `--omitir-fsck`; en ese caso el estado es
+    OMITIDA y queda registrado: nunca se presenta como verificado un sistema de archivos que no se comprobó.
+    """
+    resultado: dict = {}
+    # --- FAT
+    fsck = _buscar("fsck.vfat")
+    if fsck is None:
+        if not omitir:
+            raise BuildError("falta fsck.vfat: la FAT no se puede verificar. Instale dosfstools o use --omitir-fsck "
+                             "(la imagen quedará registrada como SIN verificar)")
+        resultado["fat"] = {"estado": "OMITIDA", "motivo": "fsck.vfat no está instalado y se pidió --omitir-fsck"}
+    else:
+        with tempfile.TemporaryDirectory(dir=imagen.parent, prefix=".p1-") as t:
+            extraida = Path(t) / "p1.img"
+            with open(imagen, "rb") as src, open(extraida, "wb") as dst:
+                src.seek(off1)
+                restante = size1
+                while restante:
+                    bloque = src.read(min(restante, 8 * MIB))
+                    if not bloque:
+                        break
+                    dst.write(bloque)
+                    restante -= len(bloque)
+            r = subprocess.run([fsck, "-n", str(extraida)], capture_output=True, text=True, timeout=600)
         if r.returncode != 0:
             raise BuildError("fsck.vfat reporta problemas en la partición de arranque: " + (r.stdout + r.stderr).strip()[:400])
+        resultado["fat"] = {"estado": "OK", "herramienta": "fsck.vfat -n", "ruta": fsck}
+    # --- ext4 (e2fsck lee la partición in situ con ?offset=; -n = solo lectura)
+    e2 = _buscar("e2fsck")
+    if e2 is None:
+        if not omitir:
+            raise BuildError("falta e2fsck: el ext4 no se puede verificar. Instale e2fsprogs o use --omitir-fsck "
+                             "(la imagen quedará registrada como SIN verificar)")
+        resultado["ext4"] = {"estado": "OMITIDA", "motivo": "e2fsck no está instalado y se pidió --omitir-fsck"}
+    else:
+        r = subprocess.run([e2, "-fn", f"{imagen}?offset={off2}"], capture_output=True, text=True, timeout=1800)
+        if r.returncode != 0:
+            raise BuildError("e2fsck reporta problemas en el ext4: " + (r.stdout + r.stderr).strip()[-400:])
+        resultado["ext4"] = {"estado": "OK", "herramienta": "e2fsck -fn", "ruta": e2}
+    return resultado
+
+
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for b in iter(lambda: f.read(8 * MIB), b""):
+            h.update(b)
+    return h.hexdigest()
+
+
+def _escribir_informe(destino: Path, plan: dict, verificaciones: dict) -> None:
+    """Informe junto a la imagen: entradas con hash, hash de la imagen y verificaciones realmente ejecutadas."""
+    informe = {
+        "imagen": destino.name,
+        "sha256_imagen": _sha256(destino),
+        "bytes_imagen": destino.stat().st_size,
+        "entradas": {n: {"archivo": plan[n], "sha256": _sha256(Path(plan[n])), "bytes": Path(plan[n]).stat().st_size}
+                     for n in ("initramfs", "kernel")},
+        "rootfs_dir": plan["rootfs_dir"],
+        "particiones_mib": {"p1": plan["p1_mib"], "p2": plan["p2_mib"]},
+        "verificaciones": verificaciones,
+        "totalmente_verificada": all(v["estado"] == "OK" for v in verificaciones.values()),
+        "nota": "Una imagen verificada no prueba compatibilidad con la consola ni que arranque; el rootfs puede ser ficticio.",
+    }
+    with open(destino.with_name(destino.name + ".informe.json"), "x", encoding="utf-8") as f:
+        json.dump(informe, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -219,6 +278,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--p1-mib", type=int, default=512)
     ap.add_argument("--tamano-mib", type=int, default=12 * 1024)
     ap.add_argument("--omitir-verificacion", action="store_true", help="no comprobar el formato de kernel/initramfs (no recomendado)")
+    ap.add_argument("--omitir-fsck", action="store_true",
+                    help="permitir construir aunque falten fsck.vfat/e2fsck; la imagen se registra como SIN verificar")
     ap.add_argument("--dry-run", action="store_true", help="validar y mostrar el plan sin crear nada")
     args = ap.parse_args(argv)
     try:
@@ -230,7 +291,13 @@ def main(argv: list[str] | None = None) -> int:
     except BuildError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
-    print(f"OK: imagen creada en {destino}. No se escribió en ningún dispositivo.")
+    informe = json.loads(destino.with_name(destino.name + ".informe.json").read_text(encoding="utf-8"))
+    v = informe["verificaciones"]
+    estado = ", ".join(f"{k}: {x['estado']}" + (f" ({x['herramienta']})" if x["estado"] == "OK" else f" — {x['motivo']}") for k, x in v.items())
+    if informe["totalmente_verificada"]:
+        print(f"OK: imagen creada en {destino} (sha256 {informe['sha256_imagen']}). Sistemas de archivos verificados -> {estado}. No se escribió en ningún dispositivo.")
+    else:
+        print(f"ATENCIÓN: imagen creada en {destino} pero NO totalmente verificada -> {estado}. No se escribió en ningún dispositivo.", file=sys.stderr)
     return 0
 
 
