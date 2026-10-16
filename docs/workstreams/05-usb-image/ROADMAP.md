@@ -15,15 +15,15 @@ Depende de los workstreams 02 (tests), 03 (procedencia/licencias) y 04 (compatib
 - [x] I02 — Enumerar las rutas de lectura del loader y referencias al almacenamiento interno. Evidencia: `USB_ONLY_CHAIN_REVIEW_2026-10-16.md`; análisis de runtime de initramfs/rootfs sigue pendiente.
 - [x] I03 — Revisar fallback/mezcla de orígenes. El upstream mezcla por archivo; el parche USB-only evita rutas internas, pero se detectó un manejo incompleto de errores en archivos opcionales. Evidencia: `USB_ONLY_CHAIN_REVIEW_2026-10-16.md` y `PATCH_REVIEW_2026-10-16.md`.
 - [x] I04 — Definir invariantes USB-only y pruebas negativas. Evidencia: `USB_ONLY_CHAIN_REVIEW_2026-10-16.md`.
-- [ ] I05 — Revisar que los scripts de construcción operen solo sobre archivos/directorios de salida explícitos y no detecten ni escriban dispositivos automáticamente. Revisión estática inicial publicada en `IMAGE_TOOLING_REVIEW_2026-10-16.md`; corregido H-IMG-001 para impedir sobrescritura concurrente del destino, pendiente CI.
-- [ ] I06 — Ejecutar preflight/dry-run con fixtures sintéticos; no usar dispositivos físicos. Se añadió `tools/strict_usb_preflight.py` y `tests/test_strict_usb_preflight.py`; pendiente ejecución real de la suite/CI.
+- [ ] I05 — Revisar que los scripts de construcción operen solo sobre archivos/directorios de salida explícitos y no detecten ni escriban dispositivos automáticamente. Revisión estática inicial publicada en `IMAGE_TOOLING_REVIEW_2026-10-16.md`; corregido H-IMG-001 para impedir sobrescritura concurrente del destino, CI host-side aprobada en runs #61, #62 y #64; la compilación del loader upstream sigue pendiente.
+- [ ] I06 — Ejecutar preflight/dry-run con fixtures sintéticos; no usar dispositivos físicos. Se añadió `tools/strict_usb_preflight.py` y `tests/test_strict_usb_preflight.py`; CI host-side aprobada en runs #61, #62 y #64 para commits anteriores; verificar CI del head actual antes de declarar el estado actualizado.
 - [ ] I07 — Verificar formato, estructura, tamaño, hashes y reproducibilidad de la imagen candidata en PC.
 - [ ] I08 — Incorporar pruebas de seguridad para paths, symlinks, nombres de dispositivo ambiguos, sobrescritura de salidas y fallos parciales. Cobertura inicial de opcionales/symlinks en `tests/test_strict_usb_preflight.py` y publicación sin sobrescritura en `tests/test_build_usb_image.py`; faltan más casos de fallos de lectura y rutas.
 - [ ] I09 — Confirmar que el manifiesto referencia fuentes confiables y artefactos permitidos por licencia. Auditoría documental inicial publicada en `ARTIFACT_PROVENANCE_LICENSE_AUDIT_2026-10-16.md`; resultado actual: NO-GO para artefactos críticos por fuente/licencia incompletas.
 - [ ] I10 — Documentar recuperación, condiciones de aborto y criterios de aprobación previos a una prueba física.
 - [ ] I11 — ChatGPT revisa de forma independiente el diseño, el diff, las rutas de escritura y los claims de seguridad. Revisión inicial publicada en `PATCH_REVIEW_2026-10-16.md`; nueva iteración de contención documentada en `R_USB_001_CONTAINMENT.md` y `USB_MINIMAL_CONFIG_TEST_PLAN.md`.
 - [ ] I12 — Emitir informe final con propiedades demostradas, no demostradas, limitaciones y decisión go/no-go para una futura prueba física.
-- [ ] I13 — Resolver R-USB-001: se adoptó como contención excluir `bootargs.txt`/`vram.txt` del candidato inicial y se añadió un preflight estricto; el defecto general de `read_file()` sigue abierto y requiere corrección/reconstrucción o exclusión formal de los opcionales en la configuración final. Evidencia: `R_USB_001_CONTAINMENT.md`.
+- [ ] I13 — Resolver R-USB-001: se adoptó como contención excluir `bootargs.txt`/`vram.txt` del candidato inicial y se añadió un preflight estricto. Existe un parche C propuesto para endurecer `read_file()` y retirar las lecturas opcionales, pero aún no se aplicó a un checkout limpio ni se compiló. Evidencia: `R_USB_001_CONTAINMENT.md` y `R_USB_001_LOADER_HARDENING_PATCH_2026-10-16.md`.
 
 ## Criterios de aceptación
 
@@ -65,3 +65,13 @@ No editar `main` directamente. No escribir USB físico, no ejecutar payloads y n
 
 
 - Revisión adicional del preflight (2026-10-16): detecté que la política de ausencia de `bootargs.txt`/`vram.txt` solo comprobaba nombres exactos. Para no depender de diferencias de mayúsculas entre el filesystem del host y FAT, `tools/strict_usb_preflight.py` ahora rechaza variantes de caso (`BOOTARGS.TXT`, `VRAM.TXT`) y symlinks rotos con esos nombres reservados. Se agregaron dos tests y se actualizó `USB_MINIMAL_CONFIG_TEST_PLAN.md`. Commits: `45c3302` (corrección) y `f988159` (tests). La consulta disponible de runs asociados al commit no devolvió ejecuciones; la suite sigue pendiente de validación CI, no se declara verde.
+
+
+## Estado actualizado — barrido integrado (2026-10-16)
+
+- [x] Se publicó la matriz parcial de initramfs/rootfs en `INITRAMFS_ROOTFS_AUDIT_2026-10-16.md`. El documento no declara aislamiento runtime ni cierra el riesgo de acceso al HDD.
+- [x] Se confirmó mediante el README upstream fijado que la guía de distribución sube kernel e initramfs a `/data/linux/boot/`; ese procedimiento no satisface USB-only estricto.
+- [x] CI #64 pasó para el plan integrado anterior. Los commits documentales posteriores requieren verificar su propia ejecución.
+- [ ] Aplicar ambos parches del loader en checkout limpio y compilar. El acceso a archivos fuente por GitHub no sustituye `git apply --check` ni build.
+- [ ] Completar extracción e inventario de los 48 archivos del initramfs y auditoría del rootfs sin ejecutar sus contenidos.
+- [ ] Resolver procedencia/licencias y mantener NO-GO físico hasta cumplir los gates.
