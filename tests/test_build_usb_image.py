@@ -3,6 +3,7 @@
 No se usan dispositivos ni privilegios. Se omiten si faltan sfdisk/mkfs.vfat/mkfs.ext4.
 """
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -234,6 +235,16 @@ class TestConstruccion(Base):
         destino = bu.construir(plan)
         self.assertTrue(destino.is_file())
         self.assertTrue((self.dir / "out" / "prueba.json").is_file())
+        informe = json.loads((self.dir / "out" / "prueba.json").read_text(encoding="utf-8"))
+        self.assertNotIn(str(self.dir), json.dumps(informe))
+
+    def test_rutas_anonimizadas(self):
+        plan = bu.planificar(self.args())
+        bu.construir(plan)
+        informe = json.loads((self.dir / "out" / "prueba.json").read_text(encoding="utf-8"))
+        self.assertEqual(informe["plan"]["initramfs"], "i.cpio.gz")
+        self.assertEqual(informe["plan"]["kernel"], "k.bin")
+        self.assertEqual(informe["plan"]["rootfs_dir"], "rootfs")
 
     def test_fsck_falla_limpia(self):
         plan = bu.planificar(self.args())
