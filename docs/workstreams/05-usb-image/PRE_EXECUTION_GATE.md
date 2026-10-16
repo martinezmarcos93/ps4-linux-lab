@@ -22,13 +22,16 @@ Los bloqueos reales que quedan son:
 - [x] Modelo CUH-2115B y firmware 13.52 registrados.
 - [x] Southbridge reportado como Baikal B1 (`0x30201`); no volver a ejecutar payload para repetirlo.
 - [x] Kernel Baikal 7.0.8 identificado como candidato documental, no como compatibilidad probada.
-- [ ] Manifiesto de candidatos con URL, commit/tag, tamaño, digest API y hash local cuando el archivo ya esté disponible en el laboratorio.
-- [ ] Licencia/procedencia de loader, kernel, initramfs y rootfs resuelta a nivel de artefacto; si no, excluir el componente.
+- [x] Inventario inicial del kernel Baikal e initramfs en `manifests/arranque-catalogo.json`; hashes locales ya calculados y comparados con los digests API publicados.
+- [x] Compilación aislada del loader original y parcheado documentada en `docs/LOADER_BUILD_REPRO.md`; artefactos de build no ejecutados.
+- [ ] Cerrar manifiesto final con loader/payload, kernel, initramfs y rootfs exactos; separar hash local, digest API y hash del propio publicador.
+- [ ] Resolver licencia/procedencia de loader, kernel, initramfs y rootfs por componente; excluir lo que siga sin licencia/procedencia suficiente.
 
 **Salida G0:** lista cerrada de candidatos y artefactos que se excluyen.
 
 ### G1 — Herramientas host-side y pruebas
-- [ ] Claude termina workstream 02: suite completa en entorno limpio, regresiones y CI diagnosticada.
+- [ ] Claude termina workstream 02: suite completa en entorno limpio, regresiones y CI diagnosticada. Existen pruebas locales previas para verificadores/inspección, pero falta un resultado actual de suite completa en esta sesión.
+- [x] Herramientas host-side de verificación/inspección y modelo de loader existen en el repo (`verify_boot_chain.py`, `inspect_image.py`, `loader_model.py`).
 - [ ] Preflight rechaza rutas de dispositivos y no escribe ni monta unidades físicas.
 - [ ] Tests negativos cubren symlinks, path traversal, archivo existente, salida parcial, interrupción y hash incorrecto.
 - [ ] Se registra el comando exacto, versión de herramientas, salida real y estado de cada test.
@@ -36,12 +39,13 @@ Los bloqueos reales que quedan son:
 **Salida G1:** tests verdes o bloqueos externos documentados con evidencia; no se acepta “debería pasar”.
 
 ### G2 — Cadena USB-only e imagen sintética
-- [ ] Verificar independientemente el parche USB-only ya compilado y sus hashes/build logs; confirmar que la salida revisada corresponde al parche y al commit exactos.
+- [ ] Verificar independientemente el parche USB-only ya compilado y sus hashes/build logs; confirmar que la salida revisada corresponde al parche y al commit exactos. El registro existente afirma compilación repetible; la revisión independiente detectó R-USB-001 para el manejo de errores de archivos opcionales.
 - [ ] Definir una disposición donde kernel, initramfs, configuración y rootfs correspondan al mismo manifiesto.
 - [ ] El diseño debe fallar cerrado si falta cualquier artefacto; nunca tomar silenciosamente un archivo del disco interno.
-- [ ] Inspeccionar particiones, filesystem y contenido de la imagen en PC en modo de solo lectura o mediante herramientas de análisis que no modifiquen la imagen.
+- [x] Inspección inicial de la imagen publicada registrada en `docs/PLAN_INMEDIATO.md` y `docs/USB_ONLY_DESIGN.md`: particiones/layout leídos sin montar en escritura; el contenido de arranque actual no incluye `bzImage` con nombre exacto ni el kernel Baikal.
+- [ ] Inspeccionar una copia de imagen candidata tras agregar el kernel Baikal en la FAT, sin montar en escritura ni modificar dispositivos físicos.
 - [ ] Validar tamaño, estructura y hashes con fixtures sintéticos y salidas temporales explícitas.
-- [ ] Verificar por lectura estática los argumentos de arranque y cómo el initramfs localiza la raíz USB.
+- [ ] Verificar por lectura estática los argumentos de arranque y cómo el initramfs localiza la raíz USB; la revisión existente del initramfs/rootfs es parcial y no prueba que Linux no acceda al disco interno.
 - [ ] Documentar recuperación y límites de lo que no puede probarse sin hardware.
 
 **Salida G2:** imagen candidata reproducible/inspeccionada en PC y evidencia de que el diseño no depende de las rutas internas. Si la variante parcheada no pasa revisión o no se puede vincular a sus fuentes/build, mantener el NO-GO y corregir/reconstruirla en entorno aislado; no sustituirla por el loader upstream sin parche.
