@@ -61,6 +61,43 @@ Modelo (nombre, parámetros, cuantización exacta), backend usado (CPU puro / Vu
 
 Descartar la aceleración por GPU para LLM en este hardware si: (a) no existe ningún backend de cómputo mantenido que soporte esta generación de GCN con el driver `amdgpu`/Mesa disponibles en este rootfs, o (b) existiendo, el tiempo de desarrollo/parcheo necesario para hacerlo funcionar supera el valor de la mejora esperada frente al baseline de CPU. Documentar la decisión en `docs/DECISION_LOG.md` con la evidencia que la sostiene, sea cual sea el resultado.
 
-## 5. Límite explícito de este documento
+## 5. Investigación bibliográfica de backends LLM (2026-10-16)
 
-No se investigó en esta sesión: soporte de ROCm para GCN1-GCN4, existencia de un backend Vulkan-compute maduro para `llama.cpp` sobre Mesa RADV en esta generación, ni el stack real de Mesa que trae el rootfs Arch+KDE de la distribución (solo se conoce su atribución a "centi07 y DionKill", no su versión exacta ni su repositorio). Estos son los primeros vacíos a cerrar antes de ejecutar la Fase 8 del roadmap.
+**Conclusión provisional:** ROCm no es una ruta oficial demostrada para la GPU de PS4; Vulkan es una ruta experimental plausible, pero la evidencia disponible no demuestra que funcione en el rootfs concreto ni que sea suficientemente estable o rápida para inferencia.
+
+### 5.1 ROCm
+
+La matriz oficial vigente de ROCm describe las GPU soportadas y advierte que una GPU no incluida no tiene soporte oficial. La matriz consultada enumera familias AMD modernas (Instinct, Radeon recientes y Ryzen recientes), pero no identifica la GPU personalizada Liverpool de PS4. Por tanto:
+
+- **Estado:** NO SOPORTE OFICIAL CONFIRMADO para Liverpool/PS4 en la matriz consultada.
+- **No equivale a:** prueba de imposibilidad técnica o ausencia de forks comunitarios.
+- **Decisión:** no invertir en instalar ROCm ni adaptar HIP para esta consola mientras no aparezca una referencia primaria y reproducible que incluya explícitamente esta GPU.
+
+Fuentes:
+- AMD, matriz ROCm 10.1.0 (publicada 2026-08-25): https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html
+- AMD, requisito de hardware soportado: https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html
+
+### 5.2 Vulkan / RADV / llama.cpp
+
+La discusión técnica del proyecto ggml-org/llama.cpp sobre RADV señala que RADV se usa con GPU AMD soportadas por amdgpu, incluidas generaciones GCN; también advierte que GCN1/GCN2 puede requerir parámetros de kernel para forzar el driver amdgpu en lugar del driver antiguo radeon. Esto hace que Vulkan sea una hipótesis razonable para investigar, pero no prueba compatibilidad con el kernel modificado, firmware inyectado ni Mesa parcheado de PS4 Linux.
+
+La misma discusión identifica límites relevantes para esta generación: FP16 no está disponible en todas las GPU GCN antiguas, y las capacidades reales deben leerse del backend, no deducirse solo de que vulkaninfo funcione. Además, hay reportes recientes de errores/crashes en hardware GCN antiguo; por tanto, incluso una inicialización correcta no basta para declarar estabilidad.
+
+Fuentes:
+- ggml-org/llama.cpp, guía comunitaria de depuración RADV, 2026-05-18: https://github.com/ggml-org/llama.cpp/discussions/23295
+- ggml-org/llama.cpp, reporte de crash Vulkan en GCN 1.0 con RADV (caso de otra GPU, no PS4): https://github.com/ggml-org/llama.cpp/issues/19610
+
+### 5.3 Evaluación y decisión actual
+
+| Ruta | Evaluación documental | Decisión |
+|---|---|---|
+| ROCm/HIP | La GPU PS4 no figura como soportada oficialmente en la matriz consultada | No invertir en instalación; reconsiderar solo con evidencia específica |
+| Vulkan/RADV en llama.cpp | Backend existente y casos GCN reportados, pero sin prueba específica reproducible para PS4 Linux | Candidato experimental, condicionado a que el sistema arranque y exponga Vulkan estable |
+| OpenCL/CLBlast | No se encontró evidencia primaria suficiente para el rootfs ni la GPU de PS4 | No priorizar hasta hallar una distribución/runtime verificable |
+| CPU-only llama.cpp | No depende del backend GPU, pero rendimiento real desconocido | Baseline obligatorio si se alcanza un arranque estable |
+
+No instalar paquetes ni compilar frameworks todavía. Una vez logrado un arranque externo reproducible, la secuencia mínima será: identificar GPU/driver; registrar versiones de kernel, Mesa y Vulkan; ejecutar una prueba Vulkan pequeña; confirmar resultados correctos y estabilidad; recién entonces compilar llama.cpp con Vulkan y comparar el mismo modelo contra CPU-only.
+
+### 5.4 Límite de la investigación
+
+Esta investigación es bibliográfica y no equivale a un test sobre la PS4 del laboratorio. El southbridge de la consola sigue sin identificar, no se ha validado el rootfs candidato y no hay arranque Linux propio. La conclusión debe mantenerse como INFERENCE respaldada por fuentes externas, no como LAB-VERIFIED.
