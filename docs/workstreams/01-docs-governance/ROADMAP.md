@@ -71,8 +71,31 @@ Esta rama contenía dos roadmaps paralelos para la misma categoría: este archiv
 | D03 | TESTS | grep de patrones de credenciales/tokens/claves privadas + emails + IPs sobre árbol actual (`*.md/.py/.sh/.json/.yml`); verificación de nombres de archivo sensibles en todo el historial (`git log --all --name-only`, 89 commits) | Sin hallazgos. Alcance: patrones conocidos + nombres de archivo en todo el historial; **no** es un diff de contenido de cada blob histórico. |
 | D04 | BLOQUEADO | F04 | Falta archivo `LICENSE` en la raíz; decisión de licencia del código propio corresponde al mantenedor. |
 | D05 | EN CURSO | F08 (commit de esta sesión) | `docs/UPSTREAM_AUDIT.md` corregido; quedan F06/F07 pendientes de decisión de Marcos (no son enlaces rotos, son contenido a decidir). |
-| D06 | PENDIENTE | — | Sincronizar README/ROADMAP/DECISION_LOG/RISK_REGISTER/ARTIFACT_INVENTORY. |
-| D07 | TESTS | `python tools/check_docs.py` ejecutado: 4 problemas (los 4 enlaces de F09, excepción documentada); ver salida completa en el informe de cierre | Validador documental ejecutado con salida real. `scripts/check.sh` (suite completa) queda para workstream 02 por alcance. |
-| D08 | PENDIENTE | — | Revisar que las afirmaciones distingan IMPLEMENTADO/TESTS/CÓDIGO/TERCEROS/LAB. |
-| D09 | PENDIENTE | — | Redactar texto sugerido de About/topics para que Marcos lo aplique (no hay acceso de API en esta sesión). |
-| D10 | PENDIENTE | — | Informe de cierre al terminar D01-D09. |
+| D06 | EN CURSO | commit `ebc2c19`; grep de firmware/modelo/USB-only/VERIFIED en los 40 Markdown | README, ROADMAP, DECISION_LOG, RISK_REGISTER y ARTIFACT_INVENTORY coinciden en CUH-2115B/FW 13.52/861,4 GB/southbridge desconocido/USB-only no demostrado. README enlaza ahora WORKSTREAMS.md/WORKSTREAM_PLAN.md. No se hizo una pasada exhaustiva de cada doc restante (p. ej. BOOT_FLOW, ARCHITECTURE) más allá del grep dirigido. |
+| D07 | TESTS | `python tools/check_docs.py` ejecutado: 4 problemas (los 4 enlaces de F09, excepción documentada) | Validador documental ejecutado con salida real. `scripts/check.sh` (suite completa, `unittest`/`compileall`) queda para workstream 02 por alcance y dependencia del plan maestro. |
+| D08 | TESTS | grep de `VERIFIED` y de frases de arranque exitoso en los 40 Markdown | Ningún documento propio se autoasigna `VERIFIED` o un arranque logrado sin atribuirlo a terceros y marcarlo como no reproducido; la única mención de "arranque exitoso" (`GPU_AND_LLM_RESEARCH.md`) remite a reportes de terceros en `COMPATIBILITY_MATRIX.md`, correctamente separados. |
+| D09 | IMPLEMENTADO | `docs/PUBLICATION_AUDIT.md` §"Descripción sugerida para GitHub About" y §"Topics sugeridos" | Ya existía (sesión previa a esta rama); no se duplica. Pendiente que Marcos lo aplique manualmente en GitHub (sin acceso de API en esta sesión) — checklist de `PUBLICATION_AUDIT.md` sigue sin tildar ese ítem porque la aplicación real no se verificó. |
+| D10 | IMPLEMENTADO | esta sección + commits `bc4222c`…`ebc2c19` | Informe de cierre más abajo. |
+
+## Informe de cierre — workstream/01-docs-governance (2026-10-16)
+
+**Commits de esta sesión (rama local, no pusheada — requiere `autorizo el push`):**
+`bc4222c` merge de main, `b0e8782` consolidación de roadmaps duplicados, `4da7891` fix de referencia "privado" obsoleta, `a3a9764` registro de hallazgos F06-F09, `d328757` D-022 (autorización de publicación retroactiva), `5af81ad` cierre de F06/F07, `ebc2c19` enlace de WORKSTREAMS.md en README.
+
+**Archivos modificados:** `docs/workstreams/01-docs-governance/ROADMAP.md`, `docs/UPSTREAM_AUDIT.md`, `docs/DECISION_LOG.md`, `README.md`. Eliminados (consolidados): `docs/roadmaps/ROADMAP-DOCS-GOVERNANCE.md`, `docs/roadmaps/AUDIT-DOCS-GOVERNANCE.md`.
+
+**Tests/validadores ejecutados realmente:** `python tools/check_docs.py` (dos corridas, antes y después de los cambios; 4/4 problemas son la excepción F09 documentada). Barrido de secretos/PII con `grep` sobre el árbol actual (patrones de credenciales, emails, IPs) y sobre nombres de archivo de los 89 commits del historial completo (`git log --all --name-only`) — sin hallazgos en ambos casos.
+
+**Evidencia por tarea:** ver tabla "Registro de ejecución" arriba.
+
+**Pendientes y bloqueos reales (no se declaran resueltos):**
+- D01/D06 no son una pasada exhaustiva de los 40 Markdown uno por uno; se hizo inventario + greps dirigidos a las contradicciones de mayor riesgo (privacidad, USB-only, VERIFIED, firmware/modelo). Podrían existir inconsistencias menores no detectadas por esos patrones.
+- D04 (`BLOQUEADO`): no hay archivo `LICENSE` en la raíz; es una decisión de Marcos, no se infiere.
+- F07: archivos de bitácora de OpenCode quedan en `docs/opencode/...` por decisión explícita de Marcos (documentar, no mover/borrar).
+- D09: el texto de About/topics está redactado; falta que Marcos lo aplique en GitHub (fuera del alcance de esta sesión).
+- Los 4 enlaces rotos que reporta `check_docs.py` seguirán apareciendo en cualquier rama individual hasta integrar las 5 ramas de workstream a `main` (F09, excepción aceptada, no es un defecto a corregir aquí).
+- No se ejecutó `scripts/check.sh` (suite completa de tests) — corresponde a `workstream/02-tools-tests` según el plan maestro.
+
+**Porcentaje de avance real:** ~75 % del alcance de D01-D10. Cerrados o con evidencia suficiente: D02, D03, D07, D08, D09, D10. Con evidencia parcial pero no exhaustiva: D01, D05, D06. Bloqueado por decisión del mantenedor: D04.
+
+**Declaración explícita:** **no se cumplen todos los criterios de aceptación todavía.** No se declara el 100 % de esta categoría: falta la decisión de licencia (D04, bloqueada), una pasada más exhaustiva de sincronización documental (D01/D06) y que Marcos aplique los metadatos de GitHub (D09, fuera del alcance de esta sesión). No hay bloqueos ocultos: todos están listados arriba.
