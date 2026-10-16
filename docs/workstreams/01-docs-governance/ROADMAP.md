@@ -49,17 +49,30 @@ Esta rama contenía dos roadmaps paralelos para la misma categoría: este archiv
 | F04 | No hay archivo `LICENSE` en la raíz del repositorio. | Alta | Confirmado en este checkout (`LICENSE*` solo resuelve `docs/LICENSE_POLICY.md`). Pendiente (D04): es una decisión del mantenedor, no se infiere ni se agrega una licencia por suposición. |
 | F05 | El validador documental disponible (`tools/check_docs.py`) no escanea secretos ni licencias; solo cubre Markdown, enlaces y frases obsoletas. | Media | Confirmado tras leer el script (D07/D03 pendientes: ejecutar y, por separado, barrer secretos con otra herramienta). |
 
+## Hallazgos nuevos (esta sesión, Claude Code)
+
+| ID | Hallazgo | Severidad | Estado |
+|---|---|---|---|
+| F06 | `docs/DECISION_LOG.md` (línea ~92, 2026-10-15) registra explícitamente que "hacer público el repositorio" **seguía sin autorización** en ese momento. El repositorio está confirmado público hoy (`docs/PUBLICATION_AUDIT.md`, `docs/CI_DIAGNOSIS.md`, y el acceso de esta sesión sin credenciales). No existe una entrada `D-0XX` posterior que registre que Marcos autorizó el cambio de visibilidad. | Alta | **No resuelto por el agente** — requiere que Marcos confirme si autorizó la publicación y, si así fue, que se registre esa decisión en `DECISION_LOG.md`. No se inventa ni se asume la autorización. |
+| F07 | `docs/opencode/2026-10-15-docs-quality-audit/` contiene bitácora/roadmap interno de otro agente (OpenCode) para una tarea (`check_docs_links.py`, `DOCS_QUALITY_CHECKS.md`) que nunca se completó — esos archivos no existen en el repo. Es trabajo en curso de otro agente mezclado en el árbol público de `docs/`, no documentación del proyecto. | Baja/Media | Pendiente de decisión de Marcos (archivar, mover fuera de `docs/`, o dejar). No se borra trabajo de otro agente sin autorización. |
+| F08 | `docs/UPSTREAM_AUDIT.md:47` describía el repositorio como "privado" pese a estar público desde la auditoría de publicación. | Media | **Corregido en este commit** (se quitó la calificación obsoleta y se referenció `PUBLICATION_AUDIT.md`). |
+| F09 | `docs/WORKSTREAMS.md` enlaza a `workstreams/0N-*/ROADMAP.md` para las categorías 2-5; esos archivos solo existen en sus respectivas ramas de trabajo. Desde cualquier rama individual (incluida `main`), `tools/check_docs.py` reporta esos enlaces como rotos hasta integrar todas las ramas. | Baja | Excepción documentada (ver abajo); no se fuerza una corrección que requeriría mezclar ramas fuera de la política de coordinación. |
+
+## Excepciones de enlaces documentadas
+
+- `docs/WORKSTREAMS.md` → `workstreams/02-tools-tests/ROADMAP.md`, `workstreams/03-upstream-audit/ROADMAP.md`, `workstreams/04-compatibility/ROADMAP.md`, `workstreams/05-usb-image/ROADMAP.md`: rotos en cualquier checkout de una sola rama (F09). Se resuelven solo tras integrar las cinco ramas de workstream a `main`; no se simulan con archivos vacíos.
+
 ## Registro de ejecución
 
 | ID | Estado | Evidencia / commit | Observaciones |
 |---|---|---|---|
-| D01 | EN CURSO | — | Inventario de Markdown y enlaces en curso en esta sesión. |
-| D02 | EN CURSO | F01, F02 | Contradicciones de CI ya corregidas; se sigue revisando el resto del árbol. |
-| D03 | PENDIENTE | — | Barrido de secretos en árbol actual, sin imprimir contenido sensible. |
+| D01 | EN CURSO | 40 Markdown inventariados (`find . -name "*.md"`) | Inventario de Markdown hecho; falta revisar scripts/manifiestos/workflows (parte de D01 original). |
+| D02 | EN CURSO | F01, F02, F06, F08 | Contradicciones de CI corregidas; nueva contradicción F06 (publicación sin decisión registrada) requiere a Marcos, no se resuelve documentalmente. |
+| D03 | TESTS | grep de patrones de credenciales/tokens/claves privadas + emails + IPs sobre árbol actual (`*.md/.py/.sh/.json/.yml`); verificación de nombres de archivo sensibles en todo el historial (`git log --all --name-only`, 89 commits) | Sin hallazgos. Alcance: patrones conocidos + nombres de archivo en todo el historial; **no** es un diff de contenido de cada blob histórico. |
 | D04 | BLOQUEADO | F04 | Falta archivo `LICENSE` en la raíz; decisión de licencia del código propio corresponde al mantenedor. |
-| D05 | PENDIENTE | — | Corrección de enlaces rotos y contradicciones restantes. |
+| D05 | EN CURSO | F08 (commit de esta sesión) | `docs/UPSTREAM_AUDIT.md` corregido; quedan F06/F07 pendientes de decisión de Marcos (no son enlaces rotos, son contenido a decidir). |
 | D06 | PENDIENTE | — | Sincronizar README/ROADMAP/DECISION_LOG/RISK_REGISTER/ARTIFACT_INVENTORY. |
-| D07 | PENDIENTE | F03, F05 | Ejecutar `scripts/check.sh` / `tools/check_docs.py` y registrar salida real. |
+| D07 | TESTS | `python tools/check_docs.py` ejecutado: 4 problemas (los 4 enlaces de F09, excepción documentada); ver salida completa en el informe de cierre | Validador documental ejecutado con salida real. `scripts/check.sh` (suite completa) queda para workstream 02 por alcance. |
 | D08 | PENDIENTE | — | Revisar que las afirmaciones distingan IMPLEMENTADO/TESTS/CÓDIGO/TERCEROS/LAB. |
 | D09 | PENDIENTE | — | Redactar texto sugerido de About/topics para que Marcos lo aplique (no hay acceso de API en esta sesión). |
 | D10 | PENDIENTE | — | Informe de cierre al terminar D01-D09. |
