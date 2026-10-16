@@ -156,6 +156,26 @@ def _ejecutar(cmd: list[str]) -> None:
         raise BuildError(f"falló {' '.join(cmd[:2])}: {(r.stderr or r.stdout).strip()[:400]}")
 
 
+def _publicar_sin_sobrescribir(parcial: Path, destino: Path) -> None:
+    """Publica un archivo temporal de forma atómica sin reemplazar un destino concurrente.
+
+    Ambos paths deben estar en el mismo filesystem. os.link falla si el destino existe;
+    después se elimina el nombre temporal. No usar os.replace: podría pisar un archivo
+    creado después de validar_salida() (TOCTOU).
+    """
+    try:
+        os.link(parcial, destino, follow_symlinks=False)
+    except FileExistsError as exc:
+        raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe") from exc
+    except OSError as exc:
+        raise BuildError(f"no se pudo publicar la imagen sin sobrescribir: {exc}") from exc
+    try:
+        os.unlink(parcial)
+    except OSError as exc:
+        # El destino ya es una publicación válida; el temporal sobrante se informa.
+        raise BuildError(f"imagen publicada en '{destino}', pero no se pudo retirar el temporal '{parcial}': {exc}") from exc
+
+
 def construir(plan: dict) -> Path:
     sfdisk, mkvfat, mkext4 = _herramienta("sfdisk"), _herramienta("mkfs.vfat"), _herramienta("mkfs.ext4")
     destino = Path(plan["salida"])
@@ -179,7 +199,7 @@ def construir(plan: dict) -> Path:
         _ejecutar([mkext4, "-q", "-F", "-L", "psxitarch", "-E", f"offset={off2}", "-d", plan["rootfs_dir"],
                    str(parcial), str(size2 // 1024)])
         _verificar_p1(parcial, off1, size1)
-        os.replace(parcial, destino)
+        _publicar_sin_sobrescribir(parcial, destino)
         return destino
     except subprocess.CalledProcessError as exc:
         raise BuildError(f"falló {exc.cmd[0]}: {(exc.stderr or exc.stdout or '').strip()[:400]}") from exc
