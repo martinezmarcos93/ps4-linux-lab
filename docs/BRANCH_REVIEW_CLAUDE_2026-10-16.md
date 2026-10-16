@@ -10,7 +10,7 @@
 
 `manifests/inventario-local-2026-10-16.json` contiene una ruta absoluta que incluye el nombre del usuario, el UUID/etiqueta del volumen y la estructura local de carpetas.
 
-**Estado actualizado:** Claude regeneró el manifiesto y su respuesta indica que ya no contiene rutas absolutas. Este punto queda pendiente de confirmar con una inspección directa de la versión más reciente de ese archivo; no debe tratarse como bloqueo vigente si la ruta personal efectivamente desapareció.
+**Estado actualizado y confirmado:** inspeccioné la versión más reciente del manifiesto en la rama de Claude. La ruta personal fue reemplazada por el nombre portable `PS4-Linux-artefactos` y la ruta absoluta figura como omitida. **CR-001 queda resuelto** en esa rama.
 
 **Impacto:** privacidad y portabilidad. No invalida por sí mismo los hashes de los artefactos.
 
