@@ -5,9 +5,10 @@
 - Run #53: [resultado](https://github.com/martinezmarcos93/ps4-linux-lab/actions/runs/38926947822) — **success** para el commit `b6b46937e2c3799079517b28ec03f0c19811215a`.
 - Run #58: [resultado](https://github.com/martinezmarcos93/ps4-linux-lab/actions/runs/38927608404) — **failure** por una aserción estática que coincidía también con líneas eliminadas del parche.
 - Run #61: [resultado](https://github.com/martinezmarcos93/ps4-linux-lab/actions/runs/38927741956) — **success** para `ee1df08e47970314213d8cd063478490a1c01971`; las pruebas unitarias y la coherencia documental finalizaron correctamente.
-- Run #62: [resultado](https://github.com/martinezmarcos93/ps4-linux-lab/actions/runs/38927771709) — **success** para el cambio documental posterior, según el último estado de ejecución consultado.
+- Run #62: [resultado](https://github.com/martinezmarcos93/ps4-linux-lab/actions/runs/38927771709) — **success** para el cambio documental posterior.
+- Run #64: [resultado](https://github.com/martinezmarcos93/ps4-linux-lab/actions/runs/38928578354) — **success** para el commit `1355836a08e1e1ef92bbdf36dc66c2fb7c71975d`, que incluye el plan integrado de barridos y esta actualización del registro CI.
 
-La falla #58 se corrigió para examinar solo las líneas añadidas del parche. La suite host-side está verde en #61 y #62; esto no valida el código C upstream.
+La falla #58 se corrigió para examinar solo las líneas añadidas del parche. La suite host-side está verde en #61, #62 y #64; el run #64 ejecutó los tests unitarios y la comprobación de coherencia documental. Esto no valida el código C upstream.
 
 ## Qué demuestra y qué no
 
