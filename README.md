@@ -106,6 +106,8 @@ python3 tools/build_usb_image.py --salida img.img --initramfs ... --kernel ... -
 python3 tools/payload_static.py goldhen.bin --referencia <referencia-verificada>
 python3 tools/elf_audit.py linux-1024mb.elf --fuente fw_offsets.h
 python3 tools/check_docs.py
+python3 tools/kernel_inspect.py /ruta/a/bzImage
+python3 tools/inventariar_artefactos.py --raiz kernel=/ruta/a/artefactos --markdown
 bash scripts/build_loader_isolated.sh <src-loader> <salida-nueva> [--patch p]
 ```
 
