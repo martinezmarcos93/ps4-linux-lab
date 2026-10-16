@@ -9,14 +9,15 @@ all: use compiled-in command-line and VRAM defaults. Harden read_file() so
 failure leaves outputs NULL/zero, validates lseek/mmap, handles partial reads,
 and releases resources on every error path.
 
-This is a source patch only. It is not compiled or executed by this file.
+This is a source patch only. It has not yet been compiled or applied to a
+checkout; the CI run for the lab repository does not compile this upstream C.
 
 --- a/linux/main-aio.c
 +++ b/linux/main-aio.c
-@@ -170,20 +170,49 @@
- int read_file(char *path, char **ptr, unsigned long long *sz)
- {
-     int fd = open(path, O_RDONLY);
+@@ -180,19 +180,50 @@
+-int read_file(char *path, char **ptr, unsigned long long *sz)
+-{
+-    int fd = open(path, O_RDONLY);
 -    if (fd < 0) return -1;
 -    *sz = lseek(fd, 0, SEEK_END);
 -    *ptr = mmap(NULL, *sz, PROT_READ | PROT_WRITE,
@@ -31,6 +32,11 @@ This is a source patch only. It is not compiled or executed by this file.
 -        l -= chk;
 -    }
 -    close(fd);
+-    return 0;
+-}
++int read_file(char *path, char **ptr, unsigned long long *sz)
++{
++    int fd = open(path, O_RDONLY);
 +    off_t end;
 +    char *buffer;
 +    unsigned long long remaining;
@@ -56,8 +62,7 @@ This is a source patch only. It is not compiled or executed by this file.
 +    remaining = (unsigned long long)end;
 +    char *cursor = buffer;
 +    while (remaining > 0) {
-+        size_t chunk = remaining > (unsigned long long)SIZE_MAX
-+                     ? SIZE_MAX : (size_t)remaining;
++        size_t chunk = (size_t)remaining;
 +        ssize_t got = read(fd, cursor, chunk);
 +        if (got <= 0)
 +            goto fail_mmap;
@@ -71,21 +76,16 @@ This is a source patch only. It is not compiled or executed by this file.
 +    }
 +    *ptr = buffer;
 +    *sz = (unsigned long long)end;
-     return 0;
++    return 0;
 +
 +fail_mmap:
 +    munmap(buffer, (size_t)end);
 +fail:
 +    close(fd);
 +    return -1;
- }
-@@ -428,29 +457,14 @@
--    char *cmdline = NULL; unsigned long long cmdline_size = 0;
--    char *vramstr = NULL; unsigned long long vramstr_size = 0;
--    int vram_mb = 0;
-+    char *cmdline = NULL;
-+    int vram_mb = VRAM_MB_DEFAULT;
-@@
++}
+
+@@ -454,22 +482,8 @@
 -    /* Opcionales: solo de la MISMA carpeta; si faltan se usan los valores por defecto. */
 -    load_from(boot_dir, "bootargs.txt", &cmdline, &cmdline_size);
 -
