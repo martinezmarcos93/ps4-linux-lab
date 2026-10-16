@@ -83,6 +83,7 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Diagnóstico de CI](docs/CI_DIAGNOSIS.md) | Estado del workflow y alternativas |
 | [Informe de estado público](docs/PUBLIC_PROJECT_STATUS.md) | Relevamiento de avances y pendientes |
 | [Auditoría de publicación pública](docs/PUBLICATION_AUDIT.md) | Revisión de documentación para un repositorio público |
+| [Auditoría de recursos externos y plan revisado](docs/AUDITORIA_RECURSOS_EXTERNOS_Y_PLAN_2026-10-16.md) | Análisis de todos los recursos propuestos, selección de kernel/initramfs y nuevas puertas de decisión |
 
 ## Herramientas locales
 
