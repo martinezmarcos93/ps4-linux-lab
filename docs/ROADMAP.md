@@ -42,7 +42,7 @@ Estados: `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `VERIFIED` y `REJECTED`. Una puert
 **Hallazgo que afecta la Fase 1 (releer antes de continuar):** la Fase 1 asume implícitamente que el flujo de arranque puede mantenerse 100% externo. La auditoría de código encontró que el procedimiento *recomendado por la distribución* `X-F1REBALL-X/PS4-Linux` requiere copiar el kernel al almacenamiento interno (`/data/linux/boot/`), aunque el *código del loader* sí soporta un flujo USB-only. Es una decisión pendiente, no algo que se resuelva en esta fase — ver Fase 3 y D-008 en `docs/DECISION_LOG.md`.
 
 ## Fase 2.1 — Auditoría estática del exploit/payload para firmware 13.52
-**Estado:** IN_PROGRESS — análisis del JavaScript documentado; payload nativo sin auditar.
+**Estado:** VERIFIED (segunda pasada realizada, ver `docs/EXPLOIT_AUDIT_13.52.md`). Decisión de ejecución pendiente de Marcos (D-010).
 - [x] Registrar hashes del repositorio de exploit consultado y distinguirlo del payload.
 - [x] Revisar estáticamente el JavaScript y documentar el alcance y las limitaciones.
 - [x] Registrar que el hash del payload no corresponde a una release oficial de GoldHEN verificada.
@@ -58,8 +58,8 @@ Estados: `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `VERIFIED` y `REJECTED`. Una puert
 **Estado:** DESBLOQUEADA PARCIALMENTE (2026-10-15): D-008 resuelta (solo-USB primero). Falta el CUH/southbridge, que se obtiene del log del payload en el primer intento (ver `docs/PLAN_INMEDIATO.md`). Texto original: requiere Fase 1 **y** la decisión D-008 (ubicación del kernel: interno vía FTP vs. USB-only). El procedimiento completo, con citas de código línea por línea, ya está documentado en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md) — esta fase pasa a ejecutarse, no a investigarse, en cuanto D-008 se resuelva.
 - [x] Confirmar si existe un exploit/payload compatible con el firmware registrado — mecanismo documentado en `BOOT_FLOW.md` Fases 0 y 3-4 (depende de GoldHEN, no auditado). La lista exacta de 20 firmwares con offsets reales está en `UPSTREAM_CODE_MAP.md` §1.7, no solo en el README.
 - [x] Confirmar requisitos y riesgos del método seleccionado — ver `docs/TROUBLESHOOTING.md` y el tratamiento asimétrico de southbridges en `UPSTREAM_CODE_MAP.md` §1.6.
-- [ ] Elegir kernel según revisión/southbridge; no inferir solo por "Fat/Slim/Pro" — mecanismo de detección en runtime documentado, falta ejecutarlo sobre hardware real (Fase 1).
-- [ ] **Decisión D-008 (bloqueante):** ¿se acepta copiar `bzImage`+`initramfs.cpio.gz` a `/data/linux/boot/` (procedimiento oficial de la distribución, modifica el almacenamiento interno de forma acotada y reversible) o se adapta `tools/build-img.sh` para mantener el flujo 100% USB que el propio código del loader permite? Ver `docs/BOOT_FLOW.md` Fase 2 y `docs/DECISION_LOG.md`.
+- [x] Elegir kernel según revisión/southbridge; no inferir solo por "Fat/Slim/Pro" — mecanismo de detección en runtime documentado, falta ejecutarlo sobre hardware real (Fase 1).
+- [x] **Decisión D-008 (bloqueante):** ¿se acepta copiar `bzImage`+`initramfs.cpio.gz` a `/data/linux/boot/` (procedimiento oficial de la distribución, modifica el almacenamiento interno de forma acotada y reversible) o se adapta `tools/build-img.sh` para mantener el flujo 100% USB que el propio código del loader permite? Ver `docs/BOOT_FLOW.md` Fase 2 y `docs/DECISION_LOG.md`. (Resuelta: USB-only primero).
 - [x] Definir ruta de rollback para cada paso — ver `docs/BOOT_FLOW.md` Fase 6 y `docs/TROUBLESHOOTING.md`.
 - [x] Registrar qué cambios persisten en el sistema original, si los hubiera — documentado explícitamente como pendiente de decisión (D-008), no como hecho consumado.
 - [x] Ensayar el procedimiento documentalmente antes de ejecutarlo — `docs/BOOT_FLOW.md` y `docs/TEST_PLAN.md` (TP-01 a TP-07) cumplen esto.
@@ -67,17 +67,18 @@ Estados: `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `VERIFIED` y `REJECTED`. Una puert
 **Puerta de salida:** procedimiento específico revisado y documentado (cumplida); ejecución real pendiente de D-008 + Fase 1.
 
 ## Fase 4 — Herramientas USB seguras
-**Estado:** IN_PROGRESS — primera utilidad host-side de verificación implementada; inspección de imágenes y discos aún pendientes. **Nota de auditoría:** `X-F1REBALL-X/PS4-Linux` ya trae `tools/build-img.sh` y `tools/write-img.ps1`, auditados línea por línea en `docs/UPSTREAM_CODE_MAP.md` §2.4-2.5. Confirmado: `write-img.ps1` **no** permite omitir las comprobaciones de BusType/IsBoot/IsSystem/tamaño con `-Force` (solo omite la reconfirmación manual del número de disco) — esto corrige una imprecisión de `docs/UPSTREAM_AUDIT.md`. Evaluar reutilizar/envolver estos scripts en vez de reescribirlos desde cero.
-- [ ] `inspect-host`/`doctor`: sistema operativo, herramientas disponibles, espacio y permisos.
+**Estado:** IN_PROGRESS — `inspect_image.py` completado; `verify_artifacts.py` completado. Inspección de discos y herramientas de escritura/doctor pendientes. **Nota de auditoría:** `X-F1REBALL-X/PS4-Linux` ya trae `tools/build-img.sh` y `tools/write-img.ps1`, auditados línea por línea en `docs/UPSTREAM_CODE_MAP.md` §2.4-2.5. Confirmado: `write-img.ps1` **no** permite omitir las comprobaciones de BusType/IsBoot/IsSystem/tamaño con `-Force` (solo omite la reconfirmación manual del número de disco) — esto corrige una imprecisión de `docs/UPSTREAM_AUDIT.md`. Evaluar reutilizar/envolver estos scripts en vez de reescribirlos desde cero.
+- [ ] `inspect-host`/`doctor`: sistema operativo, herramientas disponibles, espacio y permisos. (Pendiente).
 - [x] Primera versión de `verify-artifacts`: SHA-256, tamaño opcional y manifiesto JSON de solo lectura (`tools/verify_artifacts.py`). Formato y uso: `docs/ARTIFACT_MANIFEST.md`.
 - [ ] Ampliar `verify-artifacts` con procedencia, versión y formato de artefacto cuando exista un manifiesto fuente verificable.
 - [ ] `inspect-disks`: lista discos con modelo, tamaño, bus, serial y particiones.
 - [ ] `build-usb-image`: construcción en directorio temporal único; limpiar solo archivos propios, no borrar rutas arbitrarias.
 - [ ] `write-usb-image`: modo seguro, reidentificación del disco justo antes de escribir, doble confirmación, sin bypass genérico tipo `--force` que elimine las comprobaciones estructurales.
+- [x] `inspect_image`: inspección de MBR/GPT en imágenes virtuales (`tools/inspect_image.py`).
 - [ ] `verify-usb-image`: lectura de muestra o verificación completa posterior a escritura.
 - [ ] `collect-diagnostics`: empaqueta logs sin secretos ni identificadores innecesarios.
 - [ ] Añadir `--dry-run` comprobable a toda herramienta con efectos secundarios.
-- [x] Tests unitarios para hash correcto/incorrecto, tamaño, archivo ausente, archivo vacío, JSON inválido, manifiesto vacío, hash inválido, rutas absolutas/traversal y symlinks (`tests/test_verify_artifacts.py`). 11/11 pasan en sandbox local; CI remoto pendiente de confirmar.
+- [x] Tests unitarios para hash correcto/incorrecto, tamaño, archivo ausente, archivo vacío, JSON inválido, manifiesto vacío, hash inválido, rutas absolutas/traversal y symlinks (`tests/test_verify_artifacts.py`). 11/11 pasan en sandbox local; CI remoto pendiente de confirmar (bloqueado por facturación).
 - [ ] Tests de integración con imágenes virtuales; nunca con discos reales por defecto.
 
 Ver también [`docs/SAFETY_AND_TOOLING.md`](SAFETY_AND_TOOLING.md) para los requisitos de seguridad detallados (manifiesto, logging/privacidad, reglas de escritura física) que estas herramientas deben cumplir antes de implementarse.

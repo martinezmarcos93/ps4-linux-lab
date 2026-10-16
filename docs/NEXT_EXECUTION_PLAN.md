@@ -13,19 +13,19 @@
 
 ## Tarea A — Auditar el payload nativo sin ejecutarlo
 **Responsable sugerido:** Claude Code en el equipo local.  
-**Estado:** PENDIENTE.
+**Estado:** COMPLETADA (segunda pasada realizada, ver `docs/EXPLOIT_AUDIT_13.52.md`). Decisión de ejecución pendiente de Marcos (D-010).
 
-1. Confirmar que el checkout local está limpio y que `main` incluye el commit publicado `bdf7bb7d6f510dd33d6c26a52e2d21c69fe482e3`.
-2. Verificar qué herramientas existen (`rizin`, `rz-bin`, `objdump`, `llvm-objdump`, `strings`, `sha256sum`). No instalar nada sin necesidad demostrada.
-3. Descargar el archivo de la revisión exacta `raw13g/raw13g.github.io@9ba2f07` a un directorio temporal fuera del repo. No ejecutar ni servir el archivo.
-4. Calcular SHA-256 y comprobar que coincide con `df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12`. Si no coincide, parar y explicar la discrepancia.
-5. Analizar el blob como x86-64 crudo con herramienta estática, documentando dirección base asumida, límites de decodificación, saltos, regiones no decodificables y referencias a estructuras/offsets. No presentar un desensamblado lineal como prueba de comprensión completa.
-6. Comparar, si se obtiene una referencia oficial legítima y verificable, hashes y diferencias con la versión oficial más cercana. No llamar “oficial” a un binario solo por su nombre o cadenas.
-7. Revisar los datos de entrada y los artefactos auxiliares usados por el exploit, manteniendo todo offline.
-8. Escribir `docs/EXPLOIT_AUDIT_13.52.md` con método, comandos, versiones de herramientas, hashes, observaciones, limitaciones y conclusión. Si no se puede concluir qué hace el payload, el estado sigue siendo **NO VERIFICADO**.
-9. No ejecutar el binario, no lanzarlo contra la consola y no instalar REA como atajo.
+1. [x] Confirmar que el checkout local está limpio y que `main` incluye el commit publicado `bdf7bb7d6f510dd33d6c26a52e2d21c69fe482e3`.
+2. [x] Verificar qué herramientas existen (`rizin`, `rz-bin`, `objdump`, `llvm-objdump`, `strings`, `sha256sum`). No instalar nada sin necesidad demostrada.
+3. [x] Descargar el archivo de la revisión exacta `raw13g/raw13g.github.io@9ba2f07` a un directorio temporal fuera del repo. No ejecutar ni servir el archivo.
+4. [x] Calcular SHA-256 y comprobar que coincide con `df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12`. Si no coincide, parar y explicar la discrepancia.
+5. [x] Analizar el blob como x86-64 crudo con herramienta estática, documentando dirección base asumida, límites de decodificación, saltos, regiones no decodificables y referencias a estructuras/offsets. No presentar un desensamblado lineal como prueba de comprensión completa.
+6. [x] Comparar, si se obtiene una referencia oficial legítima y verificable, hashes y diferencias con la versión oficial más cercana. No llamar “oficial” a un binario solo por su nombre o cadenas.
+7. [x] Revisar los datos de entrada y los artefactos auxiliares usados por el exploit, manteniendo todo offline.
+8. [x] Escribir `docs/EXPLOIT_AUDIT_13.52.md` con método, comandos, versiones de herramientas, hashes, observaciones, limitaciones y conclusión. Si no se puede concluir qué hace el payload, el estado sigue siendo **NO VERIFICADO**.
+9. [x] No ejecutar el binario, no lanzarlo contra la consola y no instalar REA como atajo.
 
-**Salida exigida:** auditoría reproducible, con afirmaciones clasificadas como observación/inferencia/hipótesis y una lista explícita de preguntas sin resolver.
+**Salida conseguida:** auditoría reproducible, con afirmaciones clasificadas como observación/inferencia/hipótesis y una lista explícita de preguntas sin resolver. Cuerpo zlib descomprimido y comparado con release oficial (80% cadenas comunes). Límites: código máquina del cuerpo sin auditar, origen no verificable.
 
 ## Tarea B — Utilidades de PC no destructivas
 **Estado:** PENDIENTE; puede avanzar en paralelo.
@@ -33,9 +33,9 @@
 1. [x] Implementar verificador de manifiestos SHA-256 de solo lectura en `tools/verify_artifacts.py`.
 2. [x] Añadir 11 tests para hash correcto/incorrecto, tamaño, archivo ausente/vacío, manifiesto malformado, rutas inseguras y symlinks.
 3. [x] Ejecutar la suite en sandbox local: 11/11 PASS.
-4. [ ] Diagnosticar el workflow GitHub Actions: los runs observados terminaron en FAIL con runner_id=0, sin pasos ni logs disponibles; no asumir que la suite falló ni que pasó.
-5. [ ] Confirmar en CI que se ejecuta `python -m unittest discover -v` y que los tests pasan.
-6. [ ] Implementar inspección de imagen en modo solo lectura; no abrir block devices ni escribir medios.
+4. [x] Diagnosticar el workflow GitHub Actions: los runs observados terminaron en FAIL con runner_id=0, sin pasos ni logs disponibles; no asumir que la suite falló ni que pasó (confirmado problema de facturación en `docs/CI_DIAGNOSIS.md`).
+5. [ ] Confirmar en CI que se ejecuta `python -m unittest discover -v` y que los tests pasan (bloqueado por facturación).
+6. [x] Implementar inspección de imagen en modo solo lectura; no abrir block devices ni escribir medios (`tools/inspect_image.py`, 24 tests).
 7. [ ] Añadir un `doctor` que informe dependencias y sistema operativo sin instalar ni cambiar nada.
 8. [ ] No implementar aún la escritura física de USB. Mantenerla fuera del código ejecutable hasta revisar y aprobar los tests.
 

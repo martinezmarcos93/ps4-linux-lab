@@ -18,8 +18,8 @@ Objetivo: llegar a un primer arranque de Linux desde USB **sin escribir en el di
 ## Etapa 2 — Escribir el USB (decisión puntual de Marcos)
 - [ ] `write-usb-image` aún no existe; se construye con tests sobre imágenes virtuales (Fase 4 del roadmap). Hasta entonces, escritura manual con el pendrive **identificado por modelo/tamaño/serie**, nunca por `/dev/sdX`, y con confirmación tuya.
 
-## Etapa 3 — Primer intento real — **BLOQUEADA por D-010** (gate de revisión estática del payload) y requiere el "go" de Marcos
-Antes de esta etapa: analizar el stub inicial de `goldhen.bin` (Tarea A de `NEXT_EXECUTION_PLAN.md`) y verificar la barrera de red (D-016). Si la revisión no es concluyente, decide Marcos con la información.
+## Etapa 3 — Primer intento real — **BLOQUEADA hasta el "go" de Marcos** (D-010 resuelta como "informe completado, decisión de ejecución pendiente")
+Antes de esta etapa: verificar la barrera de red (D-016). La auditoría del payload (`EXPLOIT_AUDIT_13.52.md`) ya se realizó (D-010). Si Marcos decide ejecutar, se procede.
 Preflight, en orden:
 1. `python3 tools/ps4lab.py verify --dir <copia> --manifiesto manifests/raw13g-9ba2f07.json` → OK.
 2. PS4: DNS manual `127.0.0.1`, sin sesión de PSN.
@@ -39,5 +39,5 @@ Con el southbridge conocido se elige `baikal` o `belize` y se prueba el flujo so
 ## Estado tras Etapa 1 (2026-10-15)
 - Imagen `psxitarch-usb.img` (8 871 489 536 B) verificada contra `SHA256SUMS`; MBR con p1 FAT32 de 512 MiB y p2 ext4 (`inspect_image`).
 - **Contenido de p1 (leído sin montar):** `initramfs.cpio.gz` (4 102 011 B, igual al del release), `bzImage.belize` (20 415 488 B, kernel Belize renombrado) y `System Volume Information` (la imagen pasó por Windows). **No hay `bzImage` a secas ni kernel Baikal.**
-- **Consecuencia para D-008 (solo-USB):** tal como viene, el loader no encontraría kernel en el USB (a propósito, para compartir USB entre consolas). Para el flujo solo-USB habría que añadir en p1 una copia del kernel correcto con el nombre `bzImage`. El kernel correcto depende del southbridge, que aún se desconoce. Esa modificación se hará sobre una **copia de la imagen** (nunca sobre el original ni sobre un dispositivo) y requiere montar la imagen (privilegios) o escribir FAT con una herramienta; queda pendiente.
+- **Consecuencia para D-008 (solo-USB):** tal como viene, el loader no encontraría kernel en el USB (a propósito, para compartir USB entre consolas). Para el flujo solo-USB, habría que añadir en p1 una copia del kernel correcto con el nombre `bzImage`. El kernel correcto depende del southbridge, que aún se desconoce. Esa modificación se hará sobre una **copia de la imagen** (nunca sobre el original ni sobre un dispositivo) y requiere montar la imagen (privilegios) o escribir FAT con una herramienta; queda pendiente, pero la dirección de diseño (USB-only) ya está tomada.
 - El "primer intento real" (Etapa 3) queda a la espera del **sí de Marcos** a ejecutar el payload en su consola con las condiciones de D-015/D-016.
