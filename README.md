@@ -2,7 +2,7 @@
 
 Laboratorio público de investigación para ejecutar Linux desde almacenamiento externo en una PlayStation 4, con énfasis en auditoría técnica, reproducibilidad, seguridad y trazabilidad.
 
-**Estado actual: investigación y preparación; todavía no se ha demostrado un arranque Linux propio en la consola.** El equipo de laboratorio es una PS4 Slim **CUH-2115B**, firmware **13.52** y capacidad observada de **861,4 GB**. El southbridge no está identificado. Por eso, la selección final de kernel/método sigue bloqueada. La arquitectura objetivo es **USB-only**: mantener intacto el almacenamiento interno durante las primeras fases. Es una decisión de diseño, no una propiedad ya verificada en hardware.
+**Estado actual: investigación y preparación; todavía no se ha demostrado un arranque Linux propio en la consola.** El equipo de laboratorio es una PS4 Slim **CUH-2115B**, firmware **13.52** y capacidad observada de **861,4 GB**. El southbridge reportado por el operador es **Baikal B1 (`0x30201`)**; aún debe tratarse como observación del operador, no como verificación independiente. La selección final de kernel/método sigue bloqueada. La arquitectura objetivo es **USB-only**: mantener intacto el almacenamiento interno durante las primeras fases. Es una decisión de diseño, no una propiedad ya verificada en hardware.
 
 > Proyecto experimental y comunitario. No se garantiza compatibilidad, estabilidad ni ausencia de riesgos. No se deben ejecutar payloads, escribir imágenes en dispositivos físicos ni modificar la consola sin revisar las auditorías, los riesgos y los criterios de salida.
 
@@ -83,6 +83,13 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Diagnóstico de CI](docs/CI_DIAGNOSIS.md) | Estado del workflow y alternativas |
 | [Informe de estado público](docs/PUBLIC_PROJECT_STATUS.md) | Relevamiento de avances y pendientes |
 | [Auditoría de publicación pública](docs/PUBLICATION_AUDIT.md) | Revisión de documentación para un repositorio público |
+| [Auditoría de recursos externos y plan revisado](docs/AUDITORIA_RECURSOS_EXTERNOS_Y_PLAN_2026-10-16.md) | Análisis de kernels, loader v25.1, initramfs, distros, herramientas y próximos pasos |
+| [Auditoría de cadena Baikal](docs/AUDITORIA_CADENA_BAIKAL.md) | Auditoría integrada de compatibilidad y bloqueos |
+| [Selección de kernel](docs/KERNEL_SELECTION.md) | Comparación de candidatos y criterios de selección |
+| [Plan de validación Baikal](docs/PLAN_VALIDACION_BAIKAL.md) | Puertas de validación por etapas |
+| [Revisión de kernel_inspect](docs/REVIEW_KERNEL_INSPECT_ZSTD_2026-10-16.md) | Límites de la inspección estática del kernel |
+| [Revisión independiente OpenCode](docs/OPENCODE_REVIEW_2026-10-16.md) | Hallazgos técnicos de revisión cruzada |
+| [Revisión cruzada documental](docs/CROSS_DOC_AUDIT_2026-10-16.md) | Contradicciones y tareas de consolidación |
 | [Auditoría de recursos externos y plan revisado](docs/AUDITORIA_RECURSOS_EXTERNOS_Y_PLAN_2026-10-16.md) | Análisis de todos los recursos propuestos, selección de kernel/initramfs y nuevas puertas de decisión |
 
 ## Herramientas locales
