@@ -22,10 +22,10 @@
 |---|---|---|
 | Nombre de sistema | PS4-199 | Información del sistema |
 | Software del sistema | 13.52 | Información del sistema |
-| MAC LAN | f8:46:1c:c1:70:e9 | Información del sistema |
-| MAC Wi-Fi | 40:99:22:0b:e1:43 | Información del sistema |
-| Hostname en red | PS4-C170E9.local (mDNS, sufijo = últimos 3 bytes de la MAC LAN) | `avahi-browse` |
-| IP (Wi-Fi) | 192.168.1.98 (DHCP, puede cambiar) | mDNS + `nmap -sn` |
+| MAC LAN | **REDACTADO** (identificador de red sensible) | Información del sistema; valor omitido de la versión pública |
+| MAC Wi-Fi | **REDACTADO** (identificador de red sensible) | Información del sistema; valor omitido de la versión pública |
+| Hostname en red | **REDACTADO** | mDNS; valor omitido de la versión pública |
+| IP (Wi-Fi) | **REDACTADO** (IP privada de LAN) | mDNS + `nmap -sn`; valor omitido de la versión pública |
 | Almacenamiento | 555,1 GB / 861,4 GB (no se sabe si el primero es libre o usado) | Ajustes → Almacenamiento |
 | Puertos TCP abiertos | ninguno de 1-1024, 2121, 3232, 9090, 9295-9302 | `nmap -sT` |
 | Servicio mDNS | `_spotify-connect._tcp` | `avahi-browse` |
@@ -36,7 +36,7 @@
 - **Southbridge:** sigue sin confirmar. No inferir Baikal/Belize únicamente a partir del CUH; ver `COMPATIBILITY_MATRIX.md` §7.
 
 ## Procedimiento
-1. Escaneo pasivo de la LAN 192.168.1.0/24 con `nmap -sn` y `avahi-browse`.
+1. Escaneo pasivo de la LAN local con `nmap -sn` y `avahi-browse`; el rango y los identificadores se omiten en la versión pública.
 2. Sondeo TCP de puertos típicos de PS4/GoldHEN sobre los hosts activos.
 3. Lectura manual de Información del sistema y Almacenamiento en la consola.
 4. Lectura de la etiqueta: CUH-2115B, dato comunicado por el operador.
@@ -51,7 +51,7 @@
 
 ## Resultado
 - Estado: IN_PROGRESS (CUH y firmware identificados; southbridge y compatibilidad de arranque aún pendientes).
-- Evidencia: tabla de datos observados arriba (lectura directa en pantalla y escaneo de red).
+- Evidencia: tabla de datos observados arriba (lectura directa en pantalla y escaneo de red); identificadores de red redactados por privacidad.
 - Hipótesis confirmada/refutada: confirmado que 13.52 está dentro de la lista de firmwares del loader (`COMPATIBILITY_MATRIX.md` §3). No confirmado que haya método de jailbreak viable en esta consola concreta.
 - Variable única para el próximo intento: revisar el inventario de artefactos y la evidencia de compatibilidad; el southbridge continúa desconocido.
 - Rollback ejecutado y resultado: n/a, no se modificó nada.
