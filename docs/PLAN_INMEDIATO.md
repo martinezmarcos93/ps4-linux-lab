@@ -35,3 +35,9 @@ Con el southbridge conocido se elige `baikal` o `belize` y se prueba el flujo so
 ## En paralelo
 - HDMI contra el monitor: probar otra entrada/cable o modo seguro → *Cambiar resolución*; no bloquea nada (la TV sirve).
 - Sin etiqueta: si el southbridge sale en Etapa 3, el CUH deja de ser necesario para elegir kernel.
+
+## Estado tras Etapa 1 (2026-10-15)
+- Imagen `psxitarch-usb.img` (8 871 489 536 B) verificada contra `SHA256SUMS`; MBR con p1 FAT32 de 512 MiB y p2 ext4 (`inspect_image`).
+- **Contenido de p1 (leído sin montar):** `initramfs.cpio.gz` (4 102 011 B, igual al del release), `bzImage.belize` (20 415 488 B, kernel Belize renombrado) y `System Volume Information` (la imagen pasó por Windows). **No hay `bzImage` a secas ni kernel Baikal.**
+- **Consecuencia para D-008 (solo-USB):** tal como viene, el loader no encontraría kernel en el USB (a propósito, para compartir USB entre consolas). Para el flujo solo-USB habría que añadir en p1 una copia del kernel correcto con el nombre `bzImage`. El kernel correcto depende del southbridge, que aún se desconoce. Esa modificación se hará sobre una **copia de la imagen** (nunca sobre el original ni sobre un dispositivo) y requiere montar la imagen (privilegios) o escribir FAT con una herramienta; queda pendiente.
+- El "primer intento real" (Etapa 3) queda a la espera del **sí de Marcos** a ejecutar el payload en su consola con las condiciones de D-015/D-016.

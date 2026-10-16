@@ -96,6 +96,7 @@ Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-
 - **Decisión:** no ejecutar `goldhen.bin` en la consola mientras siga siendo un blob nativo sin fuente y sin desensamblado revisado. El análisis del JavaScript no valida el payload nativo.
 - **Siguiente acción:** análisis offline con Rizin/objdump si ya están disponibles; documentar offsets, regiones no decodificables, llamadas/saltos relevantes y límites. No ejecutar el binario ni cargarlo en la PS4 durante esta etapa.
 - **Revisión:** después de un informe reproducible de análisis estático y de evaluar la procedencia/hash del artefacto. La decisión de ejecutar en hardware seguirá siendo separada.
+- **Actualización 2026-10-15:** el informe reproducible existe (`EXPLOIT_AUDIT_13.52.md`, segunda pasada): el cuerpo se descomprime (zlib), se identifica como GoldHEN v2.4b18.12, sin hosts ajenos a GoldHEN/GitHub/Google, con ~80 % de cadenas en común con el release oficial 2.4b18. **Límites:** sin revisión del código máquina del cuerpo, sin referencia oficial exacta y sin compilación reproducible. El gate pasa a **"informe completado, decisión de ejecución pendiente de Marcos"**; no se ejecuta nada hasta ese "sí".
 
 ## D-011 — Posponer REA y no instalar herramientas de agente todavía
 - **Fecha:** 2026-10-15.
