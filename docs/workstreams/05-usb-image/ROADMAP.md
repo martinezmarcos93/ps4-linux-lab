@@ -47,6 +47,7 @@ No editar `main` directamente. No escribir USB físico, no ejecutar payloads y n
 - No se modificó `main`, no se ejecutó payload ni se escribió un dispositivo físico.
 
 
-- Revisión posterior: se corrigió la ubicación de un decorador de skip para que las pruebas de publicación sin sobrescritura no queden omitidas por las condiciones de las pruebas de construcción. Se endureció además `_cadena()` en el escritor FAT32: solo acepta marcadores válidos de fin de cadena y rechaza entradas libres/reservadas/dañadas; se añadió una prueba con cadena raíz corrupta que verifica que no haya escrituras adicionales. Estas dos modificaciones aún requieren CI posterior a sus commits.
+- Revisión posterior: se corrigió la ubicación de un decorador de skip para que las pruebas de publicación sin sobrescritura no queden omitidas por las condiciones de las pruebas de construcción. Se endureció `_cadena()` para rechazar terminadores FAT inválidos y se validó la geometría BPB (tamaño de FAT suficiente, regiones dentro del volumen); las pruebas verifican rechazo y hash inalterado ante entradas corruptas. El run #45 pasó para el commit `dea17f6` (incluye el código y tests FAT); el run #46, sobre el commit documental `3e4f298`, sigue en curso al actualizar esta nota.
 
+- [ ] H-FAT-001/H-FAT-002 — La corrección de cadena FAT y geometría BPB está implementada; CI #45 pasó con tests y documentación para `dea17f6`. Falta confirmar el run más reciente y revisar casos residuales.
 - [ ] H-IMG-001 — Cerrar con CI la publicación atómica sin sobrescritura y confirmar tests host-side.
