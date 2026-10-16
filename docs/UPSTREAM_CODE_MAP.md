@@ -77,9 +77,25 @@ loader/
 
 `linux/Makefile` (líneas `FIRMWARES = 505 672 700 750 800 850 900 903 960 1000 1050 1100 1102 1150 1200 1250 1300 1302 1350 1352`) es la fuente de verdad: son exactamente las mismas 20 versiones que tienen entrada en `fw_offsets.h`. El README puede listar "13.52(?)" con incertidumbre, pero el build únicamente genera blobs para estas 20 versiones exactas; cualquier firmware fuera de esta lista (incluyendo versiones posteriores a 13.52) **no tiene offsets** y `find_offsets_by_fw()` lo rechaza explícitamente.
 
-### 1.8 Lo que el código **no** hace (verificado por ausencia)
+### 1.8 Lo que el código **no** hace (verificado por ausencia) y qué pasó con la "copia automática"
 
-Se buscó explícitamente (`grep -rni "O_CREAT|O_WRONLY|/data/linux|/user/system/boot|write_file|fwrite"` sobre `linux/` y `lib/`) cualquier escritura hacia `/data/linux/boot/` o `/user/system/boot/`. **No se encontró ninguna.** El payload auditado en este commit solo **lee** esas rutas como respaldo; nunca copia archivos hacia ellas. Esto contradice la entrada del changelog del propio README (ver `docs/EVIDENCE_SOURCES.md`, sección de discrepancias) que describe una función "Automatic boot files placement" de una versión anterior (v23) — **PENDIENTE DE VERIFICACIÓN:** no se determinó si esa función existió en v23 y fue removida, si pertenece a una rama distinta de ArabPixel/ps4-linux-payloads no incluida en este mirror, o si nunca estuvo en este payload "AIO" concreto.
+**Alcance de la búsqueda (2026-10-15, historial completo de 71 commits clonado en una carpeta aislada, sin ejecutar nada):**
+- `git log --all -S"O_CREAT"` y `-S"O_WRONLY"` sobre todo el historial: solo el commit inicial `d55dd2c` (2022-10-26, "linuxpayloads"), en el `main()` de prueba de `acpi.c` (`fd = open(argv[1], O_RDWR)`, no forma parte del payload). `-S"creat("`, `-S"time="` y `-S"CURRENTTIME"` sobre fuentes no-markdown: **sin resultados**. `-S"/data/linux"` aparece solo en las definiciones de lectura (`HDD_BOOT_PATH`).
+- Estado del código en cinco instantáneas (`2d5cb44` 2025-09-26, `e82e513` 2025-12-31, `e9ddc48^` 2026-03-28, `e9ddc48` 2026-04-01 —la unificación AIO—, `f70f43a` HEAD): en todas, los archivos de arranque solo se **leen** con la macro/lógica `L(...)` (`main.c`/`main-baikal.c` antes de AIO, `main-aio.c` después).
+- La frase "Automatic boot files placement — … copied automatically to /data/linux/boot on the internal drive" entra en el `README.md` en `8a1468f` (2025-09-26, commit **solo de README**), cuando el código era `main.c`/`main-baikal.c` y no tenía ninguna escritura. El matiz "from the external fat32 partition" lo agrega `7280a37` (2026-04-02, otro commit solo de README). La frase sobre pasar la hora a `time=CURRENTTIME` entra en el mismo commit `8a1468f` y **tampoco** tiene código en ningún commit.
+- En los artefactos que sí se pudieron inspeccionar: el `init` y `functions.sh` del initramfs v0.9.1 no copian a `/data/linux/boot` ni procesan `time=`; el ELF `linux-1024mb.elf` tiene como únicas rutas literales las de lectura (`tools/elf_audit.py`), y su tabla `fw_table` coincide con `fw_offsets.h` de `f70f43a`.
+
+**Respuestas a las preguntas del encargo (todas con el límite indicado):**
+| Pregunta | Respuesta demostrable |
+|---|---|
+| ¿Qué componente realiza la copia? | **DESCONOCIDO.** Ningún componente inspeccionado la realiza. Quedan sin inspeccionar: el código real de los *releases* (el workflow de CI no los publica) y cualquier initramfs distinto del v0.9.1 de la distribución. |
+| ¿En qué versión se introdujo? | La *afirmación* se introduce en el README el 2025-09-26 (`8a1468f`), antes de la v23 (2026-03-28) que algunos documentos citaban; **ningún commit** introduce el *código*. |
+| ¿Cuándo ocurre? ¿Es obligatoria? | No determinable: no hay código. Se descarta que sea obligatoria para el binario cuyo código se leyó (arranca con solo leer). |
+| ¿Puede combinar archivos de distintas ubicaciones? | **Sí, demostrado por código** (`main-aio.c` 375-389): resuelve cada archivo por separado. Modelado en `tools/loader_model.py`. |
+| ¿Rutas de escritura adicionales? | Ninguna encontrada en el payload ni en el ELF distribuido. El kernel Linux resultante es una incógnita aparte (§1.5: recibe `key/eap_hdd_key.bin`, línea 381-382 de `ps4-kexec-common/firmware.c`). |
+| ¿Qué evidencia faltaría? | Código fuente de los releases + compilación reproducible; el contenido de cualquier otro initramfs que se vaya a usar; y una observación de laboratorio del disco interno antes/después (D-017). |
+
+Esto reemplaza la nota anterior ("posible función de v23 removida"): **esa hipótesis queda refutada para las instantáneas revisadas**, no resuelta en general.
 
 ### 1.9 Licencias dentro de este repositorio (no asumir una sola)
 
@@ -124,7 +140,7 @@ ps4-linux-fat/
 | `boot/initramfs.cpio.gz` | `3f373bd6c469e490eaf4e5cf4d2e8ed77cf7bb91449b6a18da6a6529d479169b` |
 | `payload/linux-1024mb.elf` | `623c3b68592437b612ede22a4fc1a6f1eef6b17c4b16a1270100ece04cb3c98f` |
 
-(Lista completa de los 9 payloads en `docs/EVIDENCE_SOURCES.md`.) Todos los `payload/linux-*mb.elf` pesan exactamente 320 936 bytes — consistente con que el tamaño de VRAM se parametriza en runtime vía `vram.txt`/nombre de payload, no con un binario distinto por tamaño en esta build concreta. **PENDIENTE DE VERIFICACIÓN:** no se confirmó si estos 9 archivos son binariamente idénticos entre sí (no se comparó byte a byte); el tamaño igual es compatible con que solo cambie una constante de compilación (`VRAM_MB_DEFAULT`), lo cual a su vez es coherente con el código de `linux/Makefile` del otro repo.
+(Lista completa de los 9 payloads en `docs/EVIDENCE_SOURCES.md`.) Todos los `payload/linux-*mb.elf` pesan exactamente 320 936 bytes — consistente con que el tamaño de VRAM se parametriza en runtime vía `vram.txt`/nombre de payload, no con un binario distinto por tamaño en esta build concreta. **Verificado el 2026-10-15** (`tools/elf_audit.py --comparar`, solo lectura): los 9 ELF **no** son idénticos (9 sha256 distintos) pero difieren de `linux-1024mb.elf` en solo 21-24 bytes: 19-20 en `.note.gnu.build-id` y 2-4 en `.text` (la constante de `VRAM_MB_DEFAULT`). Es decir, el mismo código con distinto tamaño de VRAM por defecto. Además, el ELF de 1024 MB está sin strip, compilado con `GCC: (GNU) 16.2.1 20260810`, y su tabla `fw_table` (20 firmwares, de 5.05 a 13.52) coincide fila a fila con `linux/fw_offsets.h` de `f70f43a`. Eso es coherencia entre binario y código en esa tabla y en los literales de ruta; **no** es una compilación reproducible: los blobs `kexec.bin` embebidos no se han podido comparar.
 
 ### 2.4 `tools/build-img.sh` (bash, 43 líneas) — hallazgos puntuales con línea exacta
 
@@ -135,12 +151,23 @@ ps4-linux-fat/
 - Línea 41: calcula SHA-256 del `.img` final — util para verificación posterior, consistente con nuestra política de hashes.
 - Ejecuta herramientas de partición/filesystem como root (uso esperado dentro de una VM/WSL dedicada, no en el sistema host de producción).
 
+**Hallazgos adicionales de la revisión de 2026-10-15 (revisión manual; `shellcheck` no reporta nada):**
+- No hay `trap` de limpieza: con `set -e`, un fallo tras `losetup`/`mount` deja el dispositivo loop y los montajes `/mnt/psx` y `/mnt/psxboot` activos (se desmontan solo al final feliz, línea 36-38).
+- Los puntos de montaje son fijos y no se comprueba que estén libres ni que `mount` no se haya aplicado ya a otra cosa.
+- `sleep 2` después de `losetup -Pf` es una carrera (debería esperarse a udev/`partprobe`).
+- El destino `OUT` (`$3`) no se valida: pasar un dispositivo (`/dev/sdX`) haría que `cp --sparse=never "$IMG" "$OUT"` escriba la imagen sobre el disco. El uso documentado es un archivo, pero nada lo exige.
+- `"${SPARE[@]}"` bajo `set -u` falla con bash < 4.4 si no hay kernels de repuesto.
+- Tamaño fijo de 12 GiB incompatible con el mínimo de 16 GB si el USB real es algo menor que su capacidad nominal.
+Todo esto se mitiga en `tools/build_usb_image.py` (solo archivo, sin root, temporal + `os.replace`, rechazo de rutas del sistema y de dispositivos, `fsck.vfat` sobre p1). No se modifica el script upstream.
+
 ### 2.5 `tools/write-img.ps1` (PowerShell, 106 líneas) — hallazgos puntuales, con corrección a nuestra auditoría previa
 
 - Líneas 56-58: **estas comprobaciones (`BusType -ne 'USB'`, `IsBoot/IsSystem`, tamaño insuficiente) son incondicionales — `-Force` NO las omite.** Esto corrige una imprecisión de `docs/UPSTREAM_AUDIT.md` (que decía que `-Force` "permite omitir la confirmación" sin aclarar qué parte); `-Force` (línea 64) **solo** omite el paso interactivo de reescribir el número de disco como segunda confirmación (líneas 64-67), no los chequeos de seguridad estructurales.
 - Líneas 86-94: técnica deliberada de escritura — pone a cero el primer MB, escribe el resto, y **recién al final** escribe el MBR real — para evitar que Windows monte una partición a mitad de la escritura.
 - Soporta `.img.xz` descomprimiendo al vuelo vía `7z.exe` (líneas 40-47, 74-78) — introduce una dependencia externa (7-Zip) no declarada como prerequisito explícito en el README.
 - Requiere PowerShell como Administrador (líneas 32-35) — coherente con nuestro entorno Windows-first.
+
+**Hallazgos adicionales (2026-10-15):** la comprobación `BusType -eq 'USB'` admite un **disco USB externo de datos** del PC (no solo un pendrive): la salvaguarda real es el número de disco tecleado por la persona. Entre la consulta de `Get-Disk` y la escritura (tras la confirmación interactiva) no se vuelve a enumerar el disco, de modo que un cambio de numeración por desconexión/reconexión no se detecta. El `Clear-Disk -RemoveData -RemoveOEM` se ejecuta si hay particiones. El proyecto no incorpora este script ni lo ejecuta (D-013); el procedimiento de escritura física queda como paso manual revisado.
 
 ### 2.6 Créditos del README como mapa de procedencia (cadena completa reconstruida)
 
@@ -155,14 +182,23 @@ ps4-linux-fat/
 9. **centi07, DionKill** — paquetes de Mesa y drivers de video parcheados para PS4.
 10. **SiSTR0** — GoldHEN (jailbreak + servidor FTP + BinLoader/PayLoader) — **el mecanismo externo que el propio `ps4-kexec-common/README.md` dice que es indispensable y que este laboratorio no audita ni distribuye.**
 
-### 2.7 Nomenclatura de versión del kernel — señal de alerta, no conclusión
+### 2.7 Nomenclatura de versión del kernel — RESUELTA por observación directa
 
-El archivo de configuración se llama `kernel-7.1.7-Strawberry-General.config` y su primera línea es `# Linux/x86_64 7.1.7 Kernel Configuration`. En paralelo, un reporte de la comunidad (issue #10 del loader, ver `docs/EVIDENCE_SOURCES.md`) describe una instalación funcional usando "Kernel 5.4.247 Baikal build" — un número de versión mainline de Linux real y muy distinto. **HIPÓTESIS, no confirmada:** "7.1.7"/"7.0.8" son probablemente la numeración propia del fork "Strawberry" de rmuxnet (no la versión de Linux mainline), y la base real podría ser una rama LTS de Linux 5.4.x, dado que 5.4 fue una base común para ports de GPU GCN1/Polaris de esa época. No localizamos ni auditamos el repositorio fuente del kernel "Strawberry"; este punto queda **PENDIENTE DE VERIFICACIÓN** antes de citar una versión de Linux en cualquier documento técnico.
+La hipótesis anterior ("7.1.7/7.0.8 serían numeración propia del fork") queda **refutada** (D-009): la cabecera de arranque x86 de cada `bzImage` trae la cadena `kernel_version` y dice `7.0.8-Strawberry-FullLTO-Baikal-+ … Tue Sep 8 03:09:52 CEST 2026` y `7.1.7-Strawberry-General-FullLTO+ … Tue Aug 25 18:56:41 UTC 2026`. Son Linux 7.0.8 y 7.1.7. El "Kernel 5.4.247" del issue #10 es otra compilación. Lectura reproducible con `tools/verify_boot_chain.py`.
 
 ### 2.8 Licencias
 
 - `LICENSE` (raíz): GPL-3.0 completo.
 - `NOTICE`: aclara explícitamente que esa GPL-3 cubre "guía, scripts e instalación de imagen" (es decir, `build-img.sh`/`write-img.ps1`/README), que los **kernels son GPLv2** (herencia obligatoria de Linux), y que "el loader, el initramfs y la imagen de Arch Linux fueron hechos por otras personas y mantienen sus licencias originales" — sin especificar cuáles son esas licencias para cada componente. Esto es insuficiente para nuestra política (`docs/LICENSE_POLICY.md`): antes de redistribuir o modificar el rootfs Arch+KDE o el initramfs, hay que identificar la licencia real de Psxitarch/better-initramfs/Erkkola-KDE-rootfs en sus propios repositorios — **no auditados en esta sesión**.
+
+### 2.9 Initramfs y rootfs de la imagen publicada (lectura estática, 2026-10-15)
+
+Origen: `initramfs.cpio.gz` sha256 `3f373bd6…9169b` (48 entradas, `VERSION` = `v0.9.1`, better-initramfs) extraído solo para leer texto, y la imagen `psxitarch-usb.img` del release `v1.0` (sha256 contrastado con `SHA256SUMS`) leída **sin montar** con `debugfs`/`7z`. No se ejecutó nada.
+- `init` (100 líneas): monta `proc`, `sys`, `dev`; procesa la línea de órdenes; `sleep 10`; **`mount LABEL=psxitarch /newroot`**; `switch_root`; si falla, `rescueshell`. No monta discos internos ni copia archivos. No existe `/hooks`.
+- `bin/install-psxitarch.sh` (115 líneas, **manual**, no se invoca desde `init`): recorre `/dev/sda…/dev/sdk`, monta la partición 1 de cada uno y elige el primero que contenga `bzImage`, `initramfs.cpio.gz` **y** `psxitarch.tar.gz`; a ese dispositivo le aplica `fdisk` (`o`, `n`, `w`), `mkfs.vfat` y `mke2fs`. Riesgo: si el disco interno de la PS4 aparece como `/dev/sd?`, el script solo lo tocaría si su partición 1 tuviera esos tres archivos (no ocurre en un disco de PS4), pero es un script destructivo que opera sobre dispositivos elegidos por heurística. También copia `/key/eap_hdd_key.bin` a `/newroot/etc/cryptmount`, persistiendo en el USB la clave del disco de **esa** consola. La imagen publicada no trae `/etc/cryptmount`, o sea, ese script no se ejecutó para armarla.
+- `bin/start-psxitarch.sh`: monta `LABEL=psxitarch` y `switch_root`.
+- Rootfs (partición 2): `/etc/fstab` **vacío** (solo comentarios), servicios habilitados en `multi-user.target.wants`: `NetworkManager.service`, `remote-fs.target`; `display-manager`, `bluetooth` y `timesyncd` presentes; usuario `abc` en `/home`; `/boot` con `vmlinuz-linux-lts` e `initramfs-linux-lts.img` (kernel de Arch dentro del rootfs, no usado por el loader); no existe `/data`.
+- No se auditó el resto del rootfs (paquetes, credenciales por defecto, servicios de red); queda como riesgo (R-?) en `RISK_REGISTER.md`.
 
 ---
 
@@ -172,7 +208,7 @@ El archivo de configuración se llama `kernel-7.1.7-Strawberry-General.config` y
 
 ## 4. Limitaciones de esta auditoría
 
-- No se clonó el historial completo (`--depth 1`); no se revisaron commits anteriores al HEAD de cada rama.
+- Historial: el del loader se clonó completo el 2026-10-15 (71 commits) para la búsqueda de §1.8; el de `X-F1REBALL-X/PS4-Linux` y los demás siguen sin revisarse más allá de HEAD.
 - No se auditó `Al-Azif/ps4-skeleton`, `ArabPixel/ps4-linux-payloads` (el upstream real del loader), el kernel "Strawberry" de rmuxnet, Psxitarch, `better-initramfs`, el rootfs de Erkkola, los paquetes de Mesa de centi07/DionKill, ni GoldHEN. Son dependencias de hecho de este proyecto y deberían auditarse antes de depender de ellas en producción.
-- No se abrió el binario `bzImage` ni los `.elf` con herramientas de desensamblado; el análisis de `payload/` se basa en el código fuente equivalente del otro repositorio, no en los binarios mismos.
-- Los 20 offsets de `fw_offsets.h` no se validaron independientemente; se documentan como existen en el código.
+- Los `.elf` se inspeccionaron con `readelf`/`tools/elf_audit.py` (secciones, símbolos, `.rodata`, `fw_table`), no se desensamblaron; los blobs `kexec` embebidos no se compararon con una compilación. El `bzImage` solo se leyó en su cabecera de arranque.
+- Los 20 offsets de `fw_offsets.h` no se validaron independientemente; el commit `9acef9f` marca los de 13.52 como "from 12.02" y el de `gpu_devid_is_9924` de 13.02 estuvo mal hasta `f70f43a` (2026-09-23). Coinciden con los del ELF distribuido, lo que prueba consistencia, no corrección.

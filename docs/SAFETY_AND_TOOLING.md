@@ -32,6 +32,17 @@ No implementar/habilitar hasta superar pruebas con imágenes virtuales.
 
 Esto no autoriza por sí mismo una escritura USB real.
 
+## Herramientas implementadas y su alcance (2026-10-15)
+Todas son de **solo archivo**: no abren dispositivos de bloque, no montan, no escriben fuera del `.img` o del directorio temporal que ellas mismas crean, y se ejecutan sin root (las que construyen imágenes rechazan root). Detalle y tests en `docs/ROADMAP.md` Fase 4.
+- `verify_boot_chain.py` (5 niveles; ver D-018), `verify_artifacts.py`, `inspect_image.py`: lectura.
+- `payload_static.py`, `elf_audit.py`: análisis estático de lectura de blobs/ELF; nunca ejecutan ni desensamblan.
+- `fat32_add_file.py`: escribe **solo** en una imagen regular, nunca sobrescribe entradas, rechaza dispositivos y symlinks; no es atómico (opera sobre copias).
+- `build_usb_image.py`: construye un `.img` nuevo (no existente), con temporal `.nombre.img.parcial` y `os.replace` al final; ante fallo borra únicamente su temporal; rechaza rutas del sistema (`/dev`, `/proc`, `/sys`, `/run`, `/boot`, `/etc`, `/usr`, …), entradas no regulares, rootfs con archivos especiales y ejecución como root. `--dry-run` valida sin crear nada.
+- **No existe** `write-usb-image` ni se implementará sin aprobación expresa de Marcos. Procedimiento manual propuesto para escribir una imagen ya verificada: (1) `lsblk -o NAME,MODEL,SERIAL,SIZE,TRAN,RM,MOUNTPOINTS` antes y después de conectar el pendrive; (2) identificar por modelo+serie+tamaño, nunca por `/dev/sdX`; (3) desmontar sus particiones; (4) `sudo dd if=<imagen> of=/dev/disk/by-id/<id-del-pendrive> bs=4M conv=fsync status=progress` solo tras confirmar que el `by-id` es el correcto y que no es un disco con datos; (5) `sync` y verificar con `cmp` o `sha256sum` de los primeros N bytes. Este texto describe el paso; **no lo autoriza**.
+
+## Hallazgos sobre los scripts de la distribución (no se ejecutan ni se modifican)
+`build-img.sh`: ruta fija `/root/psxitarch-usb.img` con `rm -f`, puntos de montaje fijos, sin `trap` de limpieza (un fallo deja loop y montajes activos), `sleep 2` como sincronización, destino `OUT` sin validar (un dispositivo recibiría la imagen). `write-img.ps1`: las comprobaciones de BusType/IsBoot/IsSystem/tamaño son incondicionales (`-Force` solo omite la reconfirmación), pero un disco USB externo de datos las supera y no se vuelve a enumerar entre la confirmación y la escritura. `install-psxitarch.sh` (initramfs): reparticiona por heurística un `/dev/sd?` y copia la clave del disco al rootfs. Detalle en `docs/UPSTREAM_CODE_MAP.md` §2.4, §2.5 y §2.9.
+
 ## Verificación de artefactos
 Manifiesto: URL, release/tag/commit, nombre, tamaño, SHA-256 esperado, licencia, fecha y fuente del checksum. Un hash local detecta cambios futuros, pero no autentica el origen sin checksum confiable.
 

@@ -2,7 +2,7 @@
 
 Laboratorio privado para investigar Linux en PlayStation 4, priorizando seguridad, reproducibilidad y trazabilidad.
 
-**Estado:** investigación y preparación. La consola del laboratorio es una PS4 Slim (familia inferida), firmware 13.52 observado y capacidad de 861,4 GB; CUH/southbridge desconocidos y ningún arranque probado. Una declaración upstream no equivale a una prueba propia.
+**Estado:** investigación y preparación. La consola del laboratorio es una PS4 Slim (familia **inferida** de una foto), firmware 13.52 **observado** y capacidad de 861,4 GB **observada**; CUH y southbridge **desconocidos** (la selección de kernel no está resuelta) y ningún arranque probado. La arquitectura objetivo es **USB-only** (D-008): está decidida, pero el flujo completo **no está validado**. Una declaración upstream no equivale a una prueba propia.
 
 ## Objetivos
 - Identificar un método de arranque compatible con modelo CUH, firmware y southbridge.
@@ -30,17 +30,17 @@ Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de li
 8. Separar declaraciones upstream, observaciones de código, inferencias, hipótesis y pruebas propias.
 
 ## Estado del proyecto
-- [x] Repositorio privado creado.
-- [x] Documentación inicial incorporada.
-- [x] Fuentes de referencia y riesgos preliminares registrados.
-- [ ] Completar identificación del modelo CUH y southbridge. *(parcial: firmware 13.52, Slim inferida, capacidad de clase 1 TB; ver LAB-000)*
-- [ ] Completar mapa de código y revisar commits/tags exactos.
-- [ ] Resolver licencias de cada componente candidato.
-- [ ] Elegir método de arranque basado en evidencia para el hardware real.
-- [ ] Diseñar/probar utilidades USB usando archivos e imágenes virtuales.
-- [ ] Primer arranque Linux externo y retorno al sistema original.
-- [ ] Caracterizar periféricos, GPU, temperatura y estabilidad.
-- [ ] Decidir con mediciones si gaming, emulación o LLM son viables.
+Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `TESTS`, `CÓDIGO`, `TERCEROS`, `LAB`, `PENDIENTE`, `BLOQUEADO`. Ninguna tarea tiene `LAB` todavía.
+- [x] `IMPLEMENTADO` Repositorio privado creado, documentación inicial, fuentes y riesgos registrados.
+- [ ] `PENDIENTE` Completar identificación del modelo CUH y southbridge. *(parcial: firmware 13.52 observado, Slim inferida, capacidad de clase 1 TB; ver LAB-000)*
+- [x] `CÓDIGO` Mapa de código y commits/tags exactos (loader `f70f43a`, distribución `66e21cb`); historial del loader revisado.
+- [ ] `PENDIENTE` Resolver licencias de cada componente candidato (inventario en [ARTIFACT_INVENTORY](docs/ARTIFACT_INVENTORY.md)).
+- [ ] `BLOQUEADO` Elegir método/kernel basado en evidencia para el hardware real (falta el southbridge).
+- [x] `TESTS` Utilidades USB sobre archivos e imágenes virtuales (verificación en 5 niveles, FAT32 sin root, constructor de imágenes, auditoría estática de ELF y payload).
+- [ ] `PENDIENTE` Demostrar que el flujo USB-only no toca el almacenamiento interno (ver [USB_ONLY_DESIGN](docs/USB_ONLY_DESIGN.md)).
+- [ ] `BLOQUEADO` Primer arranque Linux externo y retorno al sistema original (requiere autorización de Marcos y los puntos anteriores).
+- [ ] `PENDIENTE` Caracterizar periféricos, GPU, temperatura y estabilidad.
+- [ ] `PENDIENTE` Decidir con mediciones si gaming, emulación o LLM son viables.
 
 ## Documentación
 | Documento | Propósito |
@@ -66,20 +66,26 @@ Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de li
 | [Seguridad de herramientas](docs/SAFETY_AND_TOOLING.md) | Requisitos para scripts futuros |
 | [Plan de ejecución siguiente](docs/NEXT_EXECUTION_PLAN.md) | Tareas inmediatas, responsables y puertas de seguridad |
 | [Manifiestos de artefactos](docs/ARTIFACT_MANIFEST.md) | Formato y uso del verificador de integridad |
+| [Diseño USB-only](docs/USB_ONLY_DESIGN.md) | Propiedades verificables, qué está demostrado, bloqueos y arquitectura recomendada |
+| [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes, licencias y nivel de confianza de cada binario |
+| [Diagnóstico del CI](docs/CI_DIAGNOSIS.md) | Por qué falla Actions (facturación) y la alternativa local |
 
 ## Convenciones de evidencia
-Estados: PLANNED, IN_PROGRESS, BLOCKED, VERIFIED y REJECTED. Solo marcar VERIFIED con hardware/firmware identificados, evidencia guardada y procedimiento reproducible.
+Estado de fase: PLANNED, IN_PROGRESS, BLOCKED, COMPLETADA, VERIFIED y REJECTED. `VERIFIED` exige prueba propia en hardware con registro y hashes (etiqueta `LAB`); documentación, código escrito o reportes de terceros no bastan.
 
-Clasificar afirmaciones como UPSTREAM-CLAIM, CODE-OBSERVATION, INFERENCE, HYPOTHESIS o LAB-VERIFIED. No guardar secretos, logs sensibles ni imágenes de gran tamaño en el repositorio.
+Clasificar afirmaciones como UPSTREAM-CLAIM (`TERCEROS`), CODE-OBSERVATION (`CÓDIGO`), INFERENCE, HYPOTHESIS o LAB-VERIFIED (`LAB`). No guardar secretos, logs sensibles ni imágenes de gran tamaño en el repositorio.
 
-
-## Herramienta disponible
-
-La primera utilidad implementada es de solo lectura y verifica tamaño opcional y SHA-256 contra un manifiesto JSON:
+## Herramientas disponibles
+Todas son de solo archivo (no abren dispositivos de bloque, no montan, no ejecutan binarios de terceros). La suite local equivale al CI, que está bloqueado por facturación de GitHub:
 
 ```bash
+bash scripts/check.sh                       # compileall + tests + validación de documentación
+python3 tools/verify_boot_chain.py <carpeta-con-bzImage-e-initramfs> --catalogo manifests/arranque-catalogo.json
 python3 tools/verify_artifacts.py --manifest /ruta/a/tu-manifiesto.json --root .
-python3 -m unittest discover -v
+python3 tools/build_usb_image.py --salida img.img --initramfs ... --kernel ... --rootfs-dir ... --dry-run
+python3 tools/payload_static.py goldhen.bin --referencia <oficial>   # análisis estático, sin ejecutar
+python3 tools/elf_audit.py linux-1024mb.elf --fuente fw_offsets.h    # ELF vs. código fuente fijado
+python3 tools/check_docs.py                 # enlaces, referencias, estados del roadmap
 ```
 
-No descarga ni ejecuta binarios, no repara archivos y no escribe en dispositivos físicos. Un hash no autentica el origen por sí solo; el valor esperado debe venir de una fuente confiable.
+`verify_boot_chain` separa estructura, integridad, formato, compatibilidad y arranque; un resultado OK en los primeros no prueba que la consola arranque. No hay herramienta que escriba en un dispositivo físico. Un hash no autentica el origen por sí solo; el valor esperado debe venir de una fuente confiable.

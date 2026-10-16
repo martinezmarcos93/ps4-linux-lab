@@ -19,6 +19,10 @@ Escala inicial: Probabilidad y severidad `Baja`, `Media`, `Alta`, `Crítica`. Re
 | R-13 | Corrupción del rootfs por apagado brusco | Media | Media | Apagado controlado; filesystem checks; backups de configuración; evitar suspensión. |
 | R-14 | Falsos positivos de rendimiento por renderizado software | Media | Media | Registrar renderer y comprobar hardware acceleration antes de benchmark. |
 | R-15 | Sobreestimar utilidad como PC/LLM | Alta | Media | Medir consumo, rendimiento, compatibilidad y coste de mantenimiento; criterios de salida explícitos. |
+| R-16 | El loader upstream toma archivos del almacenamiento interno si faltan en el USB o mezcla orígenes (kernel del USB + initramfs interno) | Alta (por código) | Alta | USB-only no es propiedad del binario: verificación previa (`verify_boot_chain`), imagen con `bzImage` en la FAT, parche revisable `patches/loader-usb-only-f70f43a.patch`, y listado FTP de solo lectura de las rutas internas antes de cada intento (`docs/USB_ONLY_DESIGN.md`). |
+| R-17 | Binarios del loader/kernel/initramfs/rootfs no reproducibles ni firmados | Alta | Alta | Catálogo de hashes, comparación estática de ELF (`elf_audit`), no redistribuir (D-004), compilar en entorno aislado antes de confiar (`USB_ONLY_DESIGN.md` §4.1); inventario en `docs/ARTIFACT_INVENTORY.md`. |
+| R-18 | El kernel que arranca recibe la clave `eap_hdd_key` de la consola (en el initramfs en RAM) y el script manual `install-psxitarch.sh` puede persistirla en el USB (`/etc/cryptmount`) | Media | Alta | No ejecutar `install-psxitarch.sh`; no copiar la clave a medios; tratar el USB como medio que podría contener secretos si se usó ese script; verificar que la imagen no tenga `/etc/cryptmount` (así es la publicada). |
+| R-19 | Rootfs de terceros (Arch + KDE + NetworkManager) con credenciales/servicios no auditados en una LAN personal | Media | Media/Alta | Aislar la consola de internet (D-016), no reutilizar contraseñas, auditar usuarios/servicios del rootfs antes de conectarlo a una red con otros equipos. |
 
 ## Reglas de parada
 

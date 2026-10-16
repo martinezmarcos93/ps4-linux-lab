@@ -13,23 +13,30 @@ Basado en la lectura de código documentada en [`docs/UPSTREAM_CODE_MAP.md`](UPS
 ## Fase 1 — Preparación de medios (en la PC, sin tocar la consola)
 
 1. Verificar hashes de los artefactos descargados contra `docs/EVIDENCE_SOURCES.md`.
-2. Construir la imagen USB con `tools/build-img.sh` (bash, dentro de WSL o Linux) — ver auditoría detallada en `UPSTREAM_CODE_MAP.md` §2.4. **OBSERVACIÓN DE CÓDIGO:** el script NO coloca ningún archivo `bzImage` en la partición de arranque del USB por defecto; solo `initramfs.cpio.gz`.
-3. Escribir la imagen al USB físico con `tools/write-img.ps1` (PowerShell, Administrador) — `UPSTREAM_CODE_MAP.md` §2.5.
+2. Construir la imagen USB **a un archivo**, nunca a un dispositivo: con `tools/build_usb_image.py` (propia, sin root, valida rutas y limpia ante fallos) o, bajo revisión, con el `build-img.sh` de la distribución (requiere root; hallazgos en `UPSTREAM_CODE_MAP.md` §2.4). **OBSERVACIÓN DE CÓDIGO:** el `build-img.sh` upstream NO coloca ningún `bzImage` en la partición de arranque por defecto; solo `initramfs.cpio.gz`. En la política USB-only (D-008) el `bzImage` **sí** va dentro de la FAT; `build_usb_image.py` lo exige.
+3. Verificar la cadena con `tools/verify_boot_chain.py` (estructura, integridad con catálogo, formato) — un resultado OK no prueba que arranque. La escritura al USB físico (`tools/write-img.ps1` de la distribución u otro método) es un **paso manual revisado** que este laboratorio no automatiza ni ejecuta — `UPSTREAM_CODE_MAP.md` §2.5.
 4. **Resultado esperado:** USB con partición 1 FAT32 (512 MB, con `initramfs.cpio.gz`) y partición 2 ext4 etiquetada `psxitarch` (rootfs Arch+KDE).
 5. **Condición de aborto:** cualquier hash que no coincida, o cualquier disco objetivo que `write-img.ps1` identifique como no-USB o de arranque/sistema (el script aborta solo; no forzar con `-Force` para saltar eso, porque esos chequeos no son opcionales — ver `UPSTREAM_CODE_MAP.md` §2.5).
 
-## Fase 2 — Ubicación del kernel: la decisión que choca con nuestro principio de "no tocar el disco interno"
+## Fase 2 — Ubicación del kernel: USB-only (D-008) — política decidida, propiedad NO demostrada
 
-Esta es la fase que requiere una **DECISIÓN** explícita antes de proceder (ver `docs/DECISION_LOG.md`, entrada pendiente D-008).
+**Decisión (D-008):** `bzImage`, `initramfs.cpio.gz` y los opcionales viven en la FAT del USB; no se escribe en el almacenamiento interno y la escritura interna no es un fallback automático. Diseño y bloqueos: [`USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
 
-**HECHO DOCUMENTADO (README de la distribución):** el procedimiento oficial de `X-F1REBALL-X/PS4-Linux` instruye subir por FTP (puerto 2121) el `bzImage` correspondiente al southbridge detectado y `initramfs.cpio.gz` a `/data/linux/boot/` en el **almacenamiento interno** de la consola. El USB solo contiene el rootfs, nunca el kernel, para poder compartir un mismo USB entre consolas con southbridge distinto (el README lo explicita: "Do not put a file named `bzImage` on the USB").
+**HECHO DOCUMENTADO (README de la distribución):** el procedimiento de `X-F1REBALL-X/PS4-Linux` sube por FTP (puerto 2121) `bzImage` e `initramfs.cpio.gz` a `/data/linux/boot/` del almacenamiento interno, y deja el rootfs en el USB, para compartir un mismo USB entre consolas con distinto southbridge. **Ese procedimiento no se sigue.**
 
-**OBSERVACIÓN DE CÓDIGO (del loader):** `main-aio.c` (macro `L(...)`, líneas 375-389 de `linux/main-aio.c`) busca `bzImage`/`initramfs.cpio.gz`/`bootargs.txt`/`vram.txt` primero en `/mnt/usb0/` y `/mnt/usb1/`, y solo si no los encuentra ahí, cae a `/data/linux/boot/` y luego a `/user/system/boot/`. Es decir, **el código del payload sí permite un flujo 100% externo** (todo en el USB, incluyendo el `bzImage`), aunque el procedimiento recomendado por la distribución elegida no lo use así.
+**OBSERVACIÓN DE CÓDIGO (loader @ `f70f43a`, `linux/main-aio.c` líneas 375-389, macro `L(...)`):** cada archivo (`bzImage`, `initramfs.cpio.gz`, `bootargs.txt`, `vram.txt`) se busca **por separado** en `/mnt/usb0/`, `/mnt/usb1/`, `/data/linux/boot/` y `/user/system/boot/`, y se usa el primero que se pueda abrir. Consecuencias que **no** deben leerse al revés:
+- La búsqueda prioritaria en USB **no** es aislamiento: si falta un archivo en el USB, el loader toma el del almacenamiento interno sin avisar.
+- Puede combinar orígenes (p. ej. `bzImage` del USB con `initramfs.cpio.gz` del interno, o dos USB distintos). Modelado en `tools/loader_model.py` y probado en `tests/test_loader_model.py`.
+- Un `vram.txt` o `bootargs.txt` olvidado en `/data/linux/boot/` también se usaría.
+- Ningún commit del loader contiene código que escriba esos archivos (D-017): la "copia automática" del README no está respaldada por el código disponible.
 
-**DECISIÓN A TOMAR (no resuelta en este documento):**
-- **Opción A (procedimiento oficial de la distribución):** copiar `bzImage` + `initramfs.cpio.gz` a `/data/linux/boot/` vía FTP. Esto modifica el almacenamiento interno, pero de forma acotada (una carpeta nueva con 2 archivos, reversible borrándola) — no toca el sistema de archivos de OrbisOS ni sus particiones.
-- **Opción B (aprovechar la prioridad de USB del propio código):** poner también `bzImage` en la partición 1 del USB (el `tools/build-img.sh` soporta "kernels de repuesto" pero los renombra para que el loader los ignore — habría que adaptar el nombre o el script). Esto mantiene el almacenamiento interno sin tocar, a costa de que un mismo USB ya no sirva automáticamente para dos consolas con southbridge distinto sin intervención manual.
-- Hasta que Marcos decida, **no ejecutar la Fase 2 con la Opción A** sin una autorización explícita separada de "no escribir en almacenamiento interno", porque contradice el Hito A del `PROJECT_CHARTER.md` ("ninguna modificación del disco interno"). La Opción B es la que mantiene el principio original, pero no está probada por ningún reporte de terceros — sería terreno no documentado por upstream.
+**Qué hace el flujo USB-only en la práctica:**
+1. La FAT del USB lleva `bzImage` (el que corresponda al southbridge, **aún desconocido**) e `initramfs.cpio.gz`, con esos nombres exactos.
+2. Antes de cada intento (fase con ejecución autorizada) se comprueba por FTP de solo lectura que `/data/linux/boot/` y `/user/system/boot/` no contengan archivos ajenos.
+3. Si el loader no encuentra ambos archivos en el USB, el comportamiento upstream es seguir buscando en el interno; con el parche de `patches/loader-usb-only-f70f43a.patch` (sin compilar) se rechazaría con una alerta.
+4. Si el flujo no pudiera demostrarse USB-only, se detiene y se documenta; no se pasa a escritura interna.
+
+**Estado real:** política decidida (`IMPLEMENTADO`); propiedad de aislamiento **no demostrada** (`PENDIENTE`), con los bloqueos de `USB_ONLY_DESIGN.md` §4.
 
 ## Fase 3 — Envío del payload
 
@@ -59,7 +66,7 @@ Documentado en detalle de código en `UPSTREAM_CODE_MAP.md` §1.3, pasos 7-8. Re
 
 ## Fase 6 — Retorno al sistema original
 
-**HECHO DOCUMENTADO (README):** tras un reinicio, la consola vuelve a OrbisOS normalmente; para volver a Linux hay que rehacer el jailbreak y reenviar el payload. El USB puede quedar conectado. No hay, en el código auditado, ninguna persistencia que sobreviva un reinicio salvo lo que se haya escrito deliberadamente en `/data/linux/boot/` (Fase 2, si se eligió la Opción A).
+**HECHO DOCUMENTADO (README):** tras un reinicio, la consola vuelve a OrbisOS normalmente; para volver a Linux hay que rehacer el jailbreak y reenviar el payload. El USB puede quedar conectado. No hay, en el código auditado, ninguna persistencia que sobreviva un reinicio salvo lo que se haya escrito deliberadamente en `/data/linux/boot/` (en la política USB-only no debería haber nada; si hubiera archivos allí, vienen de un procedimiento ajeno a este laboratorio y deben revisarse antes de cualquier intento, D-017).
 
 ## Resumen visual
 
@@ -67,7 +74,7 @@ Documentado en detalle de código en `UPSTREAM_CODE_MAP.md` §1.3, pasos 7-8. Re
 [Jailbreak GoldHEN] (fuera de alcance)
         |
         v
-[USB: build-img.sh -> write-img.ps1]         [Kernel+initramfs: USB o /data/linux/boot/ -- DECISIÓN PENDIENTE]
+[USB: build-img.sh -> write-img.ps1]         [Kernel+initramfs: FAT del USB (D-008, USB-only; propiedad por demostrar)]
         |                                                   |
         v                                                   v
 [Enviar payload .elf -> puerto PayLoader (9020/9090) o FTP (2121)]

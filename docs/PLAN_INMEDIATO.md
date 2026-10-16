@@ -1,6 +1,6 @@
 # Plan inmediato (2026-10-15)
 
-Objetivo: llegar a un primer arranque de Linux desde USB **sin escribir en el disco interno**, avanzando por etapas con puertas claras. Decisiones: D-008, D-010 a D-016 en `DECISION_LOG.md`. Complementa a `NEXT_EXECUTION_PLAN.md` (sesión paralela); si hay contradicción, manda la decisión publicada más restrictiva.
+Objetivo: llegar a un primer arranque de Linux desde USB **sin escribir en el disco interno**, avanzando por etapas con puertas claras. Decisiones: D-008 (USB-only, política decidida y **no validada**), D-010 a D-020 en `DECISION_LOG.md`. Complementa a `NEXT_EXECUTION_PLAN.md` (sesión paralela); si hay contradicción, manda la decisión publicada más restrictiva.
 
 ## Etapa 0 — Preparación (sin tocar la consola) — HECHO en lo posible
 - [x] Auditoría estática del exploit y de su host (`EXPLOIT_AUDIT_13.52.md`).
@@ -16,7 +16,7 @@ Objetivo: llegar a un primer arranque de Linux desde USB **sin escribir en el di
 - **Puerta:** hashes registrados y la imagen virtual verificada.
 
 ## Etapa 2 — Escribir el USB (decisión puntual de Marcos)
-- [ ] `write-usb-image` aún no existe; se construye con tests sobre imágenes virtuales (Fase 4 del roadmap). Hasta entonces, escritura manual con el pendrive **identificado por modelo/tamaño/serie**, nunca por `/dev/sdX`, y con confirmación tuya.
+- [ ] `write-usb-image` **no se implementa** (límite del encargo: no se escribe en dispositivos físicos). La imagen se construye en un archivo con `tools/build_usb_image.py`; la escritura al pendrive es un paso **manual**, con el dispositivo **identificado por modelo/tamaño/serie**, nunca por `/dev/sdX`, y con confirmación de Marcos.
 
 ## Etapa 3 — Primer intento real — **BLOQUEADA hasta el "go" de Marcos** (D-010 resuelta como "informe completado, decisión de ejecución pendiente")
 Antes de esta etapa: verificar la barrera de red (D-016). La auditoría del payload (`EXPLOIT_AUDIT_13.52.md`) ya se realizó (D-010). Si Marcos decide ejecutar, se procede.
@@ -30,7 +30,7 @@ Preflight, en orden:
 - **Puerta:** southbridge identificado y estado de GoldHEN cargado, o fallo documentado.
 
 ## Etapa 4 — Primer arranque de Linux (solo-USB, D-008)
-Con el southbridge conocido se elige `baikal` o `belize` y se prueba el flujo solo-USB. Si es inviable, detenerse y documentar alternativas (D-008); no pasar automáticamente a escritura interna.
+Con el southbridge conocido se elige `baikal` o `belize` (`COMPATIBILITY_MATRIX.md` §7) y se prueba el flujo solo-USB, con el `bzImage` dentro de la FAT. Si es inviable, detenerse y documentar el bloqueo exacto; **no** pasar automáticamente a escritura interna. Antes del intento: comprobar que `/data/linux/boot/` y `/user/system/boot/` están vacíos (listado FTP de solo lectura, `USB_ONLY_DESIGN.md` P5).
 
 ## En paralelo
 - HDMI contra el monitor: probar otra entrada/cable o modo seguro → *Cambiar resolución*; no bloquea nada (la TV sirve).
@@ -39,5 +39,5 @@ Con el southbridge conocido se elige `baikal` o `belize` y se prueba el flujo so
 ## Estado tras Etapa 1 (2026-10-15)
 - Imagen `psxitarch-usb.img` (8 871 489 536 B) verificada contra `SHA256SUMS`; MBR con p1 FAT32 de 512 MiB y p2 ext4 (`inspect_image`).
 - **Contenido de p1 (leído sin montar):** `initramfs.cpio.gz` (4 102 011 B, igual al del release), `bzImage.belize` (20 415 488 B, kernel Belize renombrado) y `System Volume Information` (la imagen pasó por Windows). **No hay `bzImage` a secas ni kernel Baikal.**
-- **Consecuencia para D-008 (solo-USB):** tal como viene, el loader no encontraría kernel en el USB (a propósito, para compartir USB entre consolas). Para el flujo solo-USB, habría que añadir en p1 una copia del kernel correcto con el nombre `bzImage`. El kernel correcto depende del southbridge, que aún se desconoce. Esa modificación se hará sobre una **copia de la imagen** (nunca sobre el original ni sobre un dispositivo) y requiere montar la imagen (privilegios) o escribir FAT con una herramienta; queda pendiente, pero la dirección de diseño (USB-only) ya está tomada.
+- **Consecuencia para D-008 (solo-USB):** tal como viene, el loader no encontraría `bzImage` en el USB (a propósito, para compartir USB entre consolas). Para el flujo solo-USB hay que añadir en p1 una copia del kernel correcto con el nombre `bzImage`; el kernel correcto depende del southbridge, aún desconocido. **Herramienta ya disponible:** `tools/fat32_add_file.py` lo hace sobre una **copia** de la imagen, sin root ni montar, verificado con `fsck.vfat -n` (prueba mecánica sobre una copia de la p1 real: hash leído = hash del kernel agregado; la copia se descartó y **no** implica elegir ese kernel). Pendiente: elegir el kernel (Fase 1) y repetirlo con la imagen definitiva.
 - El "primer intento real" (Etapa 3) queda a la espera del **sí de Marcos** a ejecutar el payload en su consola con las condiciones de D-015/D-016.

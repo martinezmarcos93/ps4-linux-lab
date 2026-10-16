@@ -27,7 +27,7 @@
 ### Observación sobre `tools/write-img.ps1`
 
 - Incluye comprobación de administrador, bus USB, disco de arranque/sistema, tamaño y confirmación del número.
-- `-Force` permite omitir la confirmación. En nuestra implementación no debería existir un bypass genérico para escribir un disco real; usar un modo de prueba separado.
+- `-Force` omite **solo** la reconfirmación interactiva del número de disco; las comprobaciones de bus USB, disco de arranque/sistema y tamaño son incondicionales (corrección de 2026-10-15, `UPSTREAM_CODE_MAP.md` §2.5). En nuestra implementación no debería existir un bypass genérico para escribir un disco real; usar un modo de prueba separado.
 - La identificación por número de disco puede cambiar al reconectar dispositivos. Nuestra herramienta debe volver a enumerar y mostrar modelo, tamaño, serial, bus y particiones inmediatamente antes de escribir.
 - Es destructivo por diseño; probar únicamente con imágenes/discos virtuales durante desarrollo.
 
@@ -51,6 +51,6 @@
 
 - Revisar releases/tags exactos, hashes y cambios recientes.
 - Revisar todo script antes de ejecución y elaborar threat model para artefactos binarios.
-- Verificar qué archivos se copian al almacenamiento interno durante el flujo de loader/initramfs.
+- ~~Verificar qué archivos se copian al almacenamiento interno durante el flujo de loader/initramfs.~~ Hecho en lo estático (2026-10-15): ningún componente inspeccionado copia archivos al interno; la "copia automática" del README no tiene código (D-017). Falta la prueba de laboratorio.
 - Confirmar la licencia del loader y del payload que finalmente se utilice.
 - Revalidar la matriz de firmware con la consola real y no solo con documentación.

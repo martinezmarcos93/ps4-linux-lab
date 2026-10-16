@@ -4,7 +4,7 @@
 **Estado global:** investigación offline y herramientas de PC; no ejecutar payload en la PS4 todavía.
 
 ## Decisiones de trabajo
-- Prioridad de arranque: USB-only. No escribir en `/data/linux/boot/` por defecto.
+- Arranque: **USB-only** es la arquitectura objetivo (D-008); está decidida pero **no validada**. No se escribe en `/data/linux/boot/` ni como fallback.
 - `goldhen.bin`: no ejecutar en hardware hasta completar análisis estático reproducible y revisar procedencia.
 - REA: diferido. Primero comprobar si ya existe Rizin/objdump; no instalar un MCP adicional ni ejecutar `npx rea-agents setup` todavía.
 - Herramientas: desarrollar y probar en PC con archivos temporales e imágenes virtuales; ninguna escritura a dispositivos físicos.
@@ -13,7 +13,7 @@
 
 ## Tarea A — Auditar el payload nativo sin ejecutarlo
 **Responsable sugerido:** Claude Code en el equipo local.  
-**Estado:** COMPLETADA (segunda pasada realizada, ver `docs/EXPLOIT_AUDIT_13.52.md`). Decisión de ejecución pendiente de Marcos (D-010).
+**Estado:** COMPLETADA CON LÍMITES (auditoría estática; no es una verificación de seguridad). Autorización de ejecución: cerrada, pendiente del "sí" de Marcos (D-010). Ver `docs/EXPLOIT_AUDIT_13.52.md`.
 
 1. [x] Confirmar que el checkout local está limpio y que `main` incluye el commit publicado `bdf7bb7d6f510dd33d6c26a52e2d21c69fe482e3`.
 2. [x] Verificar qué herramientas existen (`rizin`, `rz-bin`, `objdump`, `llvm-objdump`, `strings`, `sha256sum`). No instalar nada sin necesidad demostrada.
@@ -25,19 +25,19 @@
 8. [x] Escribir `docs/EXPLOIT_AUDIT_13.52.md` con método, comandos, versiones de herramientas, hashes, observaciones, limitaciones y conclusión. Si no se puede concluir qué hace el payload, el estado sigue siendo **NO VERIFICADO**.
 9. [x] No ejecutar el binario, no lanzarlo contra la consola y no instalar REA como atajo.
 
-**Salida conseguida:** auditoría reproducible, con afirmaciones clasificadas como observación/inferencia/hipótesis y una lista explícita de preguntas sin resolver. Cuerpo zlib descomprimido y comparado con release oficial (80% cadenas comunes). Límites: código máquina del cuerpo sin auditar, origen no verificable.
+**Salida conseguida:** auditoría reproducible (`tools/payload_static.py`), con afirmaciones clasificadas como observación/inferencia/hipótesis y una lista explícita de preguntas sin resolver. Cuerpo zlib descomprimido y comparado con el release oficial 2.4b18 (~75 % de cadenas y ~65 % de ventanas de bytes en común: parentesco, no equivalencia). Límites: código máquina del cuerpo sin desensamblar, origen no verificable, referencia no exacta.
 
 ## Tarea B — Utilidades de PC no destructivas
-**Estado:** PENDIENTE; puede avanzar en paralelo.
+**Estado:** EN CURSO; avanza en paralelo (ver `docs/ROADMAP.md` Fase 4).
 
 1. [x] Implementar verificador de manifiestos SHA-256 de solo lectura en `tools/verify_artifacts.py`.
 2. [x] Añadir 11 tests para hash correcto/incorrecto, tamaño, archivo ausente/vacío, manifiesto malformado, rutas inseguras y symlinks.
 3. [x] Ejecutar la suite en sandbox local: 11/11 PASS.
 4. [x] Diagnosticar el workflow GitHub Actions: los runs observados terminaron en FAIL con runner_id=0, sin pasos ni logs disponibles; no asumir que la suite falló ni que pasó (confirmado problema de facturación en `docs/CI_DIAGNOSIS.md`).
-5. [ ] Confirmar en CI que se ejecuta `python -m unittest discover -v` y que los tests pasan (bloqueado por facturación).
+5. [ ] Confirmar en CI que se ejecuta `python -m unittest discover -v` y que los tests pasan (bloqueado por facturación; evidencia local en `TEST_PLAN.md` "Resultados de ejecución host-side").
 6. [x] Implementar inspección de imagen en modo solo lectura; no abrir block devices ni escribir medios (`tools/inspect_image.py`, 24 tests).
 7. [ ] Añadir un `doctor` que informe dependencias y sistema operativo sin instalar ni cambiar nada.
-8. [ ] No implementar aún la escritura física de USB. Mantenerla fuera del código ejecutable hasta revisar y aprobar los tests.
+8. [x] La escritura física de USB **no se implementa** (límite del encargo). Sí existen, solo sobre archivos: `verify_boot_chain.py`, `fat32_add_file.py`, `build_usb_image.py`, `elf_audit.py`, `payload_static.py`, `loader_model.py`.
 
 **Salida exigida:** código, tests, comandos reproducibles y resultados reales. No marcar pruebas como PASS si no se ejecutaron.
 

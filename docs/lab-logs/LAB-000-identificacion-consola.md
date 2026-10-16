@@ -59,5 +59,5 @@
 ## Pendientes antes de poder avanzar
 1. Buscar el CUH en otra ubicación (parte trasera, caja, factura).
 2. Desactivar descargas automáticas de actualización y no aceptar ninguna.
-3. Resolver D-008 y Q-006 antes de cualquier escritura (Fase 3).
+3. D-008 y Q-006 están resueltas como política (USB-only; no se escribe en el interno); lo pendiente es demostrar USB-only (`docs/USB_ONLY_DESIGN.md` §4) antes de cualquier ejecución.
 4. Diagnosticar el HDMI con el monitor (probar otra entrada/cable, modo seguro → cambiar resolución).
