@@ -16,4 +16,4 @@ Solo el titular puede revisar *GitHub → Settings → Billing & plans* (método
 
 ## Mitigación mientras tanto
 - `scripts/check.sh` ejecuta localmente lo mismo que el workflow (`compileall` + `unittest discover -v`). El workflow **no se deshabilita ni se modifica**, para no ocultar el fallo.
-- Nota: en esta máquina el comando es `python3` (no existe `python`).
+- Nota: en esta máquina el comando es `python3` (no existe `python`) y el disco externo está montado sin permiso de ejecución: usar `bash scripts/check.sh`.
