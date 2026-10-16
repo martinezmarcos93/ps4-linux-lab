@@ -13,7 +13,8 @@ Auditoría cruzada documental 2026-10-16: [`docs/CROSS_DOC_AUDIT_2026-10-16.md`]
 | `TERCEROS` | Lo afirma o reporta un tercero (README, issue); sin reproducción propia |
 | `CÓDIGO` | Confirmado leyendo código o binarios upstream (revisión citada); no es prueba de ejecución |
 | `TESTS` | Verificado por tests automáticos host-side (`bash scripts/check.sh`); no prueba comportamiento en la consola |
-| `LAB` | Probado en laboratorio con la consola, con registro y hashes. **Ninguna tarea tiene esta etiqueta todavía.** |
+| `OBSERVADO` | Dato leído directamente por el operador en la consola, registrado en el laboratorio; sin artefacto con hash ni prueba de arranque. No equivale a `LAB` ni a `VERIFIED`. |
+| `LAB` | Prueba propia en hardware con registro y hashes; requiere evidencia reproducible del ensayo. **Ningún arranque Linux está verificado.** |
 
 Una puerta de salida requiere evidencia registrada; una declaración upstream no equivale a validación propia.
 
@@ -34,7 +35,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 - [ ] `PENDIENTE` Registrar firmware exacto sin actualizarlo.
 - [ ] `PENDIENTE` Registrar estado de arranque original y síntomas existentes.
 - [ ] `PENDIENTE` Determinar qué datos requieren respaldo.
-- [x] `LAB` Registrar southbridge Baikal B1 (`0x30201`) observado mediante GoldHEN v2.2.3; ver `docs/lab-logs/LAB-001-southbridge.md`. La captura no está guardada como artefacto con hash, limitación registrada.
+- [x] `OBSERVADO` Registrar southbridge Baikal B1 (`0x30201`) leído por el operador mediante GoldHEN v2.2.3; ver `docs/lab-logs/LAB-001-southbridge.md`. La captura no está guardada como artefacto con hash; no se eleva a `LAB` ni `VERIFIED`.
 
 **Salida:** ficha de hardware y procedencia de cada dato, sin acciones destructivas.
 
