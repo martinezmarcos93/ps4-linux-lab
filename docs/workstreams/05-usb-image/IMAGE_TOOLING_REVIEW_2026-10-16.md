@@ -18,6 +18,17 @@ Las herramientas están diseñadas para trabajar sobre archivos de imagen, sin m
 
 **Estado:** corrección implementada; pendiente resultado de CI del commit actualizado. La revisión no afirma todavía que el build completo se haya ejecutado en esta sesión.
 
+### H-FAT-001 — terminador inválido aceptado en una cadena FAT
+
+**Severidad:** media.  
+**Archivo:** `tools/fat32_add_file.py`, método `_Fat32._cadena()`.
+
+La implementación anterior terminaba el recorrido cuando el siguiente valor FAT dejaba de estar en el rango de clusters ordinarios. Eso también aceptaba valores como cluster libre (0), reservado (1) o cluster defectuoso como si fueran un fin de cadena válido. En un directorio raíz corrupto, el editor podía interpretar una cadena truncada como válida y continuar hacia escrituras.
+
+**Corrección aplicada en esta rama:** ahora solo se acepta un marcador FAT válido de fin de cadena (0x0FFFFFF8–0x0FFFFFFF); valores libres, reservados y defectuosos producen error. Se agregó una prueba que corrompe la entrada FAT del cluster raíz, verifica el rechazo y compara el hash de la imagen para asegurar que la operación fallida no realice escrituras adicionales.
+
+**Estado:** código y prueba publicados; pendiente CI del commit actualizado. La prueba es sobre imagen FAT ficticia, no sobre ningún dispositivo físico.
+
 ### Controles existentes observados
 
 - La salida debe ser un archivo `.img`, su directorio padre debe existir y no se permiten rutas bajo varios directorios críticos del sistema.
