@@ -23,7 +23,7 @@ No extrapolar una fila a modelos/revisiones vecinos. "Slim CUH-2xxx" y "Pro CUH-
 
 **Nota sobre la versión de kernel en la fila CUH-2208B (resuelta por D-009):** el reporte dice "Kernel 5.4.247 Baikal build". Los kernels del catálogo de este proyecto traen en su cabecera de arranque la cadena `7.0.8-Strawberry-FullLTO-Baikal-+` y `7.1.7-Strawberry-General-FullLTO+`: son Linux 7.0.8 y 7.1.7 reales, **no** una numeración propia. Por tanto el issue #10 es una compilación distinta (5.4.x) y **no respalda** los kernels 7.x del catálogo; solo refuerza la combinación hardware/firmware/southbridge.
 
-## 1b. Consola del laboratorio (observada, no probada)
+## 1b. Consola del laboratorio (identificación reportada; Linux no probado)
 
 | Modelo CUH | Familia | Southbridge | Firmware | Capacidad | Estado | Evidencia | Registro |
 |---|---|---|---|---|---|---|---|
