@@ -1,0 +1,128 @@
+--- a/linux/main-aio.c
++++ b/linux/main-aio.c
+@@ -292,12 +292,13 @@
+ #ifndef VRAM_MB_MAX
+ #define VRAM_MB_MAX 4609
+ #endif
+-#ifndef HDD_BOOT_PATH
+-#define HDD_BOOT_PATH "/data/linux/boot/"
+-#endif
+-#ifndef HDD_SECOND_BOOT_PATH
+-#define HDD_SECOND_BOOT_PATH "/user/system/boot/"
+-#endif
++/*
++ * USB-only: los archivos de arranque se leen de UNA sola carpeta USB y nunca
++ * de rutas del almacenamiento interno (/data/linux/boot/, /user/system/boot/).
++ */
++#define USB_BOOT_DIR_0 "/mnt/usb0/"
++#define USB_BOOT_DIR_1 "/mnt/usb1/"
++#define BOOT_PATH_MAX 128
+ 
+ int get_sb_id() {
+     static t_sysctlbyname p_sysctlbyname = NULL;
+@@ -337,6 +338,60 @@
+     }
+ }
+ 
++static int join_path(char *dst, const char *dir, const char *name)
++{
++    unsigned long long n = 0;
++
++    for (; dir[n]; n++) {
++        if (n + 1 >= BOOT_PATH_MAX)
++            return -1;
++        dst[n] = dir[n];
++    }
++    for (unsigned long long i = 0; name[i]; i++, n++) {
++        if (n + 1 >= BOOT_PATH_MAX)
++            return -1;
++        dst[n] = name[i];
++    }
++    dst[n] = '\0';
++    return 0;
++}
++
++static int file_readable(const char *dir, const char *name)
++{
++    char path[BOOT_PATH_MAX];
++    int fd;
++
++    if (join_path(path, dir, name))
++        return 0;
++    fd = open(path, O_RDONLY);
++    if (fd < 0)
++        return 0;
++    close(fd);
++    return 1;
++}
++
++/* Devuelve la primera carpeta USB que contiene AMBOS archivos obligatorios. */
++static const char *select_usb_boot_dir(void)
++{
++    const char *dirs[] = { USB_BOOT_DIR_0, USB_BOOT_DIR_1 };
++
++    for (int i = 0; i < 2; i++)
++        if (file_readable(dirs[i], "bzImage") &&
++            file_readable(dirs[i], "initramfs.cpio.gz"))
++            return dirs[i];
++    return (const char *)0;
++}
++
++static int load_from(const char *dir, const char *name, char **ptr,
++                     unsigned long long *sz)
++{
++    char path[BOOT_PATH_MAX];
++
++    if (join_path(path, dir, name))
++        return -1;
++    return read_file(path, ptr, sz);
++}
++
+ // main() — user-space entry pointas
+ 
+ int main(void)
+@@ -372,21 +427,22 @@
+     char *vramstr = NULL; unsigned long long vramstr_size = 0;
+     int vram_mb = 0;
+ 
+-#define L(name, where, wheresz, is_fatal) \
+-    if (read_file("/mnt/usb0/" name, where, wheresz) \
+-     && read_file("/mnt/usb1/" name, where, wheresz) \
+-     && read_file(HDD_BOOT_PATH name, where, wheresz) \
+-     && read_file(HDD_SECOND_BOOT_PATH name, where, wheresz) \
+-     && is_fatal) { \
+-        alert("Failed to load file: " name "\nChecked paths:\n" \
+-                "/mnt/usb0/" name "\n/mnt/usb1/" name "\n" \
+-                HDD_BOOT_PATH name "\n" HDD_SECOND_BOOT_PATH name); \
+-        return 1; \
++    const char *boot_dir = select_usb_boot_dir();
++    if (!boot_dir) {
++        alert("USB-only: no hay una carpeta USB con bzImage e initramfs.cpio.gz\n"
++              "Carpetas revisadas: " USB_BOOT_DIR_0 " y " USB_BOOT_DIR_1 "\n"
++              "No se usa el almacenamiento interno.");
++        return 1;
+     }
+ 
+-    L("bzImage",            &kernel,  &kernel_size,  1);
+-    L("initramfs.cpio.gz",  &initrd,  &initrd_size,  1);
+-    L("bootargs.txt",       &cmdline, &cmdline_size,  0);
++    /* Los dos archivos obligatorios existen en boot_dir; un fallo de lectura es fatal. */
++    if (load_from(boot_dir, "bzImage", &kernel, &kernel_size) ||
++        load_from(boot_dir, "initramfs.cpio.gz", &initrd, &initrd_size)) {
++        alert("USB-only: no se pudo leer bzImage o initramfs.cpio.gz de la carpeta elegida");
++        return 1;
++    }
++    /* Opcionales: solo de la MISMA carpeta; si faltan se usan los valores por defecto. */
++    load_from(boot_dir, "bootargs.txt", &cmdline, &cmdline_size);
+ 
+     if (cmdline && cmdline_size) {
+         for (int i = 0; i < (int)cmdline_size; i++)
+@@ -398,7 +454,7 @@
+                   "video=HDMI-A-1:1920x1080@60";
+     }
+ 
+-    L("vram.txt", &vramstr, &vramstr_size, 0);
++    load_from(boot_dir, "vram.txt", &vramstr, &vramstr_size);
+     if (vramstr && vramstr_size) {
+         vram_mb = my_atoi(vramstr);
+         if (vram_mb < VRAM_MB_MIN || vram_mb > VRAM_MB_MAX)
