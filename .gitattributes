@@ -1,0 +1,23 @@
+# Normaliza finales de línea en el checkout, sin depender de core.autocrlf
+# del equipo de cada colaborador (Windows suele traer autocrlf=true, que
+# convierte LF -> CRLF y rompe scripts bash y hashes de archivos binarios-de-texto
+# como los parches). Ver docs/REVIEW_BUILD_USB_IMAGE.md / sesión 2026-10-16.
+
+* text=auto eol=lf
+
+# Scripts que se ejecutan con bash dentro de contenedores Linux: CRLF los rompe
+# (p. ej. "set -o pipefail\r" o un "case ... in\r" con error de sintaxis).
+*.sh text eol=lf
+*.patch text eol=lf
+
+# Scripts de Windows: se quedan con CRLF nativo.
+*.ps1 text eol=crlf
+
+# Binarios: nunca tocar finales de línea.
+*.png binary
+*.jpg binary
+*.7z binary
+*.xz binary
+*.img binary
+*.elf binary
+*.bin binary
