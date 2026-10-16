@@ -53,3 +53,17 @@ Los tests de construcción mostrados usan un kernel, initramfs y rootfs ficticio
 ## Alcance no cubierto
 
 Esta revisión no demuestra que el kernel Baikal 7.0.8 arranque en CUH-2115B, ni que el flujo completo sea USB-only, ni que la combinación kernel/initramfs/rootfs sea compatible. No se escribió USB físico ni se modificó la consola.
+
+## Revisión de seguimiento — SHA informado por OpenCode
+
+**Commit anunciado:** `1e15ee969e75aee7bfeec46148606acf3298bd7`  
+**Resultado:** OCH-001 sigue abierto en el código inspeccionado.
+
+1. `construir()` sigue abriendo `parcial_json` con `open(..., "w")`, sin `O_EXCL` ni `O_NOFOLLOW`. Si ese nombre es un enlace simbólico, puede truncar el archivo de destino.
+2. El constructor sigue ejecutando `os.replace(parcial_json, informe_json)` sin rechazar previamente un informe final existente. Por tanto, `prueba.json` puede sobrescribirse.
+3. `test_informe_preexistente` no prueba que el archivo previo se preserve: crea `prueba.json`, construye la imagen y solo comprueba que el archivo existe y que el JSON nuevo no contiene la ruta absoluta. La prueba acepta que el contenido original haya sido reemplazado.
+4. La rama sigue divergida respecto de `main`: 6 commits por delante y 5 por detrás, incluso comparando el SHA informado.
+
+**Acción requerida:** rechazar antes de empezar si existen `.img`, `.json`, `.img.parcial` o `.json.parcial`; crear temporales con creación exclusiva y sin seguir symlinks; probar que un JSON previo conserva exactamente sus bytes y que un temporal JSON symlink se rechaza sin modificar el objetivo. Después reconciliar la rama con `main` y volver a ejecutar las pruebas.
+
+**Estado de integración:** NO APROBADA. El reporte de 265 tests aprobados sigue siendo una declaración de OpenCode; no ejecuté esa suite en este entorno.
