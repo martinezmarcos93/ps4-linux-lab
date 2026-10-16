@@ -26,15 +26,11 @@
 | CUH-7116B (caso publicado) | 13.52 | Belize (según distribución) | loader asociado a PS4-Linux v1.0 | `bzImage-belize-7.1.7` (declarado por el distribuidor) | No; instrucciones publicadas requieren kernel/initramfs internos | Solo afirmación upstream, no transferible al objetivo |
 | CUH-2208B (reporte comunitario) | 13.52 | Baikal (reportado) | v25 | Kernel 5.4.247 Baikal (reportado; no es el 7.0.8 de la distribución) | No establecido por el issue | Evidencia de tercero; no usar como equivalencia |
 
-## 3. Bloqueo principal: southbridge
+## 3. Estado del southbridge y siguiente trabajo
 
-El CUH-2115B por sí solo no identifica el southbridge; sin embargo, Marcos reportó una lectura de información del sistema que muestra `Baikal B1`, ID `0x30201`. En el código upstream auditado, `GetSouthbridgeName()` asigna explícitamente `0x30201` a `Baikal B1`. Esto eleva el dato a **REPORTADO-OBSERVADO por el operador**, no a una medición repetida e independiente en esta sesión. La tabla comunitaria de PS4 Developer Wiki presenta filas contradictorias para el identificador de modelo, pero esa ambigüedad general no invalida automáticamente la lectura de runtime de esta unidad. No volver a ejecutar un payload solo para repetir una observación ya registrada.
+Marcos reportó que la pantalla de información del sistema mostraba `Baikal B1`, ID `0x30201`. En el código upstream auditado, `GetSouthbridgeName()` asigna explícitamente `0x30201` a `Baikal B1`. Estado: **REPORTADO-OBSERVADO por el operador**. La tabla comunitaria de PS4 Developer Wiki tiene filas contradictorias para el identificador comercial CUH-2115B; eso impide inferir el chip desde el modelo, pero no invalida por sí mismo la lectura de runtime reportada para esta unidad. No volver a ejecutar un payload solo para repetir una observación ya registrada.
 
-Siguiente observación admisible, sin intervención en la consola:
-1. Buscar documentación primaria fiable que relacione **CUH-2115B exacto** y revisión de placa/southbridge; registrar URL, fecha y qué identifica realmente.
-2. Revisar el registro de identificación existente y las fotos/documentos del usuario, si están disponibles en el checkout, distinguiendo dato leído directamente de inferencias.
-3. Si la identificación exige abrir la consola, leer información interna o ejecutar un payload, dejarlo bloqueado para una fase física futura y describir el requisito; no improvisar una inspección ni pedir desmontaje ahora.
-4. No usar números de serie, región comercial, capacidad del disco o semejanza de modelo como sustitutos del southbridge.
+El southbridge deja de ser el bloqueo principal. El trabajo documental pendiente es fijar la procedencia del kernel Baikal, cerrar licencias y revisar la cadena USB-only. La matriz debe conservar la distinción entre candidato y arranque probado.
 
 ## 4. USB-only: criterio de exclusión independiente
 
@@ -49,7 +45,6 @@ La documentación upstream menciona prioridad de USB para los archivos de boot s
 
 ## 5. Qué permitiría revisar la decisión
 
-- Identificación fiable de la revisión de placa/southbridge de CUH-2115B, con fuente y método explícitos.
 - Matriz cruzada modelo + revisión de placa + firmware + loader/tag/commit + kernel exacto + método de carga + origen de kernel/initramfs/rootfs.
 - Trazabilidad del kernel candidato: versión real en la cabecera, fuente, configuración, hash, licencia y posibilidad de reconstrucción.
 - Código fijado del loader auditado, licencia resuelta y análisis estático de todas las rutas de almacenamiento y escritura.
@@ -58,6 +53,6 @@ La documentación upstream menciona prioridad de USB para los archivos de boot s
 
 ## 6. Límites y conclusión
 
-No actualizar firmware, no ejecutar payloads, no escribir una imagen en un USB físico, no modificar el disco interno y no probar en hardware. La recomendación presente es **no seleccionar kernel todavía**. El bloqueo restante ya no es principalmente la identificación del southbridge: es demostrar la cadena USB-only, fijar y validar artefactos exactos, resolver licencias/procedencia y revisar riesgos del payload de entrada. No se ha demostrado arranque Linux propio en CUH-2115B. Esto no significa que Linux sea imposible en esta consola; significa que la documentación actual no basta para decidir con rigor.
+No actualizar firmware, no ejecutar payloads, no escribir una imagen en un USB físico, no modificar el disco interno y no probar en hardware. La recomendación presente es **usar `bzImage-baikal-7.0.8` como candidato para validación host-side**, no como kernel aprobado para ejecutar. Los bloqueos restantes son demostrar la cadena USB-only, fijar y validar artefactos exactos, resolver licencias/procedencia y revisar riesgos del payload de entrada. No se ha demostrado arranque Linux propio en CUH-2115B. Esto no significa que Linux sea imposible en esta consola; significa que la documentación actual no basta para decidir con rigor.
 
 Pendiente para cerrar el workstream: Claude debe contrastar localmente el log de identificación, las fuentes y commits, y la matriz existente; registrar cualquier discrepancia antes de marcar tareas como completadas.
