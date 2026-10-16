@@ -24,13 +24,23 @@ def verificar_configuracion_minima(boot_dir: Path) -> list[str]:
     estructura = vbc.verificar_estructura(boot_dir)
     errores.extend(estructura["errores"])
 
-    for nombre in (vbc.BOOTARGS, vbc.VRAM):
-        ruta = boot_dir / nombre
-        # lexists detecta también symlinks rotos, que no deben pasar como ausencia.
-        if ruta.is_symlink() or ruta.exists():
+    # Rechazar variantes de mayúsculas/minúsculas también: la partición FAT
+    # puede resolver nombres sin distinguir el caso aunque el host use otro FS.
+    prohibidos = {vbc.BOOTARGS.casefold(), vbc.VRAM.casefold()}
+    try:
+        presentes = list(boot_dir.iterdir())
+    except OSError as exc:
+        raise vbc.BootChainError(f"no se pudo listar '{boot_dir}': {exc}") from exc
+
+    for ruta in presentes:
+        if ruta.name.casefold() in prohibidos:
+            nombre_esperado = (
+                vbc.BOOTARGS if ruta.name.casefold() == vbc.BOOTARGS.casefold()
+                else vbc.VRAM
+            )
             errores.append(
-                f"'{nombre}' está presente; el candidato mínimo exige omitirlo "
-                "y usar los valores por defecto del loader"
+                f"'{ruta.name}' está presente (nombre reservado '{nombre_esperado}'); "
+                "el candidato mínimo exige omitirlo y usar los valores por defecto del loader"
             )
     return errores
 
