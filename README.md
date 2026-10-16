@@ -75,6 +75,7 @@ Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `T
 | [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes, licencias y nivel de confianza de cada binario |
 | [Diagnóstico del CI](docs/CI_DIAGNOSIS.md) | Por qué falla Actions (facturación) y la alternativa local |
 | [Auditoría transversal 2026-10-16](docs/CROSS_DOC_AUDIT_2026-10-16.md) | Inconsistencias detectadas entre documentos, correcciones y bloqueos abiertos |
+| [Revisión cruzada de rama Claude](docs/BRANCH_REVIEW_CLAUDE_2026-10-16.md) | Hallazgos estáticos sobre el inventario, la publicación del constructor y la divergencia de ramas |
 
 ## Convenciones de evidencia
 Estado de fase: PLANNED, IN_PROGRESS, BLOCKED, COMPLETADA, VERIFIED y REJECTED. `VERIFIED` exige prueba propia en hardware con registro y hashes (etiqueta `LAB`); documentación, código escrito o reportes de terceros no bastan.
