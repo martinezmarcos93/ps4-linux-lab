@@ -10,19 +10,19 @@
 - Modelo reportado/registrado: PS4 Slim CUH-2115B.
 - Firmware registrado: 13.52.
 - Capacidad observada: 861,4 GB.
-- Southbridge: desconocido.
+- Southbridge: Baikal B1 (`0x30201`), reportado por Marcos desde la pantalla de información del sistema; no repetido independientemente en esta sesión.
 - Arranque Linux propio: no verificado.
 - USB-only: objetivo de diseño, no propiedad demostrada.
 
 ## Tareas hasta el 100 %
 
-- [ ] C01 — Auditar el log de identificación y clasificar cada dato como confirmado, observado, inferido o desconocido.
+- [x] C01 — Auditar el log de identificación y clasificar cada dato como confirmado, observado, inferido o desconocido. Southbridge reportado como Baikal B1 (`0x30201`); el log canónico debe sincronizarse sin volver a ejecutar payloads.
 - [ ] C02 — Determinar qué métodos no invasivos permiten identificar revisión de placa/southbridge y documentar riesgos y requisitos.
 - [ ] C03 — Reunir fuentes primarias por modelo, firmware, southbridge, exploit/payload, loader y kernel; fijar versiones y fechas.
 - [ ] C04 — Crear una matriz de compatibilidad cruzada, no una lista aislada de compatibilidad por firmware.
 - [ ] C05 — Separar compatibilidad reportada por terceros, inferida por código y probada en esta consola.
 - [ ] C06 — Revisar las condiciones de firmware y evitar recomendar actualizaciones o acciones irreversibles.
-- [ ] C07 — Definir qué evidencia mínima permite elegir candidato de kernel/loader y qué evidencia lo descarta.
+- [x] C07 — Definir evidencia mínima: `bzImage-baikal-7.0.8` pasa a candidato documental; no aprobado para ejecución hasta cerrar USB-only, procedencia/licencias y validación host-side.
 - [ ] C08 — Identificar bloqueos irresolubles por documentación pública y describir la siguiente observación necesaria.
 - [ ] C09 — Actualizar COMPATIBILITY_MATRIX, LAB-000 y ROADMAP sin convertir hipótesis en hechos.
 - [ ] C10 — Revisar independientemente las conclusiones de upstream audit y documentar discrepancias.
