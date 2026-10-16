@@ -38,3 +38,9 @@ La comparación con `main` muestra que la rama está divergida y modifica docume
 - **Prometedor, pendiente de ejecución independiente:** manejo de informe, verificación de filesystem y rollback del constructor.
 - **No demostrado:** suite completa, compatibilidad de kernel, aislamiento en runtime, arranque real y seguridad de cualquier acción física.
 - **Acción tomada por esta revisión:** solo documentación en la rama de auditoría; no se modificó la rama de Claude ni `main`.
+
+### CR-005 — El README de Claude quedó desactualizado respecto del CUH confirmado
+
+La versión actual de `docs/KERNEL_SELECTION.md` y `docs/COMPATIBILITY_MATRIX.md` ya registra el modelo **CUH-2115B confirmado**, pero el primer párrafo del `README.md` de la rama de Claude aún dice que el CUH es desconocido y el checklist habla de completar la identificación del CUH. Es una inconsistencia documental; el bloqueo real es el southbridge.
+
+**Corrección aplicada solo en `chatgpt/ps4-audit-roadmap`:** el README de esa rama ahora refleja CUH-2115B confirmado y southbridge desconocido. No modifiqué la rama de Claude ni `main`.
