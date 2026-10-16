@@ -19,7 +19,7 @@ Depende de los workstreams 02 (tests), 03 (procedencia/licencias) y 04 (compatib
 - [ ] I06 — Ejecutar preflight/dry-run con fixtures sintéticos; no usar dispositivos físicos. Se añadió `tools/strict_usb_preflight.py` y `tests/test_strict_usb_preflight.py`; pendiente ejecución real de la suite/CI.
 - [ ] I07 — Verificar formato, estructura, tamaño, hashes y reproducibilidad de la imagen candidata en PC.
 - [ ] I08 — Incorporar pruebas de seguridad para paths, symlinks, nombres de dispositivo ambiguos, sobrescritura de salidas y fallos parciales. Cobertura inicial de opcionales/symlinks en `tests/test_strict_usb_preflight.py` y publicación sin sobrescritura en `tests/test_build_usb_image.py`; faltan más casos de fallos de lectura y rutas.
-- [ ] I09 — Confirmar que el manifiesto referencia fuentes confiables y artefactos permitidos por licencia.
+- [ ] I09 — Confirmar que el manifiesto referencia fuentes confiables y artefactos permitidos por licencia. Auditoría documental inicial publicada en `ARTIFACT_PROVENANCE_LICENSE_AUDIT_2026-10-16.md`; resultado actual: NO-GO para artefactos críticos por fuente/licencia incompletas.
 - [ ] I10 — Documentar recuperación, condiciones de aborto y criterios de aprobación previos a una prueba física.
 - [ ] I11 — ChatGPT revisa de forma independiente el diseño, el diff, las rutas de escritura y los claims de seguridad. Revisión inicial publicada en `PATCH_REVIEW_2026-10-16.md`; nueva iteración de contención documentada en `R_USB_001_CONTAINMENT.md` y `USB_MINIMAL_CONFIG_TEST_PLAN.md`.
 - [ ] I12 — Emitir informe final con propiedades demostradas, no demostradas, limitaciones y decisión go/no-go para una futura prueba física.
@@ -51,3 +51,14 @@ No editar `main` directamente. No escribir USB físico, no ejecutar payloads y n
 
 - [ ] H-FAT-001/H-FAT-002 — La corrección de cadena FAT y geometría BPB está implementada; CI #45 pasó con tests y documentación para `dea17f6`. Falta confirmar el run más reciente y revisar casos residuales.
 - [ ] H-IMG-001 — Cerrar con CI la publicación atómica sin sobrescritura y confirmar tests host-side.
+
+
+## Auditoría de procedencia/licencias — 2026-10-16
+
+- [x] Se cruzaron `docs/ARTIFACT_INVENTORY.md`, `manifests/arranque-catalogo.json`, `docs/LICENSE_POLICY.md`, `docs/LOADER_BUILD_REPRO.md` y `docs/USB_ONLY_DESIGN.md`.
+- [x] Se publicó `ARTIFACT_PROVENANCE_LICENSE_AUDIT_2026-10-16.md` con decisión conservadora por artefacto, nivel de confianza, limitaciones y puertas de aceptación.
+- [ ] No se declara aprobado el kernel Baikal: hay hash y cabecera, pero no fuente exacta, `.config` ni build reproducible identificados.
+- [ ] No se declara aprobado el initramfs: faltan inventario/licencias completas de binarios y firmware incluidos.
+- [ ] No se declara aprobado el rootfs: faltan auditoría de paquetes, servicios, usuarios, scripts y acceso al almacenamiento interno.
+- [ ] No se declara resuelta la licencia global del loader; la licencia BSD-2-Clause del subcomponente `ps4-kexec-common` no se extiende automáticamente al repositorio entero.
+- **Decisión:** NO-GO para prueba física con el conjunto actual; GO para continuar análisis estático y pruebas sintéticas. No se descargaron ni ejecutaron binarios durante esta revisión.
