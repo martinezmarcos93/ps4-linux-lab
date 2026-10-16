@@ -15,6 +15,10 @@ No asumir que un repositorio, release o paquete tiene una única licencia aplica
 - Obligaciones de atribución, entrega de fuente y avisos.
 - Fecha de revisión.
 
+## Licencia del código propio
+
+El código y la documentación propios de este repositorio (`tools/`, `tests/`, `scripts/`, `docs/`, `README.md`) se publican bajo **MIT** (ver `LICENSE` en la raíz, decisión `D-023` en `docs/DECISION_LOG.md`). Esta licencia **no se extiende** a componentes de terceros (loaders, kernels, payloads, rootfs, parches o binarios upstream): cada uno conserva su propia licencia y condiciones, según el inventario de esta política y de `docs/ARTIFACT_INVENTORY.md`.
+
 ## Política inicial de este repositorio
 
 - Documentación y scripts propios se identificarán como propios.
