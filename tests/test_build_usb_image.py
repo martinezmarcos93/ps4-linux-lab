@@ -153,7 +153,7 @@ class TestConstruccion(Base):
         plan = bu.planificar(self.args())
         destino = bu.construir(plan)
         self.assertTrue(destino.is_file())
-        self.assertEqual(sorted(p.name for p in (self.dir / "out").iterdir()), ["prueba.img"])  # sin temporales
+        self.assertEqual(sorted(p.name for p in (self.dir / "out").iterdir()), ["prueba.img", "prueba.json"])  # sin temporales
         off1, size1 = fat.particion_mbr(destino, 1)
         off2, size2 = fat.particion_mbr(destino, 2)
         self.assertEqual(off1, 2048 * 512)
@@ -226,7 +226,21 @@ class TestConstruccion(Base):
     def test_herramienta_faltante(self):
         with mock.patch("shutil.which", return_value=None), mock.patch("os.path.exists", return_value=False):
             with self.assertRaisesRegex(bu.BuildError, "falta la herramienta"):
-                bu.construir({"salida": str(self.dir / "out" / "x.img")})
+                bu.construir({"salida": str(self.dir / "out" / "x.img"), "tamano_total_mib": 0})
+
+    def test_informe_preexistente(self):
+        plan = bu.planificar(self.args())
+        (self.dir / "out" / "prueba.json").write_bytes(b"{}")
+        destino = bu.construir(plan)
+        self.assertTrue(destino.is_file())
+        self.assertTrue((self.dir / "out" / "prueba.json").is_file())
+
+    def test_fsck_falla_limpia(self):
+        plan = bu.planificar(self.args())
+        with mock.patch("tools.build_usb_image._verificar_p1", side_effect=bu.BuildError("fsck falló")):
+            with self.assertRaisesRegex(bu.BuildError, "fsck falló"):
+                bu.construir(plan)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
 
 
 if __name__ == "__main__":
