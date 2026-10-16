@@ -7,22 +7,22 @@
 - Familia Slim: inferida de una foto.
 - Capacidad indicada: 861,4 GB; no identifica por sí sola la revisión.
 - CUH y southbridge: desconocidos.
-- Loader USB-only: hay una rama con una compilación aislada reportada; su script todavía requiere corrección de propagación de errores y validación de artefactos.
+- Loader USB-only: compilación aislada integrada en `main` (2026-10-16) con el script corregido (propagación de errores, conjunto completo de artefactos validado, entorno fijado); sin ejecutar y sin reproducir el ELF publicado.
 - Arranque Linux propio en la consola: ninguno.
 - Escritura en USB físico, ejecución de exploit/payload y escritura en almacenamiento interno: no autorizadas por este plan.
 
 ## Secuencia mínima de trabajo
 
 ### Gate 0 — Cerrar la compilación aislada
-**Responsable:** Claude Code. **Estado:** pendiente de correcciones y revisión independiente.
+**Responsable:** Claude Code. **Estado:** correcciones hechas e integradas en `main`; pendiente solo la revisión independiente (ChatGPT). Evidencia: `docs/LOADER_BUILD_REPRO.md`, `docs/TEST_PLAN.md`.
 
-- [ ] El script propaga el código de salida real de `make`.
-- [ ] La compilación solo pasa con el conjunto completo esperado: 9 ELF, 9 BIN y 20 `kexec.bin` (confirmar nombres contra la revisión fijada).
-- [ ] Pruebas de fallo inducido cubren make fallido, artefactos ausentes, parciales y vacíos.
-- [ ] Imagen de construcción fijada por digest y paquetes versionados o snapshot documentado.
-- [ ] Permisos del host limitados al directorio de trabajo.
-- [ ] `bash scripts/check.sh` ejecutado y resultado registrado.
-- [ ] Original y parcheado construidos en el entorno corregido; hashes verificados contra los manifiestos.
+- [x] El script propaga el código de salida real de `make`.
+- [x] La compilación solo pasa con el conjunto completo esperado: 9 ELF, 9 BIN y 20 `kexec.bin` (confirmar nombres contra la revisión fijada).
+- [x] Pruebas de fallo inducido cubren make fallido, artefactos ausentes, parciales y vacíos.
+- [x] Imagen de construcción fijada por digest y paquetes versionados o snapshot documentado.
+- [x] Permisos del host limitados al directorio de trabajo.
+- [x] `bash scripts/check.sh` ejecutado y resultado registrado.
+- [x] Original y parcheado construidos en el entorno corregido; hashes verificados contra los manifiestos.
 - [ ] Revisión independiente del diff terminada.
 
 **Criterio de salida:** no existe una ruta conocida por la que el script pueda informar éxito ante una compilación fallida o incompleta. Esto no demuestra que el loader funcione en hardware.
