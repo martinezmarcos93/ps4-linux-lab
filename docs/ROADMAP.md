@@ -29,12 +29,12 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Salida:** documentos de gobernanza coherentes; no implica soporte de hardware.
 
 ## Fase 1 — Identificación de consola
-**Estado:** PARCIAL — firmware 13.52 **observado**, modelo **CUH-2115B confirmado**, familia Slim confirmada por el modelo y capacidad 861,4 GB **observada**; southbridge **desconocido**. La identificación de la consola sigue incompleta y por eso **la selección de kernel no está resuelta**. Registro: [`docs/lab-logs/LAB-000-identificacion-consola.md`](lab-logs/LAB-000-identificacion-consola.md). Ejecutable como caso **TP-01** de [`docs/TEST_PLAN.md`](TEST_PLAN.md).
+**Estado:** PARCIAL — firmware 13.52 **observado**, modelo **CUH-2115B confirmado**, familia Slim confirmada por el modelo y capacidad 861,4 GB **observada**; southbridge **Baikal B1 (`0x30201`) observado por el operador con GoldHEN v2.2.3 el 2026-10-16**. La identificación del southbridge está completada a nivel observacional; la selección del kernel sigue pendiente de validación. Registro: [`docs/lab-logs/LAB-001-southbridge.md`](lab-logs/LAB-001-southbridge.md). Registro: [`docs/lab-logs/LAB-000-identificacion-consola.md`](lab-logs/LAB-000-identificacion-consola.md). Ejecutable como caso **TP-01** de [`docs/TEST_PLAN.md`](TEST_PLAN.md).
 - [x] `IMPLEMENTADO` Registrar CUH-2115B confirmado en `docs/lab-logs/LAB-000-identificacion-consola.md` y `docs/COMPATIBILITY_MATRIX.md`.
 - [ ] `PENDIENTE` Registrar firmware exacto sin actualizarlo.
 - [ ] `PENDIENTE` Registrar estado de arranque original y síntomas existentes.
 - [ ] `PENDIENTE` Determinar qué datos requieren respaldo.
-- [ ] `PENDIENTE` Clasificar identificación de southbridge como hecho, inferencia o desconocido — el mecanismo real de detección en runtime (`sysctlbyname("hw.sce_subsys_subid")`) está documentado en [`docs/UPSTREAM_CODE_MAP.md`](UPSTREAM_CODE_MAP.md) §1.3 paso 5; es el dato que permitiría avanzar las filas "Untested" de [`docs/COMPATIBILITY_MATRIX.md`](COMPATIBILITY_MATRIX.md), pero solo se obtiene ejecutando el payload, no antes.
+- [x] `LAB` Registrar southbridge Baikal B1 (`0x30201`) observado mediante GoldHEN v2.2.3; ver `docs/lab-logs/LAB-001-southbridge.md`. La captura no está guardada como artefacto con hash, limitación registrada.
 
 **Salida:** ficha de hardware y procedencia de cada dato, sin acciones destructivas.
 
@@ -71,10 +71,11 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Salida:** informe reproducible de análisis estático, sin ejecución del payload (`docs/EXPLOIT_AUDIT_13.52.md`). Conclusión sostenida: "identificable como GoldHEN, sin hosts ajenos en cadenas"; **no sostenida**: que sea seguro.
 
 ## Fase 3 — Selección del método de arranque
-**Estado:** BLOQUEADA — la política está decidida (D-008: USB-only) pero **no validada**, y aunque el CUH-2115B ya está identificado, falta resolver el southbridge/compatibilidad, por lo que **no se puede elegir kernel**. Procedimiento con citas de código en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md); diseño verificable en [`docs/USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
+**Estado:** BLOQUEADA — la política USB-only (D-008) sigue sin validación técnica. Southbridge observado: Baikal B1 (`0x30201`). `bzImage-baikal-7.0.8` es candidato prioritario para revisión, no una selección final ni una aprobación de arranque. Procedimiento con citas de código en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md); diseño verificable en [`docs/USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
 - [x] `TERCEROS` Existe un exploit/payload que dice cubrir el firmware registrado (13.52): guías y repositorio `raw13g` (no verificado por nosotros); depende de GoldHEN (D-010). La lista de 20 firmwares con offsets está en `UPSTREAM_CODE_MAP.md` §1.7 (`CÓDIGO`).
 - [x] `CÓDIGO` Requisitos y riesgos del método seleccionado — `docs/TROUBLESHOOTING.md` y `UPSTREAM_CODE_MAP.md` §1.6.
-- [ ] `BLOQUEADO` **Elegir kernel según revisión/southbridge.** No resuelto: el southbridge de la consola es desconocido; Marcos autorizó la lectura por software. Seguir el procedimiento de `docs/AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md`. Tabla de decisión por southbridge en `COMPATIBILITY_MATRIX.md` §7; no se selecciona ningún binario para esta consola.
+- [x] `LAB` Identificar el southbridge observado: Baikal B1 (`0x30201`), registro `docs/lab-logs/LAB-001-southbridge.md`.
+- [ ] `PENDIENTE` Seleccionar formalmente el kernel tras revisar hashes, procedencia y coherencia kernel/initramfs/rootfs. Baikal 7.0.8 es candidato prioritario, no selección final.
 - [x] `IMPLEMENTADO` Decisión D-008 tomada: USB-only como arquitectura objetivo; la escritura interna no es fallback (ver `DECISION_LOG.md`).
 - [ ] `PENDIENTE` Demostrar que el flujo USB-only es una propiedad real. Hecho: loader original y parcheado **compilados** en contenedor sin red y comparados estáticamente (`TESTS`/`CÓDIGO`, `LOADER_BUILD_REPRO.md`). Falta: comprobar rutas internas vacías y observar el disco interno antes y después en laboratorio (`USB_ONLY_DESIGN.md` §4).
 - [x] `IMPLEMENTADO` Ruta de rollback por paso — `BOOT_FLOW.md` Fase 6 y `TROUBLESHOOTING.md` (documental; no ensayada).
@@ -104,17 +105,17 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Puerta de salida:** tests automáticos demuestran que los casos ambiguos o peligrosos abortan (destino ambiguo, disco de sistema, tamaño insuficiente, confirmación ausente) — cumplida para la construcción de imágenes; pendiente para la escritura física (no implementada).
 
 ## Fase 5 — Preparación de medio externo
-**Estado:** BLOCKED — depende de la Fase 1 (southbridge → kernel) y de la procedencia/licencias. Ejecutable como casos **TP-02 a TP-04** de `docs/TEST_PLAN.md`.
+**Estado:** BLOCKED — el southbridge ya se identificó como Baikal B1; la fase depende de la selección final del kernel, la procedencia y las licencias. Ejecutable como casos **TP-02 a TP-04** de `docs/TEST_PLAN.md`.
 - [ ] `PENDIENTE` Construir imagen reproducible en PC: la herramienta existe (`tools/build_usb_image.py`); falta ejecutarla con el rootfs real bajo `fakeroot` y con el kernel que corresponda.
 - [x] `TESTS` Verificar formato, particiones y filesystem de la imagen de prueba (`fsck.vfat -n` sobre p1, lectura de p2 con `debugfs`).
-- [ ] `BLOQUEADO` Confirmar correspondencia kernel/initramfs/rootfs con el hardware identificado: southbridge desconocido.
+- [ ] `BLOQUEADO` Confirmar correspondencia kernel/initramfs/rootfs con Baikal B1 (`0x30201`); el dato de hardware está identificado, pero la cadena completa aún no está validada.
 - [x] `IMPLEMENTADO` Política de kernel en el USB: el `bzImage` va **dentro de la FAT** (USB-only, D-008); no se usan kernels de repuesto renombrados para esta consola.
 - [x] `TESTS` Validar el procedimiento con imagen virtual antes de escribir a un disco real (incluye una imagen de prueba con artefactos reales en una ubicación temporal, descartada).
 
 **Salida:** artefacto USB reproducible y validado antes de conectar a la consola.
 
 ## Fase 6 — Primer arranque Linux
-**Estado:** BLOCKED — no hay consola identificada ni medio aprobado, y la política USB-only (D-008) aún no está validada como propiedad técnica. Procedimiento detallado con tiempos y señales esperadas (LED, video) en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md) Fases 3-6; árboles de diagnóstico ante fallo en [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md); ejecutable como casos **TP-05 a TP-07** de `docs/TEST_PLAN.md`.
+**Estado:** BLOCKED — la consola y el southbridge están identificados, pero no hay medio aprobado y la política USB-only (D-008) aún no está validada como propiedad técnica. Procedimiento detallado con tiempos y señales esperadas (LED, video) en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md) Fases 3-6; árboles de diagnóstico ante fallo en [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md); ejecutable como casos **TP-05 a TP-07** de `docs/TEST_PLAN.md`.
 - [ ] `PENDIENTE` Ejecutar solo el procedimiento específico aprobado (no genérico).
 - [ ] `PENDIENTE` Registrar vídeo, indicador luminoso (LED), tiempos y logs.
 - [ ] `PENDIENTE` Cambiar una sola variable por intento ante un fallo.
@@ -176,7 +177,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Salida:** decisión respaldada por evidencia registrada, no por expectativas iniciales.
 
 ## Dependencias críticas
-- Fase 1 bloquea las fases 3, 5 y 6.
+- La identificación de Fase 1 ya registró Baikal B1; la selección/validación del kernel y la cadena USB-only siguen bloqueando las fases 3, 5 y 6.
 - Fase 2 bloquea la selección/reutilización de componentes.
 - Fase 3 requiere Fase 1 (southbridge) y la validación de USB-only (`USB_ONLY_DESIGN.md` §4).
 - Fase 4 puede avanzar en la PC usando solo archivos/imágenes virtuales, sin esperar a la Fase 1.
