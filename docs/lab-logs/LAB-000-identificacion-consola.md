@@ -6,8 +6,8 @@
 - Objetivo: identificar la consola disponible sin modificarla (solo observación pasiva).
 - Modelo CUH: **CUH-2115B**, confirmado por Marcos tras localizar la etiqueta de la consola (2026-10-16).
 - Firmware: 13.52 (Ajustes → Sistema → Información del sistema).
-- Southbridge/revisión de placa: **DESCONOCIDO**. El CUH no basta para inferirlo con certeza. Solo se puede obtener ejecutando el payload (`GetSouthbridgeName()`), ver regla 3 de `COMPATIBILITY_MATRIX.md` §6.
-- Método de jailbreak/payload: ninguno. No se ejecutó nada.
+- Southbridge: **Baikal B1 (`0x30201`) observado mediante GoldHEN v2.2.3** el 2026-10-16; ver registro específico `LAB-001-southbridge.md`. El modelo CUH por sí solo no permitía inferirlo.
+- Método de identificación: navegador PS4/WebKitty y GoldHEN v2.2.3; no se arrancó Linux.
 - Hash payload: n/a
 - Kernel + hash: n/a
 - Initramfs + hash: n/a
@@ -15,7 +15,7 @@
 - Medio USB (marca/modelo/capacidad): n/a
 - Reserva VRAM: n/a
 - Pantalla/HDMI/HDCP: con el monitor de la PC no hay detección de señal (causa sin determinar). Con un televisor la consola da imagen y se pudo operar el menú.
-- Cambios: CUH-2115B confirmado por el operador; familia Slim confirmada por el modelo.
+- Cambios: CUH-2115B confirmado por el operador; familia Slim confirmada por el modelo; southbridge leído como Baikal B1 (`0x30201`).
 
 ## Datos observados (consola)
 | Dato | Valor | Fuente |
@@ -33,7 +33,7 @@
 ## Inferencias (NO confirmadas)
 - **Familia: Slim.** Confirmada por el modelo CUH-2115B.
 - **Capacidad de fábrica: clase 1 TB (letra B).** 861,4 GB es incompatible con un modelo de 500 GB (~440 GB mostrados). El disco interno pudo haber sido reemplazado; no verificado.
-- **Southbridge:** sigue sin confirmar. No inferir Baikal/Belize únicamente a partir del CUH; ver `COMPATIBILITY_MATRIX.md` §7.
+- **Southbridge:** observado como Baikal B1 (`0x30201`) mediante GoldHEN; no inferido a partir del CUH. Ver `LAB-001-southbridge.md`.
 
 ## Procedimiento
 1. Escaneo pasivo de la LAN 192.168.1.0/24 con `nmap -sn` y `avahi-browse`.
@@ -50,14 +50,14 @@
 - Logs capturados: ninguno guardado.
 
 ## Resultado
-- Estado: IN_PROGRESS (CUH y firmware identificados; southbridge y compatibilidad de arranque aún pendientes).
+- Estado: IN_PROGRESS (CUH, firmware y southbridge identificados; compatibilidad de arranque aún pendiente).
 - Evidencia: tabla de datos observados arriba (lectura directa en pantalla y escaneo de red).
 - Hipótesis confirmada/refutada: confirmado que 13.52 está dentro de la lista de firmwares del loader (`COMPATIBILITY_MATRIX.md` §3). No confirmado que haya método de jailbreak viable en esta consola concreta.
-- Variable única para el próximo intento: revisar el inventario de artefactos y la evidencia de compatibilidad; el southbridge continúa desconocido.
+- Variable única para el próximo paso: auditar artefactos Baikal y su compatibilidad; el kernel aún no está aprobado.
 - Rollback ejecutado y resultado: n/a, no se modificó nada.
 
 ## Pendientes antes de poder avanzar
-1. Resolver el southbridge con evidencia fiable y autorización; no inferirlo solo por CUH.
+1. Registrar la observación de southbridge en LAB-001; no inferirlo solo por CUH.
 2. Desactivar descargas automáticas de actualización y no aceptar ninguna.
 3. D-008 y Q-006 están resueltas como política (USB-only; no se escribe en el interno); lo pendiente es demostrar USB-only (`docs/USB_ONLY_DESIGN.md` §4) antes de cualquier ejecución.
 4. Diagnosticar el HDMI con el monitor (probar otra entrada/cable, modo seguro → cambiar resolución).
@@ -67,4 +67,4 @@
 Marcos autorizó expresamente todas las acciones técnicas necesarias para descubrir el kernel compatible, incluida la identificación del southbridge por software mediante GoldHEN o lectura de `hw.sce_subsys_subid`, y la ejecución del exploit/payload necesario para esa lectura. Esta autorización **no** equivale a autorizar escritura en almacenamiento interno, escritura física de una imagen USB o arranque Linux.
 Procedimiento y límites: [`docs/AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md`](../AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md).
 - Southbridge: pendiente de lectura observada.
-- Estado de laboratorio: no se ha ejecutado nada en la consola en esta sesión; hace falta la operación local en la PS4.
+- Estado de laboratorio: se utilizó GoldHEN para leer el southbridge. No se escribió el USB físico ni se arrancó Linux.
