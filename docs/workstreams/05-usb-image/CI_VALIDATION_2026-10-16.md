@@ -24,3 +24,11 @@ Tampoco demuestra por sí solo que los artefactos candidatos tengan procedencia/
 ## Corrección de estado documental
 
 Esta nota supersede las menciones anteriores en los documentos del workstream que indican que la CI de los cambios de endurecimiento seguía pendiente. No se modificó `main`, no se fusionó ningún PR y no se usaron dispositivos físicos.
+
+## Incidente posterior — run #58
+
+La ampliación de pruebas de contrato del parche tuvo un fallo de test: la aserción buscaba llamadas a archivos opcionales en todo el texto del parche, por lo que también coincidía con las líneas eliminadas del upstream. Se corrigió para examinar únicamente las líneas añadidas por el parche. Este cambio corrige el test, no altera el código C propuesto.
+
+- Run fallido: [#58](https://github.com/martinezmarcos93/ps4-linux-lab/actions/runs/38927608404).
+- La validación del commit que contiene la corrección debe confirmarse en una ejecución posterior; hasta entonces, el estado de CI del último head queda pendiente.
+- El parche C sigue sin aplicarse ni compilarse en un checkout upstream. 
