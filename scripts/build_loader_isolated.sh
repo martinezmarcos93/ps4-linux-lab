@@ -1,58 +1,73 @@
 #!/usr/bin/env bash
 # Compila ps4-linux-loader (revisión fijada) dentro de un contenedor Docker sin red, sin dispositivos,
-# con sistema de archivos raíz de solo lectura y sin capacidades. NO ejecuta ningún ELF resultante.
+# con raíz de solo lectura y sin capacidades. NO ejecuta ningún ELF resultante.
 #
-# Uso: scripts/build_loader_isolated.sh <dir-fuentes-limpio> <dir-salida> [--patch archivo.patch]
-#   <dir-fuentes-limpio>  checkout del loader en la revisión fijada (se copia; el original no se modifica)
-#   <dir-salida>          directorio NUEVO donde quedan fuentes copiadas, logs y artefactos
-set -euo pipefail
+# Uso: scripts/build_loader_isolated.sh <dir-fuentes-limpio> <dir-salida> [--patch archivo.patch] [--manifiesto m.json --variante original|parcheado]
+# Código de salida: 0 SOLO si make terminó con 0 Y el conjunto completo de artefactos (9 ELF, 9 BIN, 20 kexec.bin)
+# existe, no está vacío y no tiene duplicados/inesperados. Cualquier otra cosa: distinto de 0, con los logs conservados.
+# Variable DOCKER (por defecto "docker"): solo para pruebas con un docker simulado.
+set -uo pipefail
 
-IMAGEN=ps4lab-loader-build:1
+IMAGEN=ps4lab-loader-build:2
+DOCKER=${DOCKER:-docker}
 REPO=$(cd "$(dirname "$0")/.." && pwd)
-SRC=${1:?falta <dir-fuentes-limpio>}
-OUT=${2:?falta <dir-salida>}
-PARCHE=""
-if [ "${3:-}" = "--patch" ]; then PARCHE=${4:?falta archivo.patch}; fi
 
-[ -d "$SRC/linux" ] && [ -d "$SRC/lib" ] || { echo "ERROR: $SRC no parece el loader" >&2; exit 2; }
-[ ! -e "$OUT" ] || { echo "ERROR: $OUT ya existe; use un directorio nuevo" >&2; exit 2; }
-case "$(readlink -f "$OUT")" in /dev/*|/proc/*|/sys/*|/etc/*|/usr/*|/boot/*) echo "ERROR: salida en ruta del sistema" >&2; exit 2;; esac
+falla() { echo "FALLO: $1" >&2; exit "${2:-1}"; }
 
-mkdir -p "$OUT"
-cp -a "$SRC" "$OUT/src"
+SRC=${1:-}; OUT=${2:-}
+if [ -z "$SRC" ] || [ -z "$OUT" ]; then falla "uso: $0 <dir-fuentes-limpio> <dir-salida> [--patch f] [--manifiesto m --variante v]" 2; fi
+shift 2
+PARCHE=""; MANIFIESTO=""; VARIANTE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --patch) PARCHE=${2:?falta archivo.patch}; shift 2;;
+    --manifiesto) MANIFIESTO=${2:?falta manifiesto}; shift 2;;
+    --variante) VARIANTE=${2:?falta variante}; shift 2;;
+    *) falla "argumento desconocido: $1" 2;;
+  esac
+done
+
+if [ -n "$PARCHE" ]; then
+  [ -f "$PARCHE" ] || falla "el parche $PARCHE no existe" 2
+  PARCHE=$(readlink -f "$PARCHE")   # ruta absoluta: git apply se ejecuta desde otro directorio
+fi
+{ [ -d "$SRC/linux" ] && [ -d "$SRC/lib" ]; } || falla "$SRC no parece el loader" 2
+[ ! -e "$OUT" ] || falla "$OUT ya existe; use un directorio nuevo" 2
+case "$(readlink -f "$OUT")" in /dev/*|/proc/*|/sys/*|/etc/*|/usr/*|/boot/*) falla "salida en ruta del sistema" 2;; esac
+
+mkdir -m 700 "$OUT" || falla "no se pudo crear $OUT" 2
+cp -a "$SRC" "$OUT/src" || falla "no se pudo copiar las fuentes" 2
 rm -rf "$OUT/src/.git"
 if [ -n "$PARCHE" ]; then
-  (cd "$OUT/src" && git apply --check "$PARCHE" && git apply "$PARCHE")
+  (cd "$OUT/src" && git apply --check "$PARCHE" && git apply "$PARCHE") || falla "el parche no aplica limpio" 2
   echo "parche aplicado: $PARCHE (sha256 $(sha256sum "$PARCHE" | cut -d' ' -f1))" | tee "$OUT/parche.txt"
 fi
-chmod a+rwx "$OUT"            # el usuario del contenedor (uid 10001) debe poder escribir logs
-chmod -R a+rwX "$OUT/src"
 
-docker image inspect "$IMAGEN" >/dev/null 2>&1 || {
-  echo "Construyendo la imagen $IMAGEN (usa red solo para apt)..." >&2
-  docker build -q -t "$IMAGEN" "$REPO/build-env/loader" >/dev/null
-}
-
-# lib/syscalls.asm está versionado: se marca como más nuevo que lib/syscalls.py para que make NO lo regenere.
-# El contenedor no tiene red ni Python: si make intentara regenerarlo, la compilación fallaría en vez de descargar nada.
-docker run --rm --network none --read-only --tmpfs /tmp:rw,exec,size=512m --cap-drop ALL \
-  --security-opt no-new-privileges --pids-limit 512 --memory 2g --cpus 4 \
-  -v "$OUT/src":/work/src:rw -v "$OUT":/out:rw \
-  "$IMAGEN" bash -c '
-    set -uo pipefail
-    cd /work/src
-    { gcc --version | head -1; ld --version | head -1; yasm --version | head -1; make --version | head -1; } > /out/versiones.txt 2>&1
-    dpkg-query -W -f="\${Package} \${Version}\n" build-essential binutils gcc g++ make yasm libc6-dev > /out/paquetes.txt
-    touch lib/syscalls.asm
-    set +e
-    ( time make -C linux -j4 ) > /out/build.log 2>&1
-    echo "make exit=$?" >> /out/build.log
-    exit 0
-  '
-
-echo "--- resumen"; tail -3 "$OUT/build.log"
-if ls "$OUT"/src/linux/payloads/*.elf >/dev/null 2>&1; then
-  (cd "$OUT/src/linux/payloads" && sha256sum *.elf *.bin) | tee "$OUT/artefactos.sha256"
-else
-  echo "SIN ARTEFACTOS: la compilación falló (ver $OUT/build.log)"
+if ! "$DOCKER" image inspect "$IMAGEN" >/dev/null 2>&1; then
+  echo "Construyendo la imagen $IMAGEN (usa red solo para el snapshot de apt)..." >&2
+  "$DOCKER" build -q -t "$IMAGEN" "$REPO/build-env/loader" >/dev/null || falla "no se pudo construir la imagen (¿el lock de paquetes cambió?)" 3
 fi
+{ echo "arquitectura_anfitrion=$(uname -m)"; echo "imagen=$IMAGEN"; \
+  echo "imagen_id=$("$DOCKER" image inspect "$IMAGEN" --format '{{.Id}}' 2>/dev/null || echo desconocido)"; } > "$OUT/entorno.txt"
+
+# El contenedor corre con el uid/gid del anfitrión: no se cambian permisos globales y nada queda escribible por terceros.
+"$DOCKER" run --rm --platform linux/amd64 --network none --read-only --tmpfs /tmp:rw,exec,size=512m --cap-drop ALL \
+  --security-opt no-new-privileges --pids-limit 512 --memory 2g --cpus 4 \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$OUT/src":/work/src:rw -v "$OUT":/out:rw \
+  -v "$REPO/build-env/loader/inner_build.sh":/inner_build.sh:ro \
+  "$IMAGEN" bash /inner_build.sh
+RC_CONTENEDOR=$?
+echo "$RC_CONTENEDOR" > "$OUT/contenedor.exit"
+
+VERIF=("$REPO/tools/verify_loader_build.py" "$OUT")
+[ -z "$MANIFIESTO" ] || VERIF+=(--manifiesto "$MANIFIESTO" --variante "$VARIANTE")
+python3 "${VERIF[@]}"
+RC_VERIF=$?
+
+echo "--- resumen: contenedor/make=$RC_CONTENEDOR verificación=$RC_VERIF (logs en $OUT/build.log, $OUT/verificacion.json)"
+if [ "$RC_CONTENEDOR" -ne 0 ]; then
+  falla "la compilación NO terminó bien (código $RC_CONTENEDOR). Los resultados parciales se conservan en $OUT sin modificar." "$RC_CONTENEDOR"
+fi
+[ "$RC_VERIF" -eq 0 ] || falla "make terminó con 0 pero el conjunto de artefactos no es válido (ver $OUT/verificacion.json)" 1
+echo "OK: compilación y conjunto de artefactos verificados. Ningún binario se ejecutó."

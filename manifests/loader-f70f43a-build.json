@@ -31,9 +31,12 @@
     ]
   },
   "entorno": {
-    "imagen_base": "ubuntu:24.04 @ sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55",
-    "imagen_construida": "ps4lab-loader-build:1 = sha256:73cc189af568bb53e3589d4dc7b25893a8b41e85c53e890f01d37acee2c43a03 (build-env/loader/Dockerfile; red solo para apt)",
-    "ejecucion": "docker run --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --pids-limit 512 --memory 2g --cpus 4, usuario 10001, sin dispositivos ni directorios personales montados",
+    "plataforma": "linux/amd64 (anfitrión x86_64)",
+    "imagen_base": "ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55 (digest del índice multi-arquitectura; variante linux/amd64 comprobada: Architecture=amd64, Os=linux)",
+    "repositorios_apt": "snapshot.ubuntu.com/ubuntu/20261016T040000Z (noble, noble-updates, noble-security); TLS sin verificar porque la base no trae ca-certificates: la integridad la da la firma GPG de apt",
+    "paquetes": "versiones exactas de los paquetes de compilación + lista completa de 148 paquetes comparada con build-env/loader/paquetes.lock durante la construcción de la imagen (si difiere, la construcción falla)",
+    "imagen_construida": "ps4lab-loader-build:2 = sha256:83708191dc7c9362453fb5b269fb07b8718109dea5d301504ed886c513be45ce (build-env/loader/Dockerfile)",
+    "ejecucion": "docker run --platform linux/amd64 --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --pids-limit 512 --memory 2g --cpus 4 --user <uid:gid del anfitrión>, sin dispositivos, sin $HOME, sin docker.sock; solo se montan la copia de las fuentes, la carpeta de salida y inner_build.sh (solo lectura)",
     "herramientas": [
       "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
       "GNU ld (GNU Binutils for Ubuntu) 2.42",
@@ -42,7 +45,7 @@
       "binutils 2.42-4ubuntu2.10",
       "libc6-dev 2.39-0ubuntu8.9"
     ],
-    "comando_de_compilacion": "touch lib/syscalls.asm && make -C linux -j4"
+    "comando_de_compilacion": "touch lib/syscalls.asm && make -C linux -j4 (build-env/loader/inner_build.sh; propaga el código de salida real de make)"
   },
   "parche": {
     "archivo": "patches/loader-usb-only-f70f43a.patch",
@@ -51,29 +54,55 @@
   "resultados": {
     "original": {
       "make_exit": 0,
+      "contenedor_exit": 0,
       "advertencias_gcc": 0,
-      "advertencias_ld": 50,
+      "advertencias_ld": {
+        "pila_ejecutable": 30,
+        "segmento_rwx": 20,
+        "otras": 0
+      },
+      "conjunto_verificado": {
+        "esperados": {
+          "elf": 9,
+          "bin": 9,
+          "kexec": 20
+        },
+        "encontrados_validos": {
+          "elf": 9,
+          "bin": 9,
+          "kexec": 20
+        }
+      },
       "sha256": {
-        "linux-1024mb.elf": "86ed667bc7b484123d14c53d487faeafd49b07fbf306b487d1a117405aecb068",
-        "linux-128mb.elf": "f6b30f75eb21365019b35bca102fb6f10fa60c632ae79a3be4c2b2b4f7deb72e",
-        "linux-2048mb.elf": "8593668b79447179d532f0ec9ece22a60b92143c82e2e8687c55da2d87aa3a8b",
-        "linux-256mb.elf": "e749f6a315291e4e5d4b8af0b90261e6b7a4bad7ffad38f255a8893b272fe4a5",
-        "linux-3072mb.elf": "dc5e0a844f8e8d27a072039d750a6b44a05e39e2bfa9ee5b81ff35595afd9097",
         "linux-32mb.elf": "b2c3cd490a83e08aaa53637b9175bad35c437ae1bf84f6ba233db67f2af33a95",
-        "linux-4096mb.elf": "51e5a5b231de7775f153f8e22935a45746929411aaca523669dcefc577e69009",
-        "linux-512mb.elf": "79701decf996754a16de51b030e09319350e5446627acb24425ca6eca7a5b1e9",
         "linux-64mb.elf": "66d38f29d405543c989e7ce6f9d0cae9c5d8d3f92739e4e3f31c0b319d333e2b",
-        "linux-1024mb.bin": "4ce138b77a836ec5015c94cf82b4c4b32310eab32cf02749c66bd39df3ddecce",
-        "linux-128mb.bin": "2f2365c8391531cd9d605a4374f4ea8e13b9f2bdd9da27d4ed857b0f8fc27b94",
-        "linux-2048mb.bin": "30a89ef2719ada66546254379abc6690e549fff7468b7eb9332cc4a10af76241",
-        "linux-256mb.bin": "7a01475a23a0f43885c92e02fe64f405366974949c16eebada5d2ee4e73ca90e",
-        "linux-3072mb.bin": "d0d5e008f0e7e662e00f0fbb4b8ff9bfcbf5e6175e9fe6f052cac95b9568d824",
+        "linux-128mb.elf": "f6b30f75eb21365019b35bca102fb6f10fa60c632ae79a3be4c2b2b4f7deb72e",
+        "linux-256mb.elf": "e749f6a315291e4e5d4b8af0b90261e6b7a4bad7ffad38f255a8893b272fe4a5",
+        "linux-512mb.elf": "79701decf996754a16de51b030e09319350e5446627acb24425ca6eca7a5b1e9",
+        "linux-1024mb.elf": "86ed667bc7b484123d14c53d487faeafd49b07fbf306b487d1a117405aecb068",
+        "linux-2048mb.elf": "8593668b79447179d532f0ec9ece22a60b92143c82e2e8687c55da2d87aa3a8b",
+        "linux-3072mb.elf": "dc5e0a844f8e8d27a072039d750a6b44a05e39e2bfa9ee5b81ff35595afd9097",
+        "linux-4096mb.elf": "51e5a5b231de7775f153f8e22935a45746929411aaca523669dcefc577e69009",
         "linux-32mb.bin": "5f6bca234970b5a6f7859f86db40b9a9e3edf61a6e13c876ed8aace342b96ca3",
-        "linux-4096mb.bin": "12357ff33399dce399203d76fca1808b008a4392a1e4d2fd261a2fc883bafcf6",
+        "linux-64mb.bin": "16b41f97bd8a4488528a8ea0a79483a3c635c6586a24db61a34686f0b9baeb9e",
+        "linux-128mb.bin": "2f2365c8391531cd9d605a4374f4ea8e13b9f2bdd9da27d4ed857b0f8fc27b94",
+        "linux-256mb.bin": "7a01475a23a0f43885c92e02fe64f405366974949c16eebada5d2ee4e73ca90e",
         "linux-512mb.bin": "720082d5e534b847a3e6ee57e5620c17678ac07e23d853200227ddab4ad48823",
-        "linux-64mb.bin": "16b41f97bd8a4488528a8ea0a79483a3c635c6586a24db61a34686f0b9baeb9e"
+        "linux-1024mb.bin": "4ce138b77a836ec5015c94cf82b4c4b32310eab32cf02749c66bd39df3ddecce",
+        "linux-2048mb.bin": "30a89ef2719ada66546254379abc6690e549fff7468b7eb9332cc4a10af76241",
+        "linux-3072mb.bin": "d0d5e008f0e7e662e00f0fbb4b8ff9bfcbf5e6175e9fe6f052cac95b9568d824",
+        "linux-4096mb.bin": "12357ff33399dce399203d76fca1808b008a4392a1e4d2fd261a2fc883bafcf6"
       },
       "sha256_kexec_bin": {
+        "505": "b5a4a10b6a94231b6701c1cf4b6bbc2170dc18f2a791c6557fb366d598116807",
+        "672": "cb3ae367a5f1fec062263d901185d3173db5e6a81b32dc3e40f67c12703eb16a",
+        "700": "c9f38f2f0155f93d210debfcf45e353ff4b6da285209470731aeb4f903bdae38",
+        "750": "514ee0b2d88c1939da8333a2822b0114b1c05d057d021205cfe7d0965628aad5",
+        "800": "6ac8dab5554ae04985947c76e3c4574cd7a904ab8d4925b395179cb8cd01bab4",
+        "850": "6d90ad0ed2fae4363ae50b8d3df7206bd7cf6428cfc8dc0e5f479118881cf6e0",
+        "900": "420c02e4ff7ec7887ad2015d41295ae8a3d7feb9a7b8d06c22d5b96d4e5dd0ea",
+        "903": "179faabb9b91169f55110a712313afb68fb7a0ca7c80d047c3448dbbd907b172",
+        "960": "5f0c994399b0b34ea6c9073dc286a030f2dce8c2136548d4d3c9097a0b573e0f",
         "1000": "7dc664772fdf73091d21d196e88246af8117f2990dd6165dcc83b8a70214a5f8",
         "1050": "01274f946993447f66d74685ed2e404abf71d04b9cec45d21a179f7fee4a2d24",
         "1100": "09706bf21175c15e722d2f77c75b20ce41f505c137ec5ce1139d2d7c684271e4",
@@ -84,46 +113,60 @@
         "1300": "f92327d15754b0fec8bfae1dde19c0521da1134b9c64fd3feca4c32956c4b97a",
         "1302": "5efa43b8dcabd24f855df3ef41e926a68b8eda1c172eb965ad648c831ad2b0ef",
         "1350": "6a38e4d7d8b6607ed1f48bdd792d0568471de72ccb153696f066328030e91db9",
-        "1352": "e1b841f27252b5fe57590f0176734e58b6c61c5bd7e92936c655ac89a1db5957",
-        "505": "b5a4a10b6a94231b6701c1cf4b6bbc2170dc18f2a791c6557fb366d598116807",
-        "672": "cb3ae367a5f1fec062263d901185d3173db5e6a81b32dc3e40f67c12703eb16a",
-        "700": "c9f38f2f0155f93d210debfcf45e353ff4b6da285209470731aeb4f903bdae38",
-        "750": "514ee0b2d88c1939da8333a2822b0114b1c05d057d021205cfe7d0965628aad5",
-        "800": "6ac8dab5554ae04985947c76e3c4574cd7a904ab8d4925b395179cb8cd01bab4",
-        "850": "6d90ad0ed2fae4363ae50b8d3df7206bd7cf6428cfc8dc0e5f479118881cf6e0",
-        "900": "420c02e4ff7ec7887ad2015d41295ae8a3d7feb9a7b8d06c22d5b96d4e5dd0ea",
-        "903": "179faabb9b91169f55110a712313afb68fb7a0ca7c80d047c3448dbbd907b172",
-        "960": "5f0c994399b0b34ea6c9073dc286a030f2dce8c2136548d4d3c9097a0b573e0f"
+        "1352": "e1b841f27252b5fe57590f0176734e58b6c61c5bd7e92936c655ac89a1db5957"
       }
-    },
-    "original_segunda_vez": {
-      "identico_al_primero": true
     },
     "parcheado": {
       "make_exit": 0,
+      "contenedor_exit": 0,
       "advertencias_gcc": 0,
-      "advertencias_ld": 50,
+      "advertencias_ld": {
+        "pila_ejecutable": 30,
+        "segmento_rwx": 20,
+        "otras": 0
+      },
+      "conjunto_verificado": {
+        "esperados": {
+          "elf": 9,
+          "bin": 9,
+          "kexec": 20
+        },
+        "encontrados_validos": {
+          "elf": 9,
+          "bin": 9,
+          "kexec": 20
+        }
+      },
       "sha256": {
-        "linux-1024mb.elf": "a0d1eadb962bcde701a74285182c2426493789c6e0677a49d2a7c0e5b29ddbde",
-        "linux-128mb.elf": "f21fdb0dba2b345978cfe03e993ffb9eb4f86d4d1dce41e74caaa778022a5ebb",
-        "linux-2048mb.elf": "9693eb26a82af61c762843ffd6adf8ad98fd0955cdb64842e0ca1985eff7d4d4",
-        "linux-256mb.elf": "ef7d0c17043a8e0df1da8ebd4b2b6f134219ffcf04a0c08c9e4ea9c0d91a1089",
-        "linux-3072mb.elf": "f6e34b78d922db748647cb3c8674f881b9c20886a3d5561b36935eff5257b9b1",
         "linux-32mb.elf": "0e127b3d2927f54ac48d5e9353feebab057e5d7f45833c2346b0bae4c0cd8b59",
-        "linux-4096mb.elf": "2481b9c5d1c8bf18edd4d306f3a278139ee694cb70b41f31580cf50ec82a5921",
-        "linux-512mb.elf": "2b606e46010a2caaf24173f9461d3a03e517e8d2c1f27cd2749fa9ec595d318b",
         "linux-64mb.elf": "6af49b279c6684759e3c76c7da9eb5f3b0251eaf842bce99f5073ca2eaae19b6",
-        "linux-1024mb.bin": "3a84ee785322d4c4a24b599dd9faaa49e23300eeeee6f242102637d6384396a3",
-        "linux-128mb.bin": "7fa13d7c9b8d5bc8824d3a8a0edfbd352568e12ca88cd0571a2d14b72b0d3b36",
-        "linux-2048mb.bin": "1bdaded1818113a60baae4684e612806fac2155912a8f137823978e3fb6d813b",
-        "linux-256mb.bin": "9a06b0417466f0a4eeb0328cecbee30f1f1839cd87af0b962860614bf860bbbe",
-        "linux-3072mb.bin": "a11a9e9d177b9a24fccd166c261c6cd49d311b183f59b21b27cd3591d91ca9a8",
+        "linux-128mb.elf": "f21fdb0dba2b345978cfe03e993ffb9eb4f86d4d1dce41e74caaa778022a5ebb",
+        "linux-256mb.elf": "ef7d0c17043a8e0df1da8ebd4b2b6f134219ffcf04a0c08c9e4ea9c0d91a1089",
+        "linux-512mb.elf": "2b606e46010a2caaf24173f9461d3a03e517e8d2c1f27cd2749fa9ec595d318b",
+        "linux-1024mb.elf": "a0d1eadb962bcde701a74285182c2426493789c6e0677a49d2a7c0e5b29ddbde",
+        "linux-2048mb.elf": "9693eb26a82af61c762843ffd6adf8ad98fd0955cdb64842e0ca1985eff7d4d4",
+        "linux-3072mb.elf": "f6e34b78d922db748647cb3c8674f881b9c20886a3d5561b36935eff5257b9b1",
+        "linux-4096mb.elf": "2481b9c5d1c8bf18edd4d306f3a278139ee694cb70b41f31580cf50ec82a5921",
         "linux-32mb.bin": "ee394d2e995e09cf23199773eef7361478c45c7b636fdf5a3dedcbb263e670e4",
-        "linux-4096mb.bin": "37a8ec68351093dbe5b18d6595622ee819f1a0207925dce4e3344ac75ed5326c",
+        "linux-64mb.bin": "0a78e3bd168e8646956ee14609d0cb5988a7f3e6949a4532547e4b10b910c4b8",
+        "linux-128mb.bin": "7fa13d7c9b8d5bc8824d3a8a0edfbd352568e12ca88cd0571a2d14b72b0d3b36",
+        "linux-256mb.bin": "9a06b0417466f0a4eeb0328cecbee30f1f1839cd87af0b962860614bf860bbbe",
         "linux-512mb.bin": "612d90c53ea80f30175899988ba7f9ef0db669d3733b57192e454be5b8965e37",
-        "linux-64mb.bin": "0a78e3bd168e8646956ee14609d0cb5988a7f3e6949a4532547e4b10b910c4b8"
+        "linux-1024mb.bin": "3a84ee785322d4c4a24b599dd9faaa49e23300eeeee6f242102637d6384396a3",
+        "linux-2048mb.bin": "1bdaded1818113a60baae4684e612806fac2155912a8f137823978e3fb6d813b",
+        "linux-3072mb.bin": "a11a9e9d177b9a24fccd166c261c6cd49d311b183f59b21b27cd3591d91ca9a8",
+        "linux-4096mb.bin": "37a8ec68351093dbe5b18d6595622ee819f1a0207925dce4e3344ac75ed5326c"
       },
       "sha256_kexec_bin": {
+        "505": "b5a4a10b6a94231b6701c1cf4b6bbc2170dc18f2a791c6557fb366d598116807",
+        "672": "cb3ae367a5f1fec062263d901185d3173db5e6a81b32dc3e40f67c12703eb16a",
+        "700": "c9f38f2f0155f93d210debfcf45e353ff4b6da285209470731aeb4f903bdae38",
+        "750": "514ee0b2d88c1939da8333a2822b0114b1c05d057d021205cfe7d0965628aad5",
+        "800": "6ac8dab5554ae04985947c76e3c4574cd7a904ab8d4925b395179cb8cd01bab4",
+        "850": "6d90ad0ed2fae4363ae50b8d3df7206bd7cf6428cfc8dc0e5f479118881cf6e0",
+        "900": "420c02e4ff7ec7887ad2015d41295ae8a3d7feb9a7b8d06c22d5b96d4e5dd0ea",
+        "903": "179faabb9b91169f55110a712313afb68fb7a0ca7c80d047c3448dbbd907b172",
+        "960": "5f0c994399b0b34ea6c9073dc286a030f2dce8c2136548d4d3c9097a0b573e0f",
         "1000": "7dc664772fdf73091d21d196e88246af8117f2990dd6165dcc83b8a70214a5f8",
         "1050": "01274f946993447f66d74685ed2e404abf71d04b9cec45d21a179f7fee4a2d24",
         "1100": "09706bf21175c15e722d2f77c75b20ce41f505c137ec5ce1139d2d7c684271e4",
@@ -134,17 +177,17 @@
         "1300": "f92327d15754b0fec8bfae1dde19c0521da1134b9c64fd3feca4c32956c4b97a",
         "1302": "5efa43b8dcabd24f855df3ef41e926a68b8eda1c172eb965ad648c831ad2b0ef",
         "1350": "6a38e4d7d8b6607ed1f48bdd792d0568471de72ccb153696f066328030e91db9",
-        "1352": "e1b841f27252b5fe57590f0176734e58b6c61c5bd7e92936c655ac89a1db5957",
-        "505": "b5a4a10b6a94231b6701c1cf4b6bbc2170dc18f2a791c6557fb366d598116807",
-        "672": "cb3ae367a5f1fec062263d901185d3173db5e6a81b32dc3e40f67c12703eb16a",
-        "700": "c9f38f2f0155f93d210debfcf45e353ff4b6da285209470731aeb4f903bdae38",
-        "750": "514ee0b2d88c1939da8333a2822b0114b1c05d057d021205cfe7d0965628aad5",
-        "800": "6ac8dab5554ae04985947c76e3c4574cd7a904ab8d4925b395179cb8cd01bab4",
-        "850": "6d90ad0ed2fae4363ae50b8d3df7206bd7cf6428cfc8dc0e5f479118881cf6e0",
-        "900": "420c02e4ff7ec7887ad2015d41295ae8a3d7feb9a7b8d06c22d5b96d4e5dd0ea",
-        "903": "179faabb9b91169f55110a712313afb68fb7a0ca7c80d047c3448dbbd907b172",
-        "960": "5f0c994399b0b34ea6c9073dc286a030f2dce8c2136548d4d3c9097a0b573e0f"
+        "1352": "e1b841f27252b5fe57590f0176734e58b6c61c5bd7e92936c655ac89a1db5957"
       }
+    },
+    "repetibilidad": {
+      "original_dos_veces_en_el_entorno_fijado_identicas": true,
+      "mismos_hashes_que_la_primera_corrida_en_imagen_sin_fijar": true,
+      "alcance": "repetible en este entorno (misma imagen, mismo digest y snapshot); no implica reproducibilidad a largo plazo"
+    },
+    "verificado_contra_este_manifiesto": {
+      "original": "scripts/build_loader_isolated.sh --manifiesto ... --variante original: exit 0",
+      "parcheado": "... --variante parcheado: exit 0"
     }
   },
   "comparacion_con_binario_de_la_distribucion": {

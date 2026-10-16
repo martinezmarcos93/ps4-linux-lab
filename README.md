@@ -90,6 +90,7 @@ python3 tools/build_usb_image.py --salida img.img --initramfs ... --kernel ... -
 python3 tools/payload_static.py goldhen.bin --referencia <oficial>   # análisis estático, sin ejecutar
 python3 tools/elf_audit.py linux-1024mb.elf --fuente fw_offsets.h    # ELF vs. código fuente fijado
 python3 tools/check_docs.py                 # enlaces, referencias, estados del roadmap
+bash scripts/build_loader_isolated.sh <src-loader> <salida-nueva> [--patch p] # compila el loader en contenedor sin red; falla si falta algún artefacto
 ```
 
 `verify_boot_chain` separa estructura, integridad, formato, compatibilidad y arranque; un resultado OK en los primeros no prueba que la consola arranque. No hay herramienta que escriba en un dispositivo físico. Un hash no autentica el origen por sí solo; el valor esperado debe venir de una fuente confiable.

@@ -1,0 +1,3 @@
+arquitectura_anfitrion=x86_64
+imagen=ps4lab-loader-build:2
+imagen_id=sha256:83708191dc7c9362453fb5b269fb07b8718109dea5d301504ed886c513be45ce

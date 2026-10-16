@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "make_exit": 0,
+  "esperados": {
+    "elf": 9,
+    "bin": 9,
+    "kexec": 20
+  },
+  "encontrados_validos": {
+    "elf": 9,
+    "bin": 9,
+    "kexec": 20
+  },
+  "errores": [],
+  "advertencias": {
+    "ld_pila_ejecutable": 30,
+    "ld_segmento_rwx": 20,
+    "otras": 0
+  },
+  "sha256": {
+    "elf": {
+      "linux-32mb.elf": "0e127b3d2927f54ac48d5e9353feebab057e5d7f45833c2346b0bae4c0cd8b59",
+      "linux-64mb.elf": "6af49b279c6684759e3c76c7da9eb5f3b0251eaf842bce99f5073ca2eaae19b6",
+      "linux-128mb.elf": "f21fdb0dba2b345978cfe03e993ffb9eb4f86d4d1dce41e74caaa778022a5ebb",
+      "linux-256mb.elf": "ef7d0c17043a8e0df1da8ebd4b2b6f134219ffcf04a0c08c9e4ea9c0d91a1089",
+      "linux-512mb.elf": "2b606e46010a2caaf24173f9461d3a03e517e8d2c1f27cd2749fa9ec595d318b",
+      "linux-1024mb.elf": "a0d1eadb962bcde701a74285182c2426493789c6e0677a49d2a7c0e5b29ddbde",
+      "linux-2048mb.elf": "9693eb26a82af61c762843ffd6adf8ad98fd0955cdb64842e0ca1985eff7d4d4",
+      "linux-3072mb.elf": "f6e34b78d922db748647cb3c8674f881b9c20886a3d5561b36935eff5257b9b1",
+      "linux-4096mb.elf": "2481b9c5d1c8bf18edd4d306f3a278139ee694cb70b41f31580cf50ec82a5921"
+    },
+    "bin": {
+      "linux-32mb.bin": "ee394d2e995e09cf23199773eef7361478c45c7b636fdf5a3dedcbb263e670e4",
+      "linux-64mb.bin": "0a78e3bd168e8646956ee14609d0cb5988a7f3e6949a4532547e4b10b910c4b8",
+      "linux-128mb.bin": "7fa13d7c9b8d5bc8824d3a8a0edfbd352568e12ca88cd0571a2d14b72b0d3b36",
+      "linux-256mb.bin": "9a06b0417466f0a4eeb0328cecbee30f1f1839cd87af0b962860614bf860bbbe",
+      "linux-512mb.bin": "612d90c53ea80f30175899988ba7f9ef0db669d3733b57192e454be5b8965e37",
+      "linux-1024mb.bin": "3a84ee785322d4c4a24b599dd9faaa49e23300eeeee6f242102637d6384396a3",
+      "linux-2048mb.bin": "1bdaded1818113a60baae4684e612806fac2155912a8f137823978e3fb6d813b",
+      "linux-3072mb.bin": "a11a9e9d177b9a24fccd166c261c6cd49d311b183f59b21b27cd3591d91ca9a8",
+      "linux-4096mb.bin": "37a8ec68351093dbe5b18d6595622ee819f1a0207925dce4e3344ac75ed5326c"
+    },
+    "kexec": {
+      "505": "b5a4a10b6a94231b6701c1cf4b6bbc2170dc18f2a791c6557fb366d598116807",
+      "672": "cb3ae367a5f1fec062263d901185d3173db5e6a81b32dc3e40f67c12703eb16a",
+      "700": "c9f38f2f0155f93d210debfcf45e353ff4b6da285209470731aeb4f903bdae38",
+      "750": "514ee0b2d88c1939da8333a2822b0114b1c05d057d021205cfe7d0965628aad5",
+      "800": "6ac8dab5554ae04985947c76e3c4574cd7a904ab8d4925b395179cb8cd01bab4",
+      "850": "6d90ad0ed2fae4363ae50b8d3df7206bd7cf6428cfc8dc0e5f479118881cf6e0",
+      "900": "420c02e4ff7ec7887ad2015d41295ae8a3d7feb9a7b8d06c22d5b96d4e5dd0ea",
+      "903": "179faabb9b91169f55110a712313afb68fb7a0ca7c80d047c3448dbbd907b172",
+      "960": "5f0c994399b0b34ea6c9073dc286a030f2dce8c2136548d4d3c9097a0b573e0f",
+      "1000": "7dc664772fdf73091d21d196e88246af8117f2990dd6165dcc83b8a70214a5f8",
+      "1050": "01274f946993447f66d74685ed2e404abf71d04b9cec45d21a179f7fee4a2d24",
+      "1100": "09706bf21175c15e722d2f77c75b20ce41f505c137ec5ce1139d2d7c684271e4",
+      "1102": "45b2b3dad7061164debdc366509b5e9c826128e40c8c8cdb493983f4c238bf89",
+      "1150": "ac29ff10b108f368c7cb643e8bcf5fc79f54aa1916f837fa08d39089152d5a7f",
+      "1200": "b676df7ee38967f0913a132c7d9103ab280ca45e685a2f6586ee18daee3fe9a9",
+      "1250": "4d7b97851434a38ad965eedb12a2fc240f1bc47a2111977d562578fdff382edd",
+      "1300": "f92327d15754b0fec8bfae1dde19c0521da1134b9c64fd3feca4c32956c4b97a",
+      "1302": "5efa43b8dcabd24f855df3ef41e926a68b8eda1c172eb965ad648c831ad2b0ef",
+      "1350": "6a38e4d7d8b6607ed1f48bdd792d0568471de72ccb153696f066328030e91db9",
+      "1352": "e1b841f27252b5fe57590f0176734e58b6c61c5bd7e92936c655ac89a1db5957"
+    }
+  }
+}

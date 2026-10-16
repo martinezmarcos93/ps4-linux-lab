@@ -29,6 +29,10 @@ class TestRegistro(unittest.TestCase):
         for variante in ("original", "parcheado"):
             r = self.m["resultados"][variante]
             self.assertEqual(r["make_exit"], 0)
+            self.assertEqual(r["contenedor_exit"], 0)
+            self.assertEqual(r["conjunto_verificado"]["encontrados_validos"], {"elf": 9, "bin": 9, "kexec": 20})
+            self.assertEqual(r["advertencias_ld"]["segmento_rwx"], 20)
+            self.assertEqual(r["advertencias_ld"]["pila_ejecutable"], 30)
             self.assertEqual(len(r["sha256"]), 18)
             self.assertEqual(len(r["sha256_kexec_bin"]), 20)
             for h in list(r["sha256"].values()) + list(r["sha256_kexec_bin"].values()):
@@ -42,8 +46,24 @@ class TestRegistro(unittest.TestCase):
     def test_no_se_afirma_reproduccion_bit_a_bit(self):
         c = self.m["comparacion_con_binario_de_la_distribucion"]
         self.assertFalse(c["reproducido_bit_a_bit"])
-        self.assertTrue(self.m["resultados"]["original_segunda_vez"]["identico_al_primero"])
+        rep = self.m["resultados"]["repetibilidad"]
+        self.assertTrue(rep["original_dos_veces_en_el_entorno_fijado_identicas"])
+        self.assertIn("no implica reproducibilidad a largo plazo", rep["alcance"])
         self.assertFalse(self.m["entradas_remotas_de_lib_syscalls_py"]["usadas_en_la_compilacion"])
+
+    def test_entorno_fijado(self):
+        e = self.m["entorno"]
+        self.assertIn("@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55", e["imagen_base"])
+        self.assertIn("linux/amd64", e["plataforma"])
+        self.assertRegex(e["repositorios_apt"], r"snapshot\.ubuntu\.com/ubuntu/\d{8}T\d{6}Z")
+        dockerfile = DOCKERFILE.read_text(encoding="utf-8")
+        self.assertIn("FROM ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55", dockerfile)
+        self.assertIn("snapshot.ubuntu.com/ubuntu/%s", dockerfile)
+        lock = (DOCKERFILE.parent / "paquetes.lock").read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(lock), 148)
+        self.assertEqual(lock, sorted(lock))
+        self.assertTrue(all("=" in l for l in lock))
+        self.assertIn("gcc=4:13.2.0-7ubuntu1", lock)
 
     def test_fuentes_registradas(self):
         lineas = FUENTES.read_text(encoding="utf-8").splitlines()
@@ -81,7 +101,7 @@ class TestSalvaguardasDelScript(unittest.TestCase):
 
     def test_solo_se_montan_la_copia_y_la_salida(self):
         montajes = re.findall(r'-v "([^"]+)":', SCRIPT.read_text(encoding="utf-8"))
-        self.assertEqual(montajes, ['$OUT/src', '$OUT'])
+        self.assertEqual(montajes, ['$OUT/src', '$OUT', '$REPO/build-env/loader/inner_build.sh'])
 
     def test_la_compilacion_no_usa_red_ni_python(self):
         d = "\n".join(l for l in DOCKERFILE.read_text(encoding="utf-8").lower().splitlines() if not l.lstrip().startswith("#"))

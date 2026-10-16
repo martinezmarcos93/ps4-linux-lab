@@ -18,27 +18,45 @@ Revisión fijada: `ps4-linux/ps4-linux-loader@f70f43a60a973b3662daeb29c1f115d954
 
 **Conclusión de la revisión:** no hay descargas ejecutables ni ejecución de contenido remoto en la ruta usada; el hallazgo (entrada remota sin integridad en `syscalls.py`) queda **neutralizado** al no usarse y documentado. La etapa **no** se detuvo porque no se detectó ejecución de contenido remoto no fijado.
 
-## 2. Entorno aislado
-`build-env/loader/Dockerfile` (base `ubuntu:24.04@sha256:534baea6…eb55`; `build-essential binutils make yasm`; sin Python, sin red al ejecutar) y `scripts/build_loader_isolated.sh`. Ejecución: `docker run --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --pids-limit 512 --memory 2g --cpus 4`, usuario `10001`, montando solo una copia de las fuentes y una carpeta de salida; sin dispositivos, sin `$HOME`, sin `/var/run/docker.sock`. Imagen construida: `sha256:73cc189a…3a03`. Herramientas: GCC 13.3.0 (Ubuntu), GNU ld 2.42, yasm 1.3.0, GNU Make 4.3, libc6-dev 2.39.
+## 2. Entorno aislado y fijado
+Archivos: `build-env/loader/Dockerfile`, `build-env/loader/paquetes.lock`, `build-env/loader/inner_build.sh`, `scripts/build_loader_isolated.sh`, verificador `tools/verify_loader_build.py`.
+
+| Elemento | Fijación |
+|---|---|
+| Arquitectura | `linux/amd64` (anfitrión `x86_64`); `docker run --platform linux/amd64` |
+| Imagen base | `ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55` (digest del índice multi-arquitectura; la variante resuelta es `amd64/linux`) |
+| Repositorios apt | Snapshot con fecha `snapshot.ubuntu.com/ubuntu/20261016T040000Z` (noble, noble-updates, noble-security). La base no trae `ca-certificates`: el TLS **no se verifica** y la integridad la da la firma GPG de apt sobre `InRelease`/`Packages` |
+| Paquetes | Versiones exactas (gcc-13 13.3.0-6ubuntu2~24.04.1, binutils 2.42-4ubuntu2.10, make 4.3-4.1build2, yasm 1.3.0-4, libc6-dev 2.39-0ubuntu8.9…) y **lista completa de 148 paquetes** comparada con `paquetes.lock` al construir la imagen: si difiere, la construcción **falla** |
+| Imagen construida | `ps4lab-loader-build:2` = `sha256:83708191dc7c9362453fb5b269fb07b8718109dea5d301504ed886c513be45ce` |
+| Ejecución | `--network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --pids-limit 512 --memory 2g --cpus 4`, con el **uid/gid del anfitrión** (sin `chmod` globales; nada queda escribible por terceros), sin dispositivos, sin `$HOME`, sin `docker.sock`. Se montan solo la copia de las fuentes (rw), la carpeta de salida (rw) y `inner_build.sh` (ro) |
+
+**Qué se puede y qué no se puede afirmar sobre reproducibilidad**
+- *Repetible en el entorno actual:* **sí**. Las construcciones repetidas dan los mismos hashes, también al reconstruir la imagen con la fijación (la primera imagen, sin fijar, resolvió las mismas versiones y dio los mismos 38 hashes).
+- *Reproducible a largo plazo:* **no garantizado.** Sigue variando o dependiendo de terceros: que el registro conserve el digest de la imagen base, que `snapshot.ubuntu.com` conserve esa fecha, y la versión de Docker/containerd del anfitrión (no verificado que no influya). La construcción de la imagen **falla en voz alta** si alguna versión cambia, en lugar de resolver otra en silencio.
+- *Reproducción del ELF publicado:* **NO demostrada.** El ELF de la distribución se compiló con GCC 16.2.1 (20260810); aquí GCC 13.3.0. Esa diferencia sigue sin resolverse.
 
 ## 3. Comandos
 ```bash
 git clone https://github.com/ps4-linux/ps4-linux-loader.git src && git -C src checkout f70f43a60a973b3662daeb29c1f115d95408db93
-bash scripts/build_loader_isolated.sh <src> <salida-original>                                   # original
-bash scripts/build_loader_isolated.sh <src> <salida-parcheado> --patch patches/loader-usb-only-f70f43a.patch
-# dentro del contenedor:  touch lib/syscalls.asm && make -C linux -j4
+bash scripts/build_loader_isolated.sh <src> <salida-original>   --manifiesto manifests/loader-f70f43a-build.json --variante original
+bash scripts/build_loader_isolated.sh <src> <salida-parcheado>  --patch patches/loader-usb-only-f70f43a.patch \
+     --manifiesto manifests/loader-f70f43a-build.json --variante parcheado
+# dentro del contenedor (inner_build.sh): touch lib/syscalls.asm && make -C linux -j4
 ```
-El parche (sha256 `7f9b0313…90ee`) pasó `git apply --check` y se aplicó sin conflictos sobre una copia limpia.
+**Código de salida del script:** `0` solo si (a) `make` terminó con `0` (el código real se guarda en `make.exit` y se propaga; ya no hay un `exit 0` incondicional), (b) existen, son archivos regulares y no están vacíos los **9 ELF** (con firma `7f ELF`), **9 BIN** y **20 `kexec.bin`**, (c) no hay archivos inesperados en `payloads/` ni directorios inesperados en `kexec-build/`, (d) no hay hashes duplicados y (e) los hashes coinciden con el manifiesto si se indicó. Cualquier otra cosa devuelve distinto de 0 (el código de `make`/contenedor si falló, `1` si el conjunto es inválido, `2` por uso o parche, `3` si no se pudo construir la imagen), conserva los logs y los resultados parciales **sin modificarlos ni borrarlos**, y escribe `verificacion.json`. `artefactos.sha256` solo se genera ante éxito.
 
-## 4. Resultados
+## 4. Resultados — seis afirmaciones distintas
 
-| Pregunta | Resultado |
-|---|---|
-| Compilación original | **Compila** (`make exit=0`; 20 `kexec.bin`, 9 ELF y 9 BIN). 0 advertencias de GCC; 50 de `ld` (pila ejecutable y segmento RWX, propias del diseño de estos binarios). |
-| Compilación original, repetida | Los 18 hashes **idénticos** a la primera: construcción determinista en este entorno. |
-| ¿"Reproducida" frente al binario de la distribución? | **NO reproducida bit a bit.** El ELF de la distribución se compiló con GCC 16.2.1 (20260810), aquí con GCC 13.3.0: 320 936 B vs 325 048 B; los 20 `kexec.bin` no aparecen byte a byte en el ELF de la distribución. Sí coinciden: la tabla `fw_table` (20/20 contra `fw_offsets.h`), los 4 grupos de rutas literales, el conjunto de símbolos, `.data`/`.bss`. Reproducir bit a bit exigiría el mismo compilador y flags, que no tenemos. |
-| Compilación parcheada | **Compila** (`make exit=0`, mismas advertencias de `ld`). Los 20 `kexec.bin` son **idénticos** a los de la original (el parche solo toca `main-aio.c`); los 18 hashes de ELF/BIN cambian. |
-| Integridad de fuentes y artefactos | Fuentes: tree y commit fijados, 41 sha256 + agregado (`manifests/loader-f70f43a-sources.sha256`). Artefactos: 18+18 hashes en `manifests/loader-f70f43a-build.json`. |
+| # | Afirmación | Estado | Evidencia |
+|---|---|---|---|
+| 1 | Compilación exitosa del código **original** | **Sí** (`make` 0; 9+9+20 artefactos válidos) | `build-original.log.gz`, `manifests/loader-f70f43a-build.json` |
+| 2 | Compilación exitosa del código **parcheado** | **Sí** (ídem; los 20 `kexec.bin` idénticos a la original) | `build-parcheado.log.gz` |
+| 3 | **Repetibilidad** de hashes dentro del entorno fijado | **Sí** (dos corridas originales: 38/38 idénticas; ambas variantes coinciden con el manifiesto) | corridas del 2026-10-16 |
+| 4 | **Comparación estática** original ↔ parcheado | **Hecha** (tabla de abajo) | `tools/elf_audit.py`, `nm`, `objdump` |
+| 5 | **Reproducción del ELF publicado** | **NO demostrada** (GCC 16.2.1 vs 13.3.0: 320 936 B vs 325 048 B; los `kexec.bin` no aparecen bit a bit en el ELF de la distribución). Coinciden: `fw_table` 20/20, rutas literales, símbolos, `.data`/`.bss` | `manifests/...-build.json` |
+| 6 | **Funcionamiento en una PS4 real** | **No probado** (nada se ejecutó) | – |
+
+Integridad: fuentes por commit/tree y 41 sha256 (+ agregado de 2123) en `manifests/loader-f70f43a-sources.sha256`; artefactos: 38 hashes por variante en el manifiesto, contrastados por el propio script. Coincidencia de código, tabla de firmware o cadenas **no** convierte el ELF publicado en reproducido.
 
 ### Diferencias demostrables estáticamente entre original (A) y parcheado (B), sin ejecutar nada
 (`linux-1024mb.elf`; herramientas: `tools/elf_audit.py`, `nm`, `readelf`, `objdump`)
@@ -56,7 +74,7 @@ El parche (sha256 `7f9b0313…90ee`) pasó `git apply --check` y se aplicó sin 
 
 Esto demuestra, **sobre el código compilado**, que la variante parcheada no contiene referencias a rutas internas y selecciona una sola carpeta USB. No demuestra su comportamiento al ejecutarse.
 
-## 5. Qué NO queda demostrado (riesgos y límites abiertos)
+## 5. Riesgos y límites abiertos
 - Que el loader arranque, que USB-only esté garantizado **en ejecución** (el kernel/rootfs pueden acceder al disco interno por su cuenta; recibe `eap_hdd_key`), ni que el hardware sea compatible. Una compilación exitosa no prueba nada de eso.
 - Que el binario de la distribución provenga de este código: coherente (tabla, rutas, símbolos), **no probado**. Para decidirlo haría falta su compilador exacto (GCC 16.2.1-20260810) y flags.
 - Que los **releases** (`B-01`) sean lo que publican: no descargados.
@@ -64,3 +82,5 @@ Esto demuestra, **sobre el código compilado**, que la variante parcheada no con
 - Defectos de `main-aio.c` fuera de alcance (retorno de `read` tratado como sin signo, `mmap` sin comprobar, `get_sb_id()` = -1 sin manejo): presentes en A y en B.
 - El parche mantiene `bootargs.txt`/`vram.txt` opcionales de la **misma** carpeta USB; si faltan, usa los valores por defecto.
 - La salvaguarda de que `/data/linux/boot/` no tenga archivos ajenos (P5) sigue siendo de laboratorio.
+- **Advertencias del enlazador (visibles, sin silenciar):** en cada variante `ld` emite 30 avisos de pila ejecutable (`missing .note.GNU-stack` / `requires executable stack`) y 20 de segmento `LOAD` con permisos RWX (los `kexec.elf`). Son consecuencia de cómo están escritos estos binarios (código que se copia y ejecuta en memoria del kernel). **No se cambiaron flags** para silenciarlas ni se investigó si hacerlo alteraría el comportamiento del payload: quedan como riesgo pendiente (R-20) y el verificador las cuenta en cada corrida.
+- **Límite del propio ensayo de fallos:** las pruebas ejecutan el script y `inner_build.sh` reales, pero con `docker` y `make` simulados; no prueban el aislamiento del contenedor (eso solo se comprobó ejecutando las compilaciones reales).

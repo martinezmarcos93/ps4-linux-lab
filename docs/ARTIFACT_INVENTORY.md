@@ -48,7 +48,7 @@ Fecha de la consulta: 2026-10-15. Nada de lo listado se incorpora al repositorio
 | Kernel "5.4.247 Baikal build" del issue #10 | Es la configuración que probó CUH-2208B | **Sin enlace** en el issue; no existe como artefacto trazable |
 | Rootfs "Arch Linux KDE v1.1.1" original (Erkkola), paquetes Mesa/video (centi07, DionKill), Psxitarch v3 | Componentes del rootfs/initramfs | No obtenidos; licencias sin resolver (Q-004) |
 | Zips de los *releases* del loader (B-01) | Binarios que realmente se usan | Hash `API` anotado; **no descargados ni comparados** |
-| Compilación bit a bit idéntica a la de la distribución | Ligaría B-01/B-02 con A-01 | **No lograda**: compila y es determinista (GCC 13.3), pero el compilador de la distribución fue GCC 16.2.1-20260810; coherente, no idéntica |
+| Compilación bit a bit idéntica a la de la distribución | Ligaría B-01/B-02 con A-01 | **No lograda**: compila y es repetible en el entorno fijado (GCC 13.3; no reproducible a largo plazo con certeza), pero el compilador de la distribución fue GCC 16.2.1-20260810; coherente, no idéntica |
 | Transcripción/descripción del video | Contexto del encargo | **No obtenida** (solo el título) |
 
 ### Reproducir el loader (hecho en parte, 2026-10-16)
