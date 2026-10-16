@@ -65,6 +65,7 @@ Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `T
 | [Fuentes de evidencia](docs/EVIDENCE_SOURCES.md) | Trazabilidad |
 | [Seguridad de herramientas](docs/SAFETY_AND_TOOLING.md) | Requisitos para scripts futuros |
 | [Plan de ejecución siguiente](docs/NEXT_EXECUTION_PLAN.md) | Tareas inmediatas, responsables y puertas de seguridad |
+| [Plan de acción inmediata](docs/PLAN_ACCION_INMEDIATA.md) | Secuencia de cierre, preparación de imagen y puertas operativas |
 | [Manifiestos de artefactos](docs/ARTIFACT_MANIFEST.md) | Formato y uso del verificador de integridad |
 | [Auditoría del pipeline de imagen](docs/BUILD_PIPELINE_SAFETY_AUDIT.md) | Riesgos de `build-img.sh`/`write-img.ps1` y su mitigación |
 | [Preflight de imagen](docs/USB_IMAGE_BUILD_PREFLIGHT.md) | Planificador de solo lectura del pipeline upstream |
