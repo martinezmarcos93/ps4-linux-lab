@@ -41,3 +41,20 @@ Códigos de salida:
 - El manifiesto debe obtener su hash esperado de una fuente confiable e independiente. Reemplazá la ruta de ejemplo del comando por el archivo JSON que creaste; el archivo manifests/artifacts.example.json contiene valores ficticios y no debe usarse como evidencia.
 - El verificador no acepta dispositivos de bloques como artefactos normales y nunca abre archivos para escritura.
 - No usar el manifiesto de ejemplo como evidencia: contiene valores ficticios.
+
+## Catálogo de arranque (`manifests/arranque-catalogo.json`)
+
+`tools/verify_boot_chain.py` usa un catálogo distinto del manifiesto de rutas: describe **qué archivos conocidos existen** (por hash) y a qué *release* pertenecen, para detectar mezclas de versiones y asociar un kernel con un southbridge documentado.
+
+```json
+{
+  "schema_version": 1,
+  "artefactos": [
+    {"id": "...", "rol": "kernel|initramfs", "sha256": "<64 hex>", "size_bytes": 123,
+     "release": "<identificador de la release de origen>",
+     "southbridges": ["belize"], "evidencia_compatibilidad": "texto honesto del nivel de evidencia"}
+  ]
+}
+```
+
+Reglas: `schema_version` entero 1 (no booleano); `sha256` en minúsculas de 64 caracteres; `id` único; kernel e initramfs de `release` distinta se rechazan como mezcla; un southbridge desconocido deja la compatibilidad en `NO_EVALUADO`. Un hash del catálogo prueba igualdad con el valor registrado, no autenticidad ni que el artefacto arranque. El catálogo del repositorio solo contiene valores recalculados localmente (ver `docs/ARTIFACT_INVENTORY.md`).
