@@ -3,24 +3,35 @@
 - Fecha: 2026-10-16
 - Operador: Marcos
 - Consola: PS4 Slim CUH-2115B
-- Firmware: 13.52
-- GoldHEN: v2.2.3, observado en pantalla About GoldHEN
-- Método: navegador PS4 → WebKitty → GoldHEN; luego Ajustes → Sistema → Información del sistema.
-- Resultado observado y comunicado por el operador: Southbridge Baikal B1, ID 0x30201.
-- Evidencia: observación directa reportada en esta conversación. La captura original no está incorporada al repositorio ni tiene hash de archivo; conservar esta limitación.
-- Kernel: no seleccionado formalmente ni ejecutado. Baikal 7.0.8 queda como candidato prioritario para revisión, no como kernel verificado.
-- Initramfs/rootfs: combinación aún no validada para esta consola.
+- Firmware observado en pantalla: HEN 13.52
+- GoldHEN observado en pantalla About: v2.4b18.12
+- Método reportado: navegador PS4 → WebKitty → GoldHEN; luego Ajustes → Sistema → Información del sistema.
+- Resultado: la pantalla de información del sistema muestra literalmente `Southbridge Baikal B1 (0x30201)`.
+- Evidencia visual recibida en la conversación el 2026-10-16:
+  - Información del sistema: PNG, 512294 bytes, SHA-256 `079ac880e54ba9f015db699073138d1f563f9f3e4c4c90d59a83ac754db6311d`.
+  - About GoldHEN: PNG, 765856 bytes, SHA-256 `5ea6c8b5f90194c3cfc4897875f2d50cfa935fbfced0c82f9fbbcaa917f2fd7b`.
+  - Las capturas originales se recibieron como adjuntos de la conversación; los hashes identifican esos archivos recibidos. No están incorporados como blobs del repositorio.
+- Kernel: `bzImage-baikal-7.0.8` queda como candidato prioritario de inspección por incluir `CONFIG_X86_PS4_BAIKAL=y`; no está aprobado como compatible ni se ha ejecutado en la consola.
+- Initramfs/rootfs: combinación todavía no validada como cadena indivisible para esta consola.
 - USB físico: no escrito.
-- Almacenamiento interno: no se hizo ninguna modificación intencional.
+- Almacenamiento interno: no se ha modificado intencionalmente.
 - Linux: no arrancado.
-- Estado: IDENTIFICACIÓN DE SOUTHBIDGE COMPLETADA; selección y validación de kernel pendientes.
+- Estado: IDENTIFICACIÓN DE SOUTHBIDGE DOCUMENTADA; verificación de artefactos y cadena de arranque en curso.
 
-## Siguientes controles
-1. Confirmar hashes, procedencia y versión real de los artefactos Baikal.
-2. Auditar compatibilidad de kernel, initramfs y rootfs como una cadena indivisible.
-3. Confirmar que el flujo de arranque sea estrictamente USB-only, sin fallback interno.
-4. Revisar el diff de la rama opencode/ps4-usb-build-hardening y ejecutar sus pruebas en el commit exacto.
-5. No escribir el USB físico ni iniciar Linux sin autorización específica posterior.
+## Siguiente trabajo de V0
+1. Verificar en la PC hashes, tamaños, formatos y procedencia de kernel, initramfs, rootfs y loader.
+2. Ejecutar las comprobaciones automatizadas del repositorio en el commit exacto y corregir fallos reproducibles.
+3. Construir una imagen candidata como archivo regular de la PC, nunca sobre un dispositivo, solo si los artefactos de entrada pasan las comprobaciones.
+4. Revisar el flujo USB-only: el loader upstream tiene rutas fallback internas; usar una variante USB-only auditada no demuestra por sí mismo que kernel/initramfs/rootfs no accedan al almacenamiento interno.
+5. Registrar cada resultado con comando, código de salida, hashes y límites de lo que se demuestra.
 
-## Nota de la auditoría estática (2026-10-16)
-Ver `docs/AUDITORIA_CADENA_BAIKAL.md`: el kernel `bzImage-baikal-7.0.8` tiene `CONFIG_X86_PS4_BAIKAL=y` (coherente con este resultado) y no hay evidencia de compatibilidad con esta unidad. Pendiente para cerrar este registro: archivar la captura de *Información del sistema* y la de *About GoldHEN* y anotar sus SHA-256 (la versión informada, 2.2.3, no coincide con el binario conocido `v2.4b18.12`). Plan por etapas: `docs/PLAN_VALIDACION_BAIKAL.md`.
+## Límites de evidencia
+- La pantalla confirma la identificación que reporta GoldHEN, pero no demuestra que el kernel candidato arranque en esta unidad.
+- La presencia de soporte Baikal en el kernel es un indicador de compatibilidad potencial, no una prueba de funcionamiento.
+- La seguridad USB-only requiere revisar loader, kernel, initramfs y rootfs; no se infiere solo de que la imagen se cree en la PC.
+- No se ha escrito ningún USB físico ni ejecutado un nuevo payload como parte de este trabajo.
+
+## Referencias
+- `docs/AUDITORIA_CADENA_BAIKAL.md`
+- `docs/PLAN_VALIDACION_BAIKAL.md`
+- `docs/USB_ONLY_DESIGN.md`
