@@ -1,5 +1,7 @@
 # Roadmap
 
+Auditoría cruzada documental 2026-10-16: [`docs/CROSS_DOC_AUDIT_2026-10-16.md`](CROSS_DOC_AUDIT_2026-10-16.md). Los cambios son documentales; no implican pruebas de hardware.
+
 **Estado de fase:** `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `COMPLETADA`, `VERIFIED` o `REJECTED`. `VERIFIED` solo se usa con prueba propia en hardware (etiqueta `LAB`) y registro con hashes: documentación, código escrito o reportes de terceros **nunca** lo justifican (D-020).
 
 **Etiqueta de evidencia de cada tarea** (de menor a mayor fuerza):
