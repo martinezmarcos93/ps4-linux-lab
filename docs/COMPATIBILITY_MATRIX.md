@@ -99,10 +99,10 @@ Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el
 | Belize | `bzImage-belize-7.1.7` (Linux 7.1.7, sha256 `07211389…480`) | idem | CUH-7116B: README-UPSTREAM; Slim Belize del issue #11: falla inicial sin diagnóstico; CUH-7216B (southbridge no indicado): falla sin diagnóstico | **No** |
 | Aeolia (Fat CUH-10xx/11xx) | `bzImage-belize-7.1.7` según el README ("debería") | idem | Ninguna prueba | **No** |
 | Belize2 (`SB_BELIZE2`, 0x4) | El README no declara cuál | idem | Ninguna | **No** |
-| **Desconocido (esta consola)** | **Ninguno seleccionado** | – | – | **No: no se elige ni se ejecuta un payload solo para averiguarlo sin autorización de Marcos** |
+| **Baikal B1 reportado (esta consola)** | **Candidato: `bzImage-baikal-7.0.8`** | Loader v25.1 + payload con procedencia/licencia por cerrar | `0x30201` reportado por Marcos; arranque Linux propio no probado | **No: USB-only y validación de artefactos aún bloquean ejecución** |
 
-Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El verificador (`tools/verify_boot_chain.py --southbridge …`) devuelve `NO_EVALUADO` en compatibilidad si el southbridge es desconocido y `FALLO` si no coincide con el catálogo.
+Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El verificador (`tools/verify_boot_chain.py --southbridge …`) debe recibir el valor `baikal` para evaluar el candidato; confirmar en pruebas host-side que el catálogo asocia el alias correctamente y que la matriz registra el estado como candidato, no como compatibilidad probada.
 
 ### 7.3 Siguiente paso concreto para reducir la incertidumbre
-1. CUH-2115B registrado en `LAB-000`. Los reportes del mismo modelo pueden acotar, pero no confirmar el southbridge.
-2. Solo con autorización explícita y las condiciones de `PLAN_INMEDIATO.md` Etapa 3 se obtiene el southbridge real del log del payload.
+1. CUH-2115B y firmware 13.52 registrados en `LAB-000`; el southbridge Baikal B1 (`0x30201`) fue reportado por Marcos desde la pantalla de información.
+2. No hace falta volver a ejecutar un payload para repetir este dato. El próximo bloqueo es la cadena de arranque USB-only y la validación de artefactos.
