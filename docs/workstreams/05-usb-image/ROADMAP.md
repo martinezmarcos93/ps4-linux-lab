@@ -46,4 +46,7 @@ No editar `main` directamente. No escribir USB físico, no ejecutar payloads y n
 - Estado de validación: los archivos están publicados en esta rama, pero todavía no se afirma que los tests pasen; se necesita ejecutar CI o la suite en un entorno host-side.
 - No se modificó `main`, no se ejecutó payload ni se escribió un dispositivo físico.
 
+
+- Revisión posterior: se corrigió la ubicación de un decorador de skip para que las pruebas de publicación sin sobrescritura no queden omitidas por las condiciones de las pruebas de construcción. Se endureció además `_cadena()` en el escritor FAT32: solo acepta marcadores válidos de fin de cadena y rechaza entradas libres/reservadas/dañadas; se añadió una prueba con cadena raíz corrupta que verifica que no haya escrituras adicionales. Estas dos modificaciones aún requieren CI posterior a sus commits.
+
 - [ ] H-IMG-001 — Cerrar con CI la publicación atómica sin sobrescritura y confirmar tests host-side.
