@@ -8,7 +8,7 @@
 
 ## Conclusión
 
-**NO-GO para ejecución en la PS4 por ahora; GO para continuar pruebas sintéticas en PC.** El código del loader busca los archivos de arranque primero en USB, pero aplica el fallback a almacenamiento interno **por archivo y de forma independiente**. Por tanto, si falta un archivo en USB, puede combinar kernel/initramfs/argumentos procedentes de medios distintos. No existe en el flujo auditado una garantía estricta de “todo desde USB o abortar”.
+**NO-GO para ejecución en la PS4 por ahora; GO para continuar pruebas sintéticas en PC.** El código upstream busca archivos de arranque primero en USB, pero aplica fallback a almacenamiento interno **por archivo y de forma independiente**. El repositorio del laboratorio ya contiene `patches/loader-usb-only-f70f43a.patch`, y `docs/LOADER_BUILD_REPRO.md` / `docs/USB_ONLY_DESIGN.md` registran que se compiló y verificó estáticamente una variante parcheada sin rutas internas. En esta revisión independiente confirmé la lógica del upstream, pero no reconstruí localmente esa variante ni inspeccioné sus logs de build en detalle. El parche reduce el riesgo de fallback/mezcla de fuentes; **no** demuestra que Linux arranque ni que el kernel/initramfs/rootfs no accedan al almacenamiento interno en runtime.
 
 Esta revisión no encontró en el fragmento auditado una escritura directa de archivos al almacenamiento interno: las rutas examinadas son argumentos de `read_file()`. Eso no constituye una auditoría exhaustiva de todo el payload ni demuestra que la cadena completa no escriba al disco; sí permite afirmar que el riesgo visible en este punto es el **fallback/mezcla de fuentes**, además del parcheo de kernel en memoria.
 
@@ -75,4 +75,4 @@ La implementación candidata —no el upstream sin modificar— debe demostrar:
 
 ## Decisión y límites
 
-No se ha ejecutado código en la PS4 ni se ha escrito en USB físico o almacenamiento interno. No se recomienda seguir las instrucciones upstream que copian kernel/initramfs a `/data/linux/boot/`. La siguiente tarea útil es demostrar con pruebas host-side que nuestra herramienta puede producir y validar un layout USB completo, y decidir cómo se impondrá el modo fail-closed. Si eso requiere modificar el loader upstream, primero debe realizarse una revisión de código/licencia y pruebas aisladas; no parchear ni ejecutar sobre el dispositivo como experimento exploratorio.
+No se ha ejecutado código en la PS4 ni se ha escrito en USB físico o almacenamiento interno. No se recomienda seguir las instrucciones upstream que copian kernel/initramfs a `/data/linux/boot/`. La siguiente tarea útil es verificar de forma independiente la variante USB-only ya compilada, ejecutar los tests host-side del modelo y comprobar el layout de imagen en un archivo temporal. Después quedan pendientes P4/P5: inspección estática de todos los componentes Linux y una futura prueba física autorizada. No ejecutar el loader parcheado ni la consola como experimento exploratorio.
