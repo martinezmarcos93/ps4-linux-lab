@@ -91,6 +91,7 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Auditoría de cadena Baikal](docs/AUDITORIA_CADENA_BAIKAL.md) | Auditoría integrada de compatibilidad y bloqueos |
 | [Selección de kernel](docs/KERNEL_SELECTION.md) | Comparación de candidatos y criterios de selección |
 | [Plan de validación Baikal](docs/PLAN_VALIDACION_BAIKAL.md) | Puertas de validación por etapas |
+| [Handoff a entorno Linux](docs/HANDOFF_LINUX_2026-10-16.md) | Qué se cerró en Windows, qué sigue bloqueado y los comandos exactos para retomarlo en Linux |
 | [Revisión de kernel_inspect](docs/REVIEW_KERNEL_INSPECT_ZSTD_2026-10-16.md) | Límites de la inspección estática del kernel |
 | [Revisión independiente OpenCode](docs/OPENCODE_REVIEW_2026-10-16.md) | Hallazgos técnicos de revisión cruzada |
 | [Revisión cruzada documental](docs/CROSS_DOC_AUDIT_2026-10-16.md) | Contradicciones y tareas de consolidación |
