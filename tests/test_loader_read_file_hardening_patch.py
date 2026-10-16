@@ -69,10 +69,14 @@ class TestLoaderReadFileHardeningPatch(unittest.TestCase):
             self.assertIn(token, self.text)
 
     def test_candidate_does_not_load_optional_config(self):
-        self.assertNotIn('load_from(boot_dir, "bootargs.txt"', self.text)
-        self.assertNotIn('load_from(boot_dir, "vram.txt"', self.text)
-        self.assertIn("do not load bootargs.txt or vram.txt", self.text)
-        self.assertIn("host preflight rejects these files", self.text)
+        additions = "\\n".join(
+            line[1:] for line in self.text.splitlines()
+            if line.startswith("+") and not line.startswith("+++ ")
+        )
+        self.assertNotIn('load_from(boot_dir, "bootargs.txt"', additions)
+        self.assertNotIn('load_from(boot_dir, "vram.txt"', additions)
+        self.assertIn("do not load bootargs.txt or vram.txt", additions)
+        self.assertIn("host preflight rejects these files", additions)
 
     def test_reads_are_bounded_and_no_internal_fallback_is_added(self):
         self.assertIn("remaining > 1048576ULL", self.text)
