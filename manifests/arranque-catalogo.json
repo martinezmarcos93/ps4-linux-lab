@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "descripcion": "Catálogo de procedencia para tools/verify_boot_chain.py. Solo registra artefactos que existen y cuyo hash fue recalculado localmente (2026-10-15). No contiene binarios. Una entrada es una referencia de igualdad, no una prueba de autenticidad ni de compatibilidad con una consola concreta.",
+  "fuente": "https://github.com/X-F1REBALL-X/PS4-Linux",
+  "commit_fuente": "66e21cb8c15f20189254e2608c6e9bf957eb8078",
+  "contraste": "sha256 calculado localmente sobre una copia fuera del repo; coincide con los digest sha256 que la API de GitHub publica para los assets del release v1.0 (mismo origen, no una fuente independiente del publicador)",
+  "artefactos": [
+    {
+      "id": "bzImage-baikal-7.0.8",
+      "rol": "kernel",
+      "sha256": "46c835f762e7b0b5400ea762b8daa1bcec638a1b769c7ec0905137bc565b1ba8",
+      "size_bytes": 13841408,
+      "release": "X-F1REBALL-X/PS4-Linux@66e21cb (release v1.0)",
+      "southbridges": ["baikal"],
+      "evidencia_compatibilidad": "README-UPSTREAM (tabla del repo de distribución: CUH-2116A probado en FW 13.52); sin reproducción propia",
+      "version_linux_observada": "7.0.8-Strawberry-FullLTO-Baikal-+ (cadena kernel_version de la cabecera x86, leída 2026-10-15)",
+      "origen": "binario comunitario sin fuente ni build reproducible verificados; atribuido a rmuxnet por el README"
+    },
+    {
+      "id": "bzImage-belize-7.1.7",
+      "rol": "kernel",
+      "sha256": "072113898347932c34888cfdc7556953ee27233c0727cc45f419a57119242480",
+      "size_bytes": 20415488,
+      "release": "X-F1REBALL-X/PS4-Linux@66e21cb (release v1.0)",
+      "southbridges": ["belize"],
+      "evidencia_compatibilidad": "README-UPSTREAM (CUH-7116B probado en FW 13.52); Aeolia y Belize2: sin ninguna prueba; sin reproducción propia",
+      "version_linux_observada": "7.1.7-Strawberry-General-FullLTO+ (cadena kernel_version de la cabecera x86, leída 2026-10-15)",
+      "origen": "binario comunitario sin fuente ni build reproducible verificados; atribuido a rmuxnet por el README"
+    },
+    {
+      "id": "initramfs-psxitarch-v0.9.1",
+      "rol": "initramfs",
+      "sha256": "3f373bd6c469e490eaf4e5cf4d2e8ed77cf7bb91449b6a18da6a6529d479169b",
+      "size_bytes": 4102011,
+      "release": "X-F1REBALL-X/PS4-Linux@66e21cb (release v1.0)",
+      "origen": "better-initramfs v0.9.1 (archivo VERSION interno) adaptado por PSXITA Team; contenido leído estáticamente, ver docs/UPSTREAM_CODE_MAP.md §2.9"
+    }
+  ]
+}
