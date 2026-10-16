@@ -9,6 +9,7 @@ import struct
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from tests.test_verify_boot_chain import hacer_bzimage
@@ -73,6 +74,17 @@ class TestKernelInspect(unittest.TestCase):
     @unittest.skipUnless(shutil.which("zstd"), "sin zstd")
     def test_zstd_con_pie_de_4_bytes(self):
         self.comprobar(lambda v: subprocess.run(["zstd", "-c", "-q"], input=v, capture_output=True, check=True).stdout, "zstd")
+
+    @unittest.skipUnless(shutil.which("zstd"), "sin zstd")
+    def test_zstd_rechaza_salida_mayor_que_tope_sin_acumularla(self):
+        vm = b"A" * 4096
+        comprimido = subprocess.run(
+            ["zstd", "-c", "-q"], input=vm, capture_output=True, check=True
+        ).stdout
+        # El límite reducido permite probar la barrera sin reservar cientos de MiB.
+        with patch.object(ki, "TOPE", 128):
+            with self.assertRaisesRegex(ki.KernelError, "mayor que el tope"):
+                ki._descomprimir(comprimido + struct.pack("<I", len(vm)))
 
     def test_pie_de_tamano_incorrecto_se_detecta(self):
         vm = vmlinux_falso()
