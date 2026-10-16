@@ -19,21 +19,22 @@ Ningún caso de este plan sobre la consola se ha ejecutado todavía. Ninguno pue
 - **Resultado esperado:** todos los hashes coinciden; tamaños de archivo coinciden con los declarados en el README (`psxitarch.tar.xz` 2.8 GB, `kernel.zip` 36.4 MB, `payloads.zip` 185 KB, `tools.zip` 5 KB).
 - **Condición de aborto:** cualquier hash o tamaño que no coincida — no continuar con ese archivo, volver a descargarlo desde la fuente oficial.
 
-## TP-03 — Construcción de imagen USB (en la PC, sin consola)
+## TP-03 — Construcción de imagen USB (archivo regular, sin consola ni dispositivo físico)
 
-- **Precondición:** TP-02 completo; entorno Linux o WSL disponible; USB de prueba de al menos 32 GB (recomendado) dedicado, sin datos importantes.
-- **Pasos:** ejecutar `tools/build-img.sh` con los argumentos documentados en `docs/BOOT_FLOW.md` Fase 1; registrar el hash SHA-256 que el script imprime al final.
-- **Resultado esperado:** archivo `.img` de ~12 GB generado, hash registrado.
-- **Evidencia a guardar:** salida completa del script, hash final.
-- **Condición de aborto:** cualquier error de `sfdisk`/`mkfs`/`tar` antes de llegar a `BUILD_IMG_OK` — no continuar a TP-04 con una imagen a medio construir.
+- **Precondición:** artefactos con hashes/procedencia registrados, kernel compatible con el southbridge confirmado y combinación kernel/initramfs/rootfs respaldada por evidencia suficiente. Si el southbridge sigue desconocido, TP-03 queda `BLOCKED`; no elegir un kernel por aproximación.
+- **Pasos:** usar `tools/build_usb_image.py` para generar un archivo `.img` nuevo en una ruta de salida explícita. Ejecutar primero `--dry-run`; luego construir solo si todas las precondiciones técnicas están satisfechas. Para rootfs que requiera propietarios Unix, seguir el procedimiento documentado con `fakeroot`. No ejecutar `build-img.sh` upstream como sustituto del generador auditado.
+- **Resultado esperado:** imagen regular creada en una ruta de salida no existente; informe de validación y hashes guardados. Esto valida la construcción host-side, no el arranque de PS4.
+- **Evidencia a guardar:** comandos exactos, versiones de herramientas, hashes de entradas y salida, informe de verificación y resultados de filesystem.
+- **Condición de aborto:** kernel no seleccionado con evidencia suficiente, hash/procedencia no coincidente, herramienta de validación ausente sin modo explícito de omisión, cualquier fallo de filesystem o informe de validación incompleto.
 
-## TP-04 — Escritura del USB (en la PC, Windows, sin consola)
+## TP-04 — Escritura física del USB (BLOQUEADA hasta autorización explícita)
 
-- **Precondición:** TP-03 completo; disco USB físico identificado y confirmado como no-booteable/no-sistema vía `Get-Disk`.
-- **Pasos:** ejecutar `tools/write-img.ps1` como Administrador, confirmando el número de disco manualmente (sin `-Force` en la primera vez).
-- **Resultado esperado:** `WRITE_DONE_OK` en la salida; tamaño escrito igual al tamaño de la imagen.
-- **Evidencia a guardar:** salida completa del script.
-- **Condición de aborto:** el script mismo aborta si el disco no es USB o es de arranque/sistema — no hay override seguro para eso; si aborta, verificar el número de disco con `Get-Disk` de nuevo antes de reintentar.
+- **Estado actual:** bloqueado. Este plan no autoriza a escribir un dispositivo físico. La escritura destructiva requiere una autorización explícita de Marcos para ese intento concreto, después de revisar imagen, destino y procedimiento.
+- **Precondición:** TP-03 completado y revisado; imagen final y SHA-256 aprobados; dispositivo identificado por modelo, tamaño y número de serie; copia de seguridad de cualquier dato necesario.
+- **Pasos:** todavía no ejecutar. Antes de habilitar este caso, revisar el procedimiento de escritura y sus protecciones contra selección ambigua o disco de sistema. No usar `-Force` para saltar comprobaciones.
+- **Resultado esperado:** solo después de autorización específica, escritura completada y verificación de lectura posterior con informe.
+- **Evidencia a guardar:** autorización, identidad del dispositivo, imagen/hash de origen, comando exacto, resultado y hash/verificación posterior.
+- **Condición de aborto:** cualquier ambigüedad sobre el dispositivo, fallo de validación, falta de autorización o riesgo para un disco con datos.
 
 ## TP-05 — Cadena USB-only lista y verificada en la PC (puerta previa al primer intento)
 

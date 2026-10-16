@@ -1,5 +1,7 @@
 # Roadmap
 
+Auditoría cruzada documental 2026-10-16: [`docs/CROSS_DOC_AUDIT_2026-10-16.md`](CROSS_DOC_AUDIT_2026-10-16.md). Los cambios son documentales; no implican pruebas de hardware.
+
 **Estado de fase:** `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `COMPLETADA`, `VERIFIED` o `REJECTED`. `VERIFIED` solo se usa con prueba propia en hardware (etiqueta `LAB`) y registro con hashes: documentación, código escrito o reportes de terceros **nunca** lo justifican (D-020).
 
 **Etiqueta de evidencia de cada tarea** (de menor a mayor fuerza):
@@ -55,7 +57,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Hallazgo que afecta la Fase 1 (resuelto como política, no como propiedad demostrada):** el procedimiento *recomendado por la distribución* `X-F1REBALL-X/PS4-Linux` copia el kernel al almacenamiento interno (`/data/linux/boot/`); el *código del loader* lee de USB con prioridad pero **también** de rutas internas y puede mezclar orígenes. La decisión D-008 fija USB-only como arquitectura objetivo; que el flujo completo la cumpla sigue sin demostrarse — ver [`docs/USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
 
 ## Fase 2.1 — Auditoría estática del exploit/payload para firmware 13.52
-**Estado:** COMPLETADA CON LÍMITES (informe estático hecho; **no** es `VERIFIED`). Autorización de ejecución en hardware: **CERRADA**, a la espera del "sí" de Marcos (D-010, D-014). Ambos estados son independientes: avanzar la auditoría no desbloquea la ejecución.
+**Estado:** COMPLETADA CON LÍMITES (informe estático hecho; **no** es `VERIFIED`). Autorización de identificación por software: **CONCEDIDA por Marcos el 2026-10-16**; ver [`docs/AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md`](AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md). Esta autorización cubre la lectura del southbridge mediante GoldHEN o lector auditado, no una escritura USB física ni escritura en almacenamiento interno.
 - [x] `IMPLEMENTADO` Registrar hashes del repositorio de exploit consultado y distinguirlo del payload (`manifests/raw13g-9ba2f07.json`).
 - [x] `CÓDIGO` Revisar estáticamente el JavaScript y documentar el alcance y las limitaciones.
 - [x] `CÓDIGO` Registrar que el hash del payload no corresponde a una release oficial de GoldHEN verificada (el cuerpo declara `v2.4b18.12`; el último release oficial es `2.4b18`).
@@ -69,11 +71,12 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Salida:** informe reproducible de análisis estático, sin ejecución del payload (`docs/EXPLOIT_AUDIT_13.52.md`). Conclusión sostenida: "identificable como GoldHEN, sin hosts ajenos en cadenas"; **no sostenida**: que sea seguro.
 
 ## Fase 3 — Selección del método de arranque
-**Estado:** BLOQUEADA — la política está decidida (D-008: USB-only) pero **no validada**, y aunque el CUH-2115B ya está identificado, falta resolver el southbridge/compatibilidad, por lo que **no se puede elegir kernel**. Procedimiento con citas de código en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md); diseño verificable en [`docs/USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
+**Estado:** BLOQUEADA — la política está decidida (D-008: USB-only) pero **no validada**, con CUH-2115B identificado y southbridge Baikal B1 **observado por el operador**; falta validar la cadena de arranque (hallazgos en `AUDITORIA_CADENA_BAIKAL.md`), por lo que **no se declara ningún kernel compatible**. Procedimiento con citas de código en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md); diseño verificable en [`docs/USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
 - [x] `TERCEROS` Existe un exploit/payload que dice cubrir el firmware registrado (13.52): guías y repositorio `raw13g` (no verificado por nosotros); depende de GoldHEN (D-010). La lista de 20 firmwares con offsets está en `UPSTREAM_CODE_MAP.md` §1.7 (`CÓDIGO`).
 - [x] `CÓDIGO` Requisitos y riesgos del método seleccionado — `docs/TROUBLESHOOTING.md` y `UPSTREAM_CODE_MAP.md` §1.6.
 - [x] `TERCEROS` Investigación de evidencia de compatibilidad de CUH-2115B/FW 13.52 y de métodos para identificar el southbridge (2026-10-16): el modelo corresponde a **dos** southbridges posibles (wiki); procedimiento y criterios en [`KERNEL_SELECTION.md`](KERNEL_SELECTION.md). Es evidencia de terceros, no verificada en la consola.
-- [ ] `BLOQUEADO` **Elegir kernel según revisión/southbridge.** No resuelto: el southbridge de la consola es desconocido y solo se obtiene ejecutando el payload (`GetSouthbridgeName()`), lo que exige autorización. Tabla de decisión por southbridge en `COMPATIBILITY_MATRIX.md` §7; no se selecciona ningún binario para esta consola.
+- [x] `TERCEROS` Southbridge de la consola **observado por el operador: Baikal B1 (0x30201)** (Ajustes → Sistema → Información del sistema tras cargar GoldHEN; `lab-logs/LAB-001-southbridge.md`). Sin captura archivada ni hash: dato del operador, no reproducido por nosotros. Aún no es `LAB` en el sentido del proyecto (falta evidencia archivable).
+- [ ] `BLOQUEADO` **Elegir kernel.** El southbridge ya no es la incógnita; falta validar la cadena kernel + initramfs + rootfs + loader (ver `AUDITORIA_CADENA_BAIKAL.md`). `bzImage-baikal-7.0.8` es **candidato** (no seleccionado, no autorizado para arrancar). Procedimiento por etapas: `PLAN_VALIDACION_BAIKAL.md`.
 - [x] `IMPLEMENTADO` Decisión D-008 tomada: USB-only como arquitectura objetivo; la escritura interna no es fallback (ver `DECISION_LOG.md`).
 - [ ] `PENDIENTE` Demostrar que el flujo USB-only es una propiedad real. Hecho: loader original y parcheado **compilados** en contenedor sin red y comparados estáticamente (`TESTS`/`CÓDIGO`, `LOADER_BUILD_REPRO.md`). Falta: comprobar rutas internas vacías y observar el disco interno antes y después en laboratorio (`USB_ONLY_DESIGN.md` §4).
 - [x] `IMPLEMENTADO` Ruta de rollback por paso — `BOOT_FLOW.md` Fase 6 y `TROUBLESHOOTING.md` (documental; no ensayada).
@@ -156,7 +159,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Salida:** benchmark reproducible y decisión documentada en `docs/DECISION_LOG.md`, sea cual sea el resultado.
 
 ## Fase 10 — Diagnóstico y recuperación
-**Estado:** PLANNED. Árboles de diagnóstico específicos para esta pila (no genéricos) ya redactados en [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md), con casos derivados de issues reales del upstream (LED blanca/sin handoff, rootfs no monta, bug de EDID). Ver también [`docs/RECOVERY_STRATEGY.md`](RECOVERY_STRATEGY.md) para los niveles generales de recuperación.
+**Estado:** PLANNED. Árboles de diagnóstico específicos para esta pila (no genéricos) ya redactados en [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md), con casos derivados de issues reales del upstream (LED blanca/sin handoff, rootfs no monta, bug de EDID). Ver también [`docs/RECOVERY_STRATEGY.md`](RECOVERY_STRATEGY.md) para los niveles generales de recuperación. El protocolo de aborto, paquete de diagnóstico y recuperación para el primer intento está en [`docs/RECOVERY_PLAN.md`](RECOVERY_PLAN.md); es documental y no se ha ensayado en hardware.
 - [ ] `PENDIENTE` Árbol de diagnóstico por síntoma (ya cubierto para los síntomas conocidos en `TROUBLESHOOTING.md`; ampliar con los que aparezcan en pruebas propias).
 - [ ] `PENDIENTE` Herramientas de solo lectura para recolección de logs.
 - [ ] `PENDIENTE` Backup antes de editar cualquier configuración; restauración atómica.

@@ -2,7 +2,7 @@
 
 Laboratorio privado para investigar Linux en PlayStation 4, priorizando seguridad, reproducibilidad y trazabilidad.
 
-**Estado:** investigación y preparación. La consola del laboratorio es una PS4 Slim (familia **inferida** de una foto), firmware 13.52 **observado** y capacidad de 861,4 GB **observada**; CUH y southbridge **desconocidos** (la selección de kernel no está resuelta) y ningún arranque probado. La arquitectura objetivo es **USB-only** (D-008): está decidida, pero el flujo completo **no está validado**. Una declaración upstream no equivale a una prueba propia.
+**Estado:** investigación y preparación. La consola del laboratorio es una PS4 Slim (familia **inferida** de una foto), firmware 13.52 **observado** y capacidad de 861,4 GB **observada**; modelo **CUH-2115B confirmado** y southbridge **desconocido** (la selección de kernel no está resuelta) y ningún arranque probado. La arquitectura objetivo es **USB-only** (D-008): está decidida, pero el flujo completo **no está validado**. Una declaración upstream no equivale a una prueba propia.
 
 ## Objetivos
 - Identificar un método de arranque compatible con modelo CUH, firmware y southbridge.
@@ -32,7 +32,7 @@ Consultar [la auditoría upstream](docs/UPSTREAM_AUDIT.md) y [la política de li
 ## Estado del proyecto
 Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `TESTS`, `CÓDIGO`, `TERCEROS`, `LAB`, `PENDIENTE`, `BLOQUEADO`. Ninguna tarea tiene `LAB` todavía.
 - [x] `IMPLEMENTADO` Repositorio privado creado, documentación inicial, fuentes y riesgos registrados.
-- [ ] `PENDIENTE` Completar identificación del modelo CUH y southbridge. *(parcial: firmware 13.52 observado, Slim inferida, capacidad de clase 1 TB; ver LAB-000)*
+- [ ] `PENDIENTE` Completar identificación del southbridge. *(CUH-2115B confirmado; firmware 13.52 y capacidad 861,4 GB observados; southbridge desconocido; ver LAB-000 y KERNEL_SELECTION.md)*
 - [x] `CÓDIGO` Mapa de código y commits/tags exactos (loader `f70f43a`, distribución `66e21cb`); historial del loader revisado.
 - [ ] `PENDIENTE` Resolver licencias de cada componente candidato (inventario en [ARTIFACT_INVENTORY](docs/ARTIFACT_INVENTORY.md)).
 - [ ] `BLOQUEADO` Elegir método/kernel basado en evidencia para el hardware real (falta el southbridge).
@@ -66,6 +66,7 @@ Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `T
 | [Seguridad de herramientas](docs/SAFETY_AND_TOOLING.md) | Requisitos para scripts futuros |
 | [Plan de ejecución siguiente](docs/NEXT_EXECUTION_PLAN.md) | Tareas inmediatas, responsables y puertas de seguridad |
 | [Plan de acción inmediata](docs/PLAN_ACCION_INMEDIATA.md) | Secuencia de cierre, preparación de imagen y puertas operativas |
+| [Plan de recuperación](docs/RECOVERY_PLAN.md) | Criterios de aborto, diagnóstico por etapas y límites de recuperación |
 | [Manifiestos de artefactos](docs/ARTIFACT_MANIFEST.md) | Formato y uso del verificador de integridad |
 | [Auditoría del pipeline de imagen](docs/BUILD_PIPELINE_SAFETY_AUDIT.md) | Riesgos de `build-img.sh`/`write-img.ps1` y su mitigación |
 | [Preflight de imagen](docs/USB_IMAGE_BUILD_PREFLIGHT.md) | Planificador de solo lectura del pipeline upstream |
@@ -74,6 +75,8 @@ Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `T
 | [Diseño USB-only](docs/USB_ONLY_DESIGN.md) | Propiedades verificables, qué está demostrado, bloqueos y arquitectura recomendada |
 | [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes, licencias y nivel de confianza de cada binario |
 | [Diagnóstico del CI](docs/CI_DIAGNOSIS.md) | Por qué falla Actions (facturación) y la alternativa local |
+| [Auditoría transversal 2026-10-16](docs/CROSS_DOC_AUDIT_2026-10-16.md) | Inconsistencias detectadas entre documentos, correcciones y bloqueos abiertos |
+| [Revisión cruzada de rama Claude](docs/BRANCH_REVIEW_CLAUDE_2026-10-16.md) | Hallazgos estáticos sobre el inventario, la publicación del constructor y la divergencia de ramas |
 
 ## Convenciones de evidencia
 Estado de fase: PLANNED, IN_PROGRESS, BLOCKED, COMPLETADA, VERIFIED y REJECTED. `VERIFIED` exige prueba propia en hardware con registro y hashes (etiqueta `LAB`); documentación, código escrito o reportes de terceros no bastan.
