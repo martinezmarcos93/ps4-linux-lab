@@ -74,7 +74,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 - [x] `CÓDIGO` Requisitos y riesgos del método seleccionado — `docs/TROUBLESHOOTING.md` y `UPSTREAM_CODE_MAP.md` §1.6.
 - [ ] `BLOQUEADO` **Elegir kernel según revisión/southbridge.** No resuelto: el southbridge de la consola es desconocido y solo se obtiene ejecutando el payload (`GetSouthbridgeName()`), lo que exige autorización. Tabla de decisión por southbridge en `COMPATIBILITY_MATRIX.md` §7; no se selecciona ningún binario para esta consola.
 - [x] `IMPLEMENTADO` Decisión D-008 tomada: USB-only como arquitectura objetivo; la escritura interna no es fallback (ver `DECISION_LOG.md`).
-- [ ] `PENDIENTE` Demostrar que el flujo USB-only es una propiedad real (compilar y revisar el loader parcheado, comprobar rutas internas vacías, observar el disco interno antes y después en laboratorio): bloqueo y solución en `USB_ONLY_DESIGN.md` §4.
+- [ ] `PENDIENTE` Demostrar que el flujo USB-only es una propiedad real. Hecho: loader original y parcheado **compilados** en contenedor sin red y comparados estáticamente (`TESTS`/`CÓDIGO`, `LOADER_BUILD_REPRO.md`). Falta: comprobar rutas internas vacías y observar el disco interno antes y después en laboratorio (`USB_ONLY_DESIGN.md` §4).
 - [x] `IMPLEMENTADO` Ruta de rollback por paso — `BOOT_FLOW.md` Fase 6 y `TROUBLESHOOTING.md` (documental; no ensayada).
 - [ ] `PENDIENTE` Registrar qué cambios persisten en el sistema original: por código, el loader no escribe archivos (D-017); falta probar el kernel/rootfs en runtime.
 - [x] `IMPLEMENTADO` Ensayo documental del procedimiento — `BOOT_FLOW.md` y `TEST_PLAN.md` (TP-01 a TP-07); **ningún caso se ha ejecutado**.

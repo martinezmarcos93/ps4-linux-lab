@@ -33,7 +33,7 @@ Basado en la lectura de código documentada en [`docs/UPSTREAM_CODE_MAP.md`](UPS
 **Qué hace el flujo USB-only en la práctica:**
 1. La FAT del USB lleva `bzImage` (el que corresponda al southbridge, **aún desconocido**) e `initramfs.cpio.gz`, con esos nombres exactos.
 2. Antes de cada intento (fase con ejecución autorizada) se comprueba por FTP de solo lectura que `/data/linux/boot/` y `/user/system/boot/` no contengan archivos ajenos.
-3. Si el loader no encuentra ambos archivos en el USB, el comportamiento upstream es seguir buscando en el interno; con el parche de `patches/loader-usb-only-f70f43a.patch` (sin compilar) se rechazaría con una alerta.
+3. Si el loader no encuentra ambos archivos en el USB, el comportamiento upstream es seguir buscando en el interno; con el parche de `patches/loader-usb-only-f70f43a.patch` (compilado y revisado estáticamente, no ejecutado) se rechazaría con una alerta.
 4. Si el flujo no pudiera demostrarse USB-only, se detiene y se documenta; no se pasa a escritura interna.
 
 **Estado real:** política decidida (`IMPLEMENTADO`); propiedad de aislamiento **no demostrada** (`PENDIENTE`), con los bloqueos de `USB_ONLY_DESIGN.md` §4.

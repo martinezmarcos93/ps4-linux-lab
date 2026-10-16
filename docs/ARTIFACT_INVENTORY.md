@@ -32,8 +32,8 @@ Fecha de la consulta: 2026-10-15. Nada de lo listado se incorpora al repositorio
 | ID | Qué | Para qué | Estado / procedencia |
 |---|---|---|---|
 | T-01 | `gcc`, `objcopy`, `ld` (binutils) | Compilar el loader | Instalados localmente (sistema); versión del ELF de la distribución: GCC 16.2.1 20260810 (otra) |
-| T-02 | `yasm` | Ensamblar `lib/crt.asm` y `syscalls.asm` | **No instalado**; sin evaluar con `dependency-auditor` |
-| T-03 | `lib/syscalls.py` | Genera `syscalls.asm` bajando datos de `raw.githubusercontent.com/freebsd/...syscalls.master` y de `web.archive.org` | Descarga en tiempo de compilación; **no reproducible ni apto para entorno sin red**; ejecutar solo en un entorno desechable |
+| T-02 | `yasm` 1.3.0 | Ensamblar `lib/crt.asm` y `syscalls.asm` | Solo dentro del contenedor de compilación (`build-env/loader/Dockerfile`, paquete Ubuntu 24.04 `yasm 1.3.0-4`); **no** instalado en el host; sin evaluar con `dependency-auditor` (entorno desechable) |
+| T-03 | `lib/syscalls.py` | Genera `syscalls.asm` desde `syscalls.master` (FreeBSD stable/9) y una página archivada de psdevwiki | Entrada remota sin integridad en origen; **no se usó**: `syscalls.asm` está versionado y se comprobó byte-idéntico al regenerarlo sin red (`docs/LOADER_BUILD_REPRO.md` §1) |
 | T-04 | `freebsd-headers/` (en A-01) | Headers FreeBSD 9 vendorizados | Licencias BSD de FreeBSD; sin auditar |
 | T-05 | `Al-Azif/ps4-skeleton` | Origen (MIT) del método de detección de FW | Mencionado en `fw_detect.c`; no auditado |
 | T-06 | Herramientas del laboratorio (`sfdisk`, `mkfs.vfat`, `mkfs.ext4`, `fsck.vfat`, `e2fsck`, `debugfs`, `7z`, `fakeroot`, `shellcheck`) | Construir/verificar imágenes y revisar scripts | Instaladas del sistema; los tests se omiten si faltan |
@@ -48,14 +48,11 @@ Fecha de la consulta: 2026-10-15. Nada de lo listado se incorpora al repositorio
 | Kernel "5.4.247 Baikal build" del issue #10 | Es la configuración que probó CUH-2208B | **Sin enlace** en el issue; no existe como artefacto trazable |
 | Rootfs "Arch Linux KDE v1.1.1" original (Erkkola), paquetes Mesa/video (centi07, DionKill), Psxitarch v3 | Componentes del rootfs/initramfs | No obtenidos; licencias sin resolver (Q-004) |
 | Zips de los *releases* del loader (B-01) | Binarios que realmente se usan | Hash `API` anotado; **no descargados ni comparados** |
-| Compilación reproducible del loader (§ siguiente) | Ligaría B-01/B-02 con A-01 | **No realizada** |
+| Compilación bit a bit idéntica a la de la distribución | Ligaría B-01/B-02 con A-01 | **No lograda**: compila y es determinista (GCC 13.3), pero el compilador de la distribución fue GCC 16.2.1-20260810; coherente, no idéntica |
 | Transcripción/descripción del video | Contexto del encargo | **No obtenida** (solo el título) |
 
-### Reproducir el loader (pendiente; lo que haría falta)
-1. Entorno desechable con red controlada y `yasm`, `gcc`, `binutils`, `python3`.
-2. `git checkout f70f43a60a973b3662daeb29c1f115d95408db93`; revisar `lib/syscalls.py` antes de ejecutarlo; `make -C linux`.
-3. Comparar los ELF resultantes con B-02 usando `python3 tools/elf_audit.py <elf-propio> --comparar <elf-distribuido>`: lo esperable es diferencia solo en `.note.gnu.build-id` si el compilador es el mismo; otra versión de GCC cambiará `.text`, y eso por sí solo no invalida nada pero impide declarar "idéntico".
-4. Registrar versiones de herramientas y hashes en `manifests/`.
+### Reproducir el loader (hecho en parte, 2026-10-16)
+`scripts/build_loader_isolated.sh` + `build-env/loader/Dockerfile` compilan `f70f43a` en un contenedor sin red; resultados y hashes en `docs/LOADER_BUILD_REPRO.md` y `manifests/loader-f70f43a-build.json`. Para una identidad bit a bit con B-02 faltaría el compilador exacto (GCC 16.2.1 20260810) o el código fuente de los releases.
 
 ## 5. Estado resumido de la procedencia
 
@@ -64,7 +61,7 @@ Fecha de la consulta: 2026-10-15. Nada de lo listado se incorpora al repositorio
 | Código del loader (A-01) | Sí, a nivel de código fuente en una revisión fija |
 | Scripts de la distribución (A-02) | Sí (leídos, hash = lista del autor) |
 | GoldHEN oficial 2.4b18 (A-03) | Parcial (release del autor; sin firma) |
-| ELF del loader (B-02) | **Parcial**: coherentes con A-01 en tabla de offsets y rutas; no reproducidos |
+| ELF del loader (B-02) | **Parcial**: coherentes con A-01 (tabla, rutas, símbolos; recompilados de A-01 con otro compilador); no idénticos bit a bit |
 | Kernels, initramfs, rootfs (B-03…B-06) | **No**: hash = valores publicados por el mismo autor; sin fuente ni build reproducible |
 | `goldhen.bin` de raw13g (A-04/B-07) | **No**: sin fuente; identificado solo estáticamente |
 | Releases del loader (B-01) | **No**: no descargados |

@@ -34,7 +34,7 @@ Lo que **no** demuestra (ver §4): que los releases del loader provengan de ese 
 | # | Enfoque | P1 | P2 | P3 | P4 | Costo / riesgo | Veredicto |
 |---|---|---|---|---|---|---|---|
 | A | **Configuración USB-only sin tocar el loader** (poner `bzImage` en la FAT del USB; no usar `/data/linux/boot/`) | ❌ no garantizado (fallback interno) | ❌ | ❌ | ◐ solo por código/estático | Muy bajo; es lo único posible con el binario publicado | Necesario, **insuficiente** |
-| B | **Variante auditada del loader** que no usa rutas internas (`patches/loader-usb-only-f70f43a.patch`) | ✅ por construcción | ✅ una sola carpeta | ❌ | ◐ | Requiere compilar (yasm, red en `syscalls.py`) y revisar; el binario resultante sería de procedencia propia | Única opción que vuelve P1/P2 propiedad del binario |
+| B | **Variante auditada del loader** que no usa rutas internas (`patches/loader-usb-only-f70f43a.patch`) | ✅ por construcción; **compilada y verificada estáticamente** en el binario (2026-10-16, `docs/LOADER_BUILD_REPRO.md`) | ✅ una sola carpeta | ❌ | ◐ | Compila en un contenedor sin red; el binario resultante sería de procedencia propia (GCC 13.3, no el de la distribución) y **sin ejecutar** | Única opción que vuelve P1/P2 propiedad del binario |
 | C | **Verificación previa de todos los artefactos** y rechazo de faltantes (`tools/verify_boot_chain.py` + catálogo) | ◐ detecta archivos ausentes en la PC | ◐ solo en el USB, no en la consola | ✅ | ❌ | Bajo; no depende del loader | Necesario para P3, complementario |
 | D | **Detección y rechazo de mezclas de versiones** (catálogo con `release`) | – | – | ✅ | – | Bajo | Incluido en C |
 
@@ -42,15 +42,15 @@ Ninguna opción cubre P5 por sí sola: solo se puede comprobar con acceso a la c
 
 ## 4. Bloqueo exacto: por qué USB-only todavía no se puede dar por demostrado
 
-1. **El binario que se usaría no es el que auditamos.** El workflow de CI del loader solo sube artefactos de Actions; los *releases* se publican aparte. No hay compilación reproducible: `lib/Makefile` genera `syscalls.asm` ejecutando `lib/syscalls.py`, que descarga `syscalls.master` de GitHub y una página de `web.archive.org` en cada compilación, y necesita `yasm` (no instalado aquí). Hasta reproducir el ELF publicado, "el código dice X" no equivale a "el ELF hace X". Lo máximo estático actual es §2 (tabla + literales + diferencias).
+1. **El binario que se usaría no es el que auditamos.** El workflow de CI del loader solo sube artefactos de Actions; los *releases* se publican aparte. Actualización 2026-10-16: se **compiló** `f70f43a` (con y sin parche) en un contenedor sin red y es determinista, pero **no es bit a bit idéntico** al ELF de la distribución (compilador distinto: GCC 16.2.1 vs 13.3.0); es consistente en tabla de offsets, rutas y símbolos. Detalle y límites en `docs/LOADER_BUILD_REPRO.md`.
 2. **El kernel Linux y el rootfs no están auditados.** Los kernels son binarios comunitarios (versiones reales 7.0.8 y 7.1.7 según su cabecera, D-009) y la imagen trae `systemd` y KDE (según su README; no auditados). Un `fstab` vacío no impide que un servicio monte el disco interno si Linux lo ve. Además `sys_kexec` añade en RAM al initramfs la clave `key/eap_hdd_key.bin` de la consola (`ps4-kexec-common/firmware.c`: `copy_eap_hdd_key`, usada en la línea 382), de modo que el sistema que arranca **tiene el material para descifrar el almacenamiento interno**. Que no lo use es una propiedad por demostrar, no un hecho.
 3. **P5 requiere hardware.** Comprobar que `/data/linux/boot/` y `/user/system/boot/` están vacíos exige el servidor FTP de GoldHEN, es decir, ejecutar el exploit y el payload GoldHEN (D-010).
 4. **La prueba final es de laboratorio.** Que el primer arranque no modifique el disco interno solo se demuestra con un procedimiento de laboratorio (hash/listado del interno antes y después, en una consola que Marcos autorice a ejecutar).
 
-**Solución técnica concreta para desbloquear (en orden):**
-1. En una máquina desechable con red controlada, compilar `f70f43a` **sin** el parche y comparar con `linux-1024mb.elf` usando `tools/elf_audit.py --comparar` (esperado: diferencia solo en `.note.gnu.build-id`, o explicar el resto). Si coincide, la procedencia queda establecida para ese release.
-2. Compilar con `patches/loader-usb-only-f70f43a.patch`, repetir la comparación (esperado: difieren `.text`/`.rodata`, y `.rodata` ya no contiene ninguna ruta `/data/` ni `/user/system/`; comprobable con `elf_audit.py`).
-3. Con el ELF parcheado, la propiedad P1/P2 pasa a ser comprobable por inspección del binario. P4 sigue exigiendo laboratorio.
+**Solución técnica concreta para desbloquear (estado 2026-10-16):**
+1. ~~Compilar `f70f43a` sin parche en un entorno desechable y comparar con `linux-1024mb.elf`.~~ **Hecho, resultado parcial:** compila y es determinista, pero **no es idéntico bit a bit** (otro compilador); coincide en tabla de offsets, rutas y símbolos. Para cerrar la procedencia del binario de la distribución haría falta su compilador exacto (GCC 16.2.1-20260810) o el código fuente de los releases.
+2. ~~Compilar con el parche y comprobar que no hay rutas internas.~~ **Hecho:** el ELF parcheado no contiene los bytes `/data/linux` ni `/user/system`, solo `/mnt/usb0/` y `/mnt/usb1/`; 4 funciones nuevas; `kexec.bin` idénticos a los originales.
+3. Pendiente: P4 (ningún componente escribe en el interno en runtime) y P5 siguen exigiendo laboratorio con autorización.
 
 ## 5. Arquitectura recomendada (D-019)
 
@@ -65,7 +65,7 @@ Capas, de la PC a la consola; cada una es verificable por separado:
    Para un rootfs real con propietarios correctos, preparar el directorio y ejecutar bajo `fakeroot`.
 3. **Edición de una copia de imagen ya hecha** con `tools/fat32_add_file.py` (p. ej. añadir `bzImage` a la FAT de la imagen publicada), siempre sobre una copia; después `fsck.vfat -n` sobre la partición.
 4. **Verificación previa** con `tools/verify_boot_chain.py <carpeta-FAT-extraída> --catalogo manifests/arranque-catalogo.json --requerir estructura,integridad,formato` (y `--southbridge` solo cuando esté confirmado).
-5. **Loader USB-only** (opcional hasta resolver §4.1): `patches/loader-usb-only-f70f43a.patch`. Aplica limpio con `git apply --check`; no está compilado.
+5. **Loader USB-only**: `patches/loader-usb-only-f70f43a.patch`. Aplica limpio con `git apply --check` y **compila** (`docs/LOADER_BUILD_REPRO.md`); el binario parcheado no contiene literales de rutas internas. No se ha ejecutado.
 6. **Precondición de laboratorio (P5)** antes de cada intento: listado FTP de solo lectura de las dos rutas internas; abortar si tienen contenido ajeno.
 
 **Por qué esta combinación:** A y C/D se pueden hacer ya y son reversibles; B es la única que vuelve P1/P2 una propiedad del binario, pero depende de un entorno de compilación y de una revisión que todavía no existen. Se recomienda A+C+D hoy y B en cuanto §4.1 esté resuelto; sin B, el sistema **no** es USB-only por construcción, solo por configuración y disciplina de laboratorio.
@@ -81,7 +81,7 @@ cd linux && gcc -fsyntax-only -Wall -Wextra -isystem ../freebsd-headers -nostdin
     -DVRAM_MB_DEFAULT=1024 -DVRAM_MB_MIN=32 -DVRAM_MB_MAX=4096 main-aio.c   # solo sintaxis (hecho: mismas advertencias que el original)
 python3 -m unittest tests.test_loader_model                          # lógica de selección y contenido del parche
 ```
-La compilación completa (`make`) y la comparación de ELF quedan en §4.1: requieren `yasm`, red para `lib/syscalls.py` y, por el contenido de ese script, un entorno aislado.
+La compilación completa (`make`) en contenedor sin red y la comparación estática de ELF se hicieron el 2026-10-16: `scripts/build_loader_isolated.sh`, `docs/LOADER_BUILD_REPRO.md`.
 
 ### Limitaciones del parche y del modelo
 - Es un parche de **diseño**: no se ha compilado a ELF ni ejecutado. `tools/loader_model.py` modela el algoritmo; no es el loader.

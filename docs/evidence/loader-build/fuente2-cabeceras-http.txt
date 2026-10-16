@@ -1,0 +1,44 @@
+HTTP/1.1 200 OK
+Server: nginx
+Date: Fri, 16 Oct 2026 03:01:05 GMT
+Content-Type: text/html; charset=UTF-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+x-archive-orig-date: Sun, 24 Jan 2021 21:48:03 GMT
+x-archive-orig-server: Apache/2.4.6 (CentOS) OpenSSL/1.0.2k-fips PHP/7.2.11
+x-archive-orig-x-powered-by: PHP/7.2.11
+x-archive-orig-x-content-type-options: nosniff
+x-archive-orig-content-language: en-GB
+x-archive-orig-x-ua-compatible: IE=Edge
+x-archive-orig-link: </ps4/logo.png?341ed>;rel=preload;as=image
+x-archive-orig-x-frame-options: DENY
+x-archive-orig-vary: Accept-Encoding,Cookie
+x-archive-orig-expires: Thu, 01 Jan 1970 00:00:00 GMT
+x-archive-orig-cache-control: private, must-revalidate, max-age=0
+x-archive-orig-x-crawler-content-encoding: gzip
+x-archive-orig-keep-alive: timeout=5, max=100
+x-archive-orig-connection: Keep-Alive
+x-archive-orig-x-crawler-transfer-encoding: chunked
+x-archive-orig-content-length: 38723
+x-archive-guessed-content-type: text/html
+x-archive-guessed-charset: utf-8
+memento-datetime: Sun, 24 Jan 2021 21:51:26 GMT
+link: <https://psdevwiki.com/ps4/edit/Syscalls>; rel="original", <http://web.archive.org/web/timemap/link/https://psdevwiki.com/ps4/edit/Syscalls>; rel="timemap"; type="application/link-format", <http://web.archive.org/web/https://psdevwiki.com/ps4/edit/Syscalls>; rel="timegate"
+content-security-policy: default-src 'self' 'unsafe-eval' 'unsafe-inline' data: blob: archive.org web.archive.org web-static.archive.org wayback-api.archive.org athena.archive.org analytics.archive.org pragma.archivelab.org wwwb-events.archive.org
+x-archive-src: CC-MAIN-2021-04-1610703557462.87-0005/CC-MAIN-20210124204052-20210124234052-00101.warc.gz
+server-timing: captures_list;dur=0.505533, exclusion.robots;dur=0.044864, exclusion.robots.policy;dur=0.033419, esindex;dur=0.009762, cdx.remote;dur=443.450153, LoadShardBlock;dur=1158.715269, PetaboxLoader3.datanode;dur=57.144422, PetaboxLoader3.resolve;dur=41.428328, load_resource;dur=61.233306
+x-app-server: wwwb-app222-dc8
+x-ts: 200
+x-tr: 1701
+server-timing: TR;dur=0,Tw;dur=0,Tc;dur=0
+X-location: All
+X-AS: 22927
+X-RL: 0
+X-NA: 0
+X-Page-Cache: MISS
+Server-Timing: MISS
+X-NID: Telefonica de Argentina
+Referrer-Policy: no-referrer-when-downgrade
+Permissions-Policy: interest-cohort=()
+X-sd: 0
+
