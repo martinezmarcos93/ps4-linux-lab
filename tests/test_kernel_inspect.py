@@ -1,4 +1,6 @@
 """Tests de tools/kernel_inspect.py con kernels FICTICIOS (carga comprimida sintética). No hay kernels reales."""
+from __future__ import annotations
+
 import bz2
 import contextlib
 import gzip
