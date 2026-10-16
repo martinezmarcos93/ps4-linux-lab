@@ -104,6 +104,28 @@ class TestFat32(unittest.TestCase):
         with self.assertRaises(fa.FatError):
             fa.agregar_archivo(self.dir / "enlace.img", 0, self.img.stat().st_size, "x", b"x")
 
+    def test_rechaza_cadena_raiz_terminada_en_cluster_libre_sin_escribir(self):
+        boot = self.img.read_bytes()[:512]
+        root_cluster = int.from_bytes(boot[0x2C:0x30], "little")
+        reserved_sectors = int.from_bytes(boot[0x0E:0x10], "little")
+        entrada_fat = reserved_sectors * 512 + root_cluster * 4
+        with open(self.img, "r+b") as f:
+            f.seek(entrada_fat)
+            f.write(b"\x00\x00\x00\x00")
+        antes = self.sha_img()
+        with self.assertRaisesRegex(fa.FatError, "valor FAT inválido"):
+            self.agregar("nuevo.bin", b"contenido")
+        self.assertEqual(self.sha_img(), antes)
+
+    def test_rechaza_fat_demasiado_pequena_sin_escribir(self):
+        with open(self.img, "r+b") as f:
+            f.seek(0x24)  # BPB_FATSz32
+            f.write((1).to_bytes(4, "little"))
+        antes = self.sha_img()
+        with self.assertRaisesRegex(fa.FatError, "entradas suficientes"):
+            self.agregar("nuevo.bin", b"contenido")
+        self.assertEqual(self.sha_img(), antes)
+
     def test_particion_fuera_de_la_imagen(self):
         with self.assertRaises(fa.FatError):
             fa.agregar_archivo(self.img, 0, self.img.stat().st_size + 1, "x", b"x")

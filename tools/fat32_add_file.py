@@ -42,16 +42,21 @@ class _Fat32:
         self.fat_sectores, = struct.unpack_from("<I", boot, 0x24)
         self.raiz, = struct.unpack_from("<I", boot, 0x2C)
         self.fsinfo, = struct.unpack_from("<H", boot, 0x30)
-        if self.bps != 512 or self.spc not in (1, 2, 4, 8, 16, 32, 64, 128) or self.nfats not in (1, 2) or self.reservados < 1:
+        if self.bps != 512 or self.spc not in (1, 2, 4, 8, 16, 32, 64, 128) or self.nfats not in (1, 2) or self.reservados < 1 or self.fat_sectores < 1:
             raise FatError("parámetros BPB no soportados")
         total = total32 or total16
-        if total * self.bps > part_size:
-            raise FatError("el BPB declara más sectores que el tamaño de la partición")
+        if total <= 0 or total * self.bps > part_size:
+            raise FatError("el BPB declara un tamaño de partición inválido")
         self.inicio_datos = self.reservados + self.nfats * self.fat_sectores
+        if self.inicio_datos >= total:
+            raise FatError("las regiones reservada/FAT exceden el volumen declarado")
         self.cluster_bytes = self.spc * self.bps
         self.clusters = (total - self.inicio_datos) // self.spc
         if self.clusters < 65525:
             raise FatError("menos de 65525 clusters: no es FAT32")
+        # La FAT debe contener una entrada de 32 bits para cada cluster y las reservadas.
+        if self.fat_sectores * self.bps // 4 < self.clusters + 2:
+            raise FatError("la FAT declarada no contiene entradas suficientes para el volumen")
         if self.raiz < 2 or self.raiz >= self.clusters + 2:
             raise FatError("cluster raíz inválido")
 
@@ -82,15 +87,20 @@ class _Fat32:
 
     def _cadena(self, c: int) -> list[int]:
         cad, vistos = [], set()
-        while 2 <= c < 0x0FFFFFF8:
-            if c in vistos or len(cad) > self.clusters:
-                raise FatError("cadena de clusters con ciclo")
-            if c >= self.clusters + 2:
+        while True:
+            # Solo 0x0FFFFFF8..0x0FFFFFFF son marcadores válidos de fin de cadena.
+            # Un cluster libre/reservado/dañado no puede aceptarse como terminación.
+            if c >= 0x0FFFFFF8:
+                return cad
+            if c in (0, 1) or 0x0FFFFFF0 <= c <= 0x0FFFFFF7:
+                raise FatError("cadena de clusters termina en un valor FAT inválido")
+            if c < 2 or c >= self.clusters + 2:
                 raise FatError("cadena de clusters fuera de rango")
+            if c in vistos or len(cad) >= self.clusters:
+                raise FatError("cadena de clusters con ciclo")
             vistos.add(c)
             cad.append(c)
             c = self._fat_entrada(c)
-        return cad
 
     def _libres(self, n: int) -> list[int]:
         libres: list[int] = []
