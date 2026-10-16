@@ -117,6 +117,15 @@ class TestFat32(unittest.TestCase):
             self.agregar("nuevo.bin", b"contenido")
         self.assertEqual(self.sha_img(), antes)
 
+    def test_rechaza_fat_demasiado_pequena_sin_escribir(self):
+        with open(self.img, "r+b") as f:
+            f.seek(0x24)  # BPB_FATSz32
+            f.write((1).to_bytes(4, "little"))
+        antes = self.sha_img()
+        with self.assertRaisesRegex(fa.FatError, "entradas suficientes"):
+            self.agregar("nuevo.bin", b"contenido")
+        self.assertEqual(self.sha_img(), antes)
+
     def test_particion_fuera_de_la_imagen(self):
         with self.assertRaises(fa.FatError):
             fa.agregar_archivo(self.img, 0, self.img.stat().st_size + 1, "x", b"x")
