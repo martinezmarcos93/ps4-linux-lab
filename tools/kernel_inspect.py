@@ -21,6 +21,9 @@ import shutil
 import struct
 import subprocess
 import sys
+import tempfile
+import time
+import selectors
 import zlib
 from pathlib import Path
 
@@ -52,13 +55,51 @@ def _descomprimir(carga: bytes) -> tuple[str, bytes]:
         exe = shutil.which("zstd")
         if not exe:
             raise KernelError("el kernel usa zstd y no hay binario `zstd` en el sistema")
-        # el kernel agrega 4 bytes tras el marco; el CLI los rechaza al final pero ya emitió todo el contenido
-        r = subprocess.run([exe, "-dc"], input=carga, capture_output=True, timeout=300)
-        if len(r.stdout) == 0:
-            raise KernelError("zstd no produjo salida: " + r.stderr.decode("utf-8", "replace")[:200])
-        if len(r.stdout) > TOPE:
-            raise KernelError("contenido descomprimido mayor que el tope")
-        return "zstd", r.stdout
+        # Alimentar desde un archivo temporal evita bloquear al escribir stdin mientras stdout se llena.
+        # La salida se lee en bloques y se corta al superar TOPE; no se acumula una salida ilimitada en RAM.
+        with tempfile.TemporaryFile() as entrada, tempfile.TemporaryFile() as errores:
+            entrada.write(carga)
+            entrada.seek(0)
+            try:
+                proc = subprocess.Popen([exe, "-dc"], stdin=entrada, stdout=subprocess.PIPE, stderr=errores)
+            except OSError as exc:
+                raise KernelError(f"no se pudo iniciar zstd: {exc}") from exc
+            partes = []
+            total = 0
+            limite = time.monotonic() + 300
+            try:
+                with selectors.DefaultSelector() as selector:
+                    selector.register(proc.stdout, selectors.EVENT_READ)
+                    while True:
+                        restante = limite - time.monotonic()
+                        if restante <= 0 or not selector.select(restante):
+                            proc.kill()
+                            proc.wait()
+                            raise KernelError("zstd excedió el tiempo límite de 300 s")
+                        bloque = proc.stdout.read(min(64 * 1024, TOPE - total + 1))
+                        if not bloque:
+                            break
+                        total += len(bloque)
+                        if total > TOPE:
+                            proc.kill()
+                            proc.wait()
+                            raise KernelError("contenido descomprimido mayor que el tope")
+                        partes.append(bloque)
+                codigo = proc.wait(timeout=max(0.1, limite - time.monotonic()))
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                proc.kill()
+                proc.wait()
+                raise KernelError(f"falló la lectura de salida zstd: {exc}") from exc
+            errores.seek(0)
+            detalle = errores.read(200).decode("utf-8", "replace")
+            salida = b"".join(partes)
+            # El kernel añade 4 bytes tras el marco zstd; algunas versiones del CLI
+            # devuelven código distinto de cero por esos bytes finales, aunque emitieron el marco.
+            if not salida:
+                raise KernelError("zstd no produjo salida: " + detalle)
+            if codigo != 0 and not detalle:
+                raise KernelError(f"zstd terminó con código {codigo}")
+            return "zstd", salida
     raise KernelError(f"formato de compresión no reconocido (primeros bytes {carga[:4].hex()})")
 
 
