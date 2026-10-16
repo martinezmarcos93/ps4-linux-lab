@@ -62,7 +62,7 @@ checkout; the CI run for the lab repository does not compile this upstream C.
 +    remaining = (unsigned long long)end;
 +    char *cursor = buffer;
 +    while (remaining > 0) {
-+        size_t chunk = (size_t)remaining;
++        size_t chunk = remaining > 1048576ULL ? 1048576U : (size_t)remaining;
 +        ssize_t got = read(fd, cursor, chunk);
 +        if (got <= 0)
 +            goto fail_mmap;
@@ -85,7 +85,7 @@ checkout; the CI run for the lab repository does not compile this upstream C.
 +    return -1;
 +}
 
-@@ -454,22 +482,8 @@
+@@ -443,21 +443,8 @@
 -    /* Opcionales: solo de la MISMA carpeta; si faltan se usan los valores por defecto. */
 -    load_from(boot_dir, "bootargs.txt", &cmdline, &cmdline_size);
 -
