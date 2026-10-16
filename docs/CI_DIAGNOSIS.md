@@ -1,19 +1,30 @@
-# Diagnóstico del CI (2026-10-15)
+# Diagnóstico del CI
 
-## Hecho observado
-- El workflow `.github/workflows/tests.yml` ("Host-side tests") falla en **todos** los runs de `main`, en 4-13 s, con `runner_id=0`, `runner_name=""` y **0 pasos**.
-- La anotación del check-run (API `repos/.../check-runs/<job>/annotations`) dice textualmente: *"The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"*.
-- `actions/permissions`: Actions habilitado (`enabled: true`, `allowed_actions: all`). El repo es **privado**, y los repos privados consumen minutos de Actions facturables.
-- Hay además un aviso informativo: `ubuntu-latest` migrará a Ubuntu 26 desde 2026-10-19 (no relacionado con el fallo).
+**Última revisión documental:** 2026-10-16  
+**Estado:** diagnóstico histórico pendiente de nueva ejecución verificable.
 
-## Conclusión (hecho + inferencia)
-- **Hecho:** el job nunca arranca; no es un fallo del código ni de los tests. Los logs no existen (`BlobNotFound`) porque no hubo ejecución.
-- **Inferencia razonable:** la causa es de facturación de la cuenta/límite de gasto de Actions, no del workflow.
-- **No verificado:** el estado real de pagos/límite (el token de `gh` no tiene scope `user`, la API de billing devuelve 404/403).
+## Observación histórica (2026-10-15)
 
-## Qué falta y quién lo resuelve
-Solo el titular puede revisar *GitHub → Settings → Billing & plans* (método de pago y *Spending limit* de Actions). Alternativas que no requieren eso: hacer el repo público (Actions es gratuito en repos públicos; **decisión de privacidad de Marcos, no tomada**) o usar un runner propio.
+- El workflow `.github/workflows/tests.yml` (`Host-side tests`) no iniciaba jobs: `runner_id=0`, nombre de runner vacío y cero pasos.
+- La anotación del check-run reportó que el job no arrancaba debido a pagos recientes fallidos o al límite de gasto de la cuenta.
+- En ese momento, el repositorio se describía como privado. **Ese dato quedó obsoleto: el repositorio ahora es público.**
+- El workflow usa `ubuntu-latest`; la advertencia de migración de imagen de runner observada en ese momento no explicaba el fallo de facturación.
 
-## Mitigación mientras tanto
-- `scripts/check.sh` ejecuta localmente lo mismo que el workflow (`compileall` + `unittest discover -v`). El workflow **no se deshabilita ni se modifica**, para no ocultar el fallo.
-- Nota: en esta máquina el comando es `python3` (no existe `python`) y el disco externo está montado sin permiso de ejecución: usar `bash scripts/check.sh`.
+## Conclusión y límites
+
+- **Hecho histórico:** el job no llegó a ejecutar tests en la observación del 15 de octubre.
+- **Inferencia histórica:** la causa probable era la facturación/límite de Actions, no el código del workflow.
+- **Estado actual:** no se ha verificado en esta revisión que el problema siga presente o esté resuelto tras hacer público el repositorio. No reutilizar la observación histórica como estado actual.
+- La publicación del repositorio cambia una de las condiciones que se consideraban alternativas, pero no demuestra por sí sola que un nuevo workflow haya corrido con éxito.
+
+## Próximas comprobaciones
+
+1. Consultar el estado más reciente de GitHub Actions para `main` y para una rama de trabajo.
+2. Confirmar si el job obtuvo runner y ejecutó pasos.
+3. Si el job arranca, registrar el resultado real de tests y documentación.
+4. Si no arranca, conservar el mensaje de error actual y clasificarlo como bloqueo externo o problema de workflow según la evidencia.
+5. No publicar un badge verde ni marcar CI como resuelto hasta ver una ejecución satisfactoria.
+
+## Mitigación local
+
+`scripts/check.sh` ejecuta `compileall`, `unittest discover -v` y `tools/check_docs.py`. Ejecutarlo localmente permite validar el estado host-side, pero no sustituye la comprobación del runner remoto. Registrar los comandos y resultados exactos; no afirmar ejecución local si solo se inspeccionó el script.
