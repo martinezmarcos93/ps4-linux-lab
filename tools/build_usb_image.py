@@ -184,7 +184,10 @@ def construir(plan: dict) -> Path:
         _verificar_p1(parcial_img, off1, size1)
         
         # Escribir informe atómicamente
-        informe = {"imagen": destino.name, "plan": plan, "estado": "ok"}
+        plan_anon = plan.copy()
+        for k in ("salida", "initramfs", "kernel", "rootfs_dir"):
+            plan_anon[k] = str(Path(plan_anon[k]).name)
+        informe = {"imagen": destino.name, "plan": plan_anon, "estado": "ok"}
         with open(parcial_json, "w", encoding="utf-8") as f:
             json.dump(informe, f, indent=2, ensure_ascii=False)
             f.flush()
