@@ -5,6 +5,7 @@ import unittest
 import uuid
 import zlib
 from pathlib import Path
+from unittest import mock
 
 from tools import inspect_image as ii
 
@@ -177,6 +178,16 @@ class InspectImageTests(unittest.TestCase):
         os.symlink(p, link)
         with self.assertRaises(ii.ImageError):
             ii.inspect_image(str(link))
+
+    def test_fstat_failure_no_deja_pasar_oserror_sin_convertir(self):
+        # Regresión: _open_regular puede filtrar un OSError crudo si fstat()
+        # falla después de abrir (ventana entre lstat y fstat). inspect_image()
+        # y main() deben tratarlo como un error limpio, no una traza sin manejar.
+        p = self.write(make_mbr_image([], 8))
+        with mock.patch("os.fstat", side_effect=OSError("fallo simulado de fstat")):
+            with self.assertRaises(ii.ImageError):
+                ii.inspect_image(p)
+            self.assertEqual(ii.main([p]), 2)
 
     def test_rejects_device_and_fifo(self):
         with self.assertRaises(ii.ImageError):
