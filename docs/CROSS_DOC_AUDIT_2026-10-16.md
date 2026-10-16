@@ -57,3 +57,9 @@
 - Verificar las pruebas host-side en la máquina de desarrollo.
 - Mantener las puertas de autorización de payload y escritura física independientes.
 - No marcar ninguna tarea como `LAB` o `VERIFIED` sin un registro real de hardware con hashes y resultados observados.
+
+### A-006 — Los documentos nuevos no figuraban en el índice principal
+
+**Hallazgo:** `RECOVERY_PLAN.md` y esta auditoría transversal existían en la rama de trabajo, pero no estaban enlazados desde el índice de documentación del `README.md`.
+
+**Cambio:** se agregaron ambos enlaces al índice del README en esta rama. Esto mejora la descubribilidad sin alterar el estado de `main`.
