@@ -85,6 +85,9 @@ Alcance: se buscó por nombre en `/home/marcos`, `/media/marcos` (disco externo)
 
 Sobre la imagen `.img` publicada: contiene `initramfs.cpio.gz` y `bzImage.belize` (kernel Belize renombrado) en p1, **sin `bzImage` a secas**: tal como viene, el loader no encontraría kernel en el USB.
 
+## 6b. Kernel Baikal 7.0.8: inspección estática (2026-10-16)
+`tools/kernel_inspect.py` sobre `distro/boot/baikal/bzImage`: Linux `7.0.8-Strawberry-FullLTO-Baikal-+` (clang 21.1.8, compilado en `pask@pask-MacBookPro16-1`, 2026-09-08), carga zstd de 43 755 952 B descomprimidos con pie de tamaño coincidente, configuración embebida (`sha256 ca48fc48…6835`, 5 068 líneas) con `CONFIG_X86_PS4_BAIKAL=y`. Tabla completa de artefactos, correspondencia de la cadena y riesgos: [`AUDITORIA_CADENA_BAIKAL.md`](AUDITORIA_CADENA_BAIKAL.md).
+
 ## 7. Candidatos NO obtenidos y condiciones de uso (investigación del 2026-10-16)
 
 Metadatos por la API pública de GitHub (solo texto; **no se descargó ningún binario**). `NOASSERTION` = GitHub no reconoció una licencia única (los forks de Linux traen `COPYING` con GPL-2.0).

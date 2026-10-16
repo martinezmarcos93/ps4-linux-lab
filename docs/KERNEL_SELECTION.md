@@ -6,7 +6,9 @@ Niveles de evidencia usados: **HECHO** (confirmado por una fuente que se consult
 
 ## 1. Conclusión técnica
 
-**No hay evidencia suficiente para construir una imagen candidata para esta consola.** Falta un único dato decisivo y verificable: el **southbridge** de la CUH-2115B. La razón es nueva respecto de lo que sabíamos y es un HECHO documentado:
+**Actualización 2026-10-16 (posterior):** el operador informa haber leído el southbridge de esta consola: **Baikal B1 (`0x30201`)** (`LAB-001`; sin captura archivada). Con ese dato, **hay base para preparar una imagen candidata como archivo** (etapa V0 de `PLAN_VALIDACION_BAIKAL.md`), una vez archivada la captura; **no hay evidencia de compatibilidad** del kernel con esta unidad (auditoría en `AUDITORIA_CADENA_BAIKAL.md`). El resto de este documento conserva el razonamiento original, redactado cuando el southbridge era desconocido.
+
+**Conclusión original (southbridge aún desconocido): no había evidencia suficiente para construir una imagen candidata.** Faltaba un único dato decisivo y verificable: el **southbridge** de la CUH-2115B. La razón era un HECHO documentado:
 
 > La wiki PS4 Developer (tabla *Hardware Info*, copia de Wayback del 2025-12-18) lista **tres filas** del modelo `CUH-2115` y **dos southbridges distintos para CUH-2115B**: `30201 (Baikal B1)` y `40100 (Belize2 A0)` (la CUH-2115A figura con `40100 (Belize2 A0)`). Las tablas de la página *Southbridge* (Wayback 2026-03-03) lo confirman por placa: el chasis 2100 usa **Belize 2** con las placas SAE-001/003 y **Baikal** con SAE-002/004.
 
@@ -65,7 +67,7 @@ southbridge `INFERIDO` o desconocido; el kernel declara otro codename; evidencia
 
 | Southbridge confirmado | Kernel local candidato | Evidencia | Veredicto hoy |
 |---|---|---|---|
-| Baikal (0x30201) | `bzImage-baikal-7.0.8` | README: CUH-2116A FW 13.52 (TERCEROS débil); issue #10: CUH-2208B FW 13.52 con **otro** kernel (5.4.247); feeRnt: CUH-2115B con Baikal 5.4.247 (FW desconocido) | **Candidato débil**: cumple 1, 3, 4(parcial); el 2 solo con reportes sin logs y de otra versión de kernel. Habilitaría una **primera prueba de laboratorio autorizada**, no una afirmación de compatibilidad |
+| Baikal (0x30201) **← observado en esta consola (OPERADOR)** | `bzImage-baikal-7.0.8` | README: CUH-2116A FW 13.52 (TERCEROS débil); issue #10: CUH-2208B FW 13.52 con **otro** kernel (5.4.247); feeRnt: CUH-2115B con Baikal 5.4.247 (FW desconocido) | **Candidato débil**: cumple 1, 3, 4(parcial); el 2 solo con reportes sin logs y de otra versión de kernel. Habilitaría una **primera prueba de laboratorio autorizada**, no una afirmación de compatibilidad |
 | Belize2 (0x40100) | ninguno | El README no declara Belize 2; sin reportes con SB confirmado | **Rechazado** (criterio 1): no hay kernel con soporte declarado |
 | Belize (0x2xxxx) | `bzImage-belize-7.1.7` | CUH-7116B (pero la wiki da Belize2 para 7116B: contradicción #9); issue #11: Slim Belize con fallo inicial sin diagnóstico | **Rechazado hoy** por contradicción sin resolver |
 | Aeolia | – | no aplica al CUH-2115B según la wiki | n/a |
@@ -88,7 +90,8 @@ southbridge `INFERIDO` o desconocido; el kernel declara otro codename; evidencia
 Los kernels son derivados de Linux (GPL-2.0): quien los **redistribuye** debe ofrecer las fuentes. `X-F1REBALL-X/PS4-Linux` declara GPL-3.0 para guía/scripts (su `LICENSE` es un UTF-16 de 71 648 B, ilegible como texto plano sin convertirlo) y que kernel, initramfs y rootfs "mantienen sus licencias"; sin enlaces a las fuentes de los kernels. Los repositorios de kernels que inspeccioné (`feeRnt`, `codedwrench`, `crashniels`, `DFAUS-git`, `eeply`, `Ps3itaTeam`) son forks del kernel y la API de GitHub devuelve `NOASSERTION` (traen `COPYING` de Linux). `ps4-linux-loader` y `GoldHEN` no declaran licencia. Este laboratorio no redistribuye binarios (D-004); el uso privado de archivos ya descargados no se ve afectado, pero cualquier publicación de imágenes sí lo estaría.
 
 ## 7. Siguiente bloqueo y qué lo resuelve
-**Bloqueo único:** southbridge de la CUH-2115B (Baikal B1 o Belize2 A0).
+**(Texto original; el southbridge ya fue informado como Baikal B1 — ver la actualización del §1. El bloqueo vigente es archivar la captura y completar `PLAN_VALIDACION_BAIKAL.md`.)**
+**Bloqueo original:** southbridge de la CUH-2115B (Baikal B1 o Belize2 A0).
 1. **Sin tocar la consola:** buscar la fecha de fabricación en etiqueta/caja y registrarla (acota, no confirma).
 2. **Con autorización expresa de Marcos:** leer el subsys ID con el procedimiento más pequeño disponible (hoy: payload de espacio de usuario tras el jailbreak; previa auditoría estática de ese binario y barrera de red D-016). Resultado → completar la tabla del Paso 4 y recién entonces preparar la imagen por la ruta A de `USB_ONLY_DESIGN.md` §8.
 3. **Si el resultado es Belize2:** no hay kernel candidato; el siguiente trabajo sería buscar un kernel con soporte declarado para Belize 2 (investigación, no ejecución).

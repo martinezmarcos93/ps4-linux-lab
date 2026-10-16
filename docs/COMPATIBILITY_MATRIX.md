@@ -27,7 +27,7 @@ No extrapolar una fila a modelos/revisiones vecinos. "Slim CUH-2xxx" y "Pro CUH-
 
 | Modelo CUH | Familia | Southbridge | Firmware | Capacidad | Estado | Evidencia | Registro |
 |---|---|---|---|---|---|---|---|
-| **CUH-2115B** | Slim | **DESCONOCIDO** | 13.52 | 861,4 GB (clase 1 TB observada; disco posiblemente reemplazado) | Sin arranque probado | CUH comunicado por Marcos tras leer la etiqueta; firmware y capacidad observados; southbridge desconocido | `docs/lab-logs/LAB-000-identificacion-consola.md` |
+| **CUH-2115B** | Slim | **Baikal B1 (0x30201) — OBSERVADO POR EL OPERADOR**, sin captura archivada (`LAB-001`) | 13.52 | 861,4 GB (clase 1 TB observada; disco posiblemente reemplazado) | Sin arranque probado | CUH comunicado por Marcos tras leer la etiqueta; firmware y capacidad observados; southbridge leído por el operador en *Información del sistema* con GoldHEN cargado (reportado v2.2.3, inconsistente con el binario conocido: `AUDITORIA_CADENA_BAIKAL.md` §3.7) | `docs/lab-logs/LAB-000-identificacion-consola.md`, `LAB-001-southbridge.md` |
 
 Esta fila **no** es `REPRODUCIDO-LABORATORIO`: no se ejecutó ningún payload ni arranque. El CUH identifica el modelo, pero no confirma el southbridge ni valida un kernel.
 
@@ -73,7 +73,7 @@ Fuente: `linux/Makefile` y `linux/fw_offsets.h` de `ps4-linux/ps4-linux-loader` 
 
 ## 7. Identificación de la consola y tabla de decisión kernel/loader (no selecciona binario para esta consola)
 
-**El firmware 13.52 es un dato del software; no identifica el hardware.** Para esta consola: firmware 13.52 *observado*, modelo **CUH-2115B confirmado**, familia Slim confirmada por el modelo y southbridge *desconocido* (`LAB-000`). **No se elige kernel hasta resolver la compatibilidad con evidencia suficiente.**
+**El firmware 13.52 es un dato del software; no identifica el hardware.** Para esta consola: firmware 13.52 *observado*, modelo **CUH-2115B confirmado**, familia Slim confirmada por el modelo y southbridge **Baikal B1 observado por el operador** (`LAB-001`; sin captura archivada). **No se declara ningún kernel compatible:** `bzImage-baikal-7.0.8` es candidato prioritario, no seleccionado ni autorizado para arrancar (`AUDITORIA_CADENA_BAIKAL.md`, `PLAN_VALIDACION_BAIKAL.md`).
 
 ### 7.1 Datos que se pueden obtener sin ejecutar un payload ni tocar el almacenamiento interno
 
@@ -95,7 +95,7 @@ Las listas de CUH candidatos recibidas de terceros (§1b) siguen descartadas: el
 
 | Southbridge confirmado | Kernel del catálogo (`manifests/arranque-catalogo.json`) | Loader / payload | Evidencia existente | ¿Se puede elegir hoy para esta consola? |
 |---|---|---|---|---|
-| Baikal | `bzImage-baikal-7.0.8` (Linux 7.0.8, sha256 `46c835f7…ba8`) | Loader v25.1 (`f70f43a`); payload `linux-1024mb.elf` de la distribución (sha256 `623c3b68…98f`, **procedencia no reproducida**) | CUH-2116A: README-UPSTREAM; CUH-2208B: TERCEROS con kernel 5.4.247 (otra compilación) | **No** (southbridge desconocido) |
+| Baikal **← esta consola (OPERADOR)** | `bzImage-baikal-7.0.8` (Linux 7.0.8, `CONFIG_X86_PS4_BAIKAL=y`, sha256 `46c835f7…ba8`) | Loader v25.1 (`f70f43a`); payload `linux-1024mb.elf` de la distribución (sha256 `623c3b68…98f`, **procedencia no reproducida**) | CUH-2116A: README-UPSTREAM; CUH-2208B: TERCEROS con kernel 5.4.247 (otra compilación) | **No** (southbridge desconocido) |
 | Belize | `bzImage-belize-7.1.7` (Linux 7.1.7, sha256 `07211389…480`) | idem | CUH-7116B: README-UPSTREAM; Slim Belize del issue #11: falla inicial sin diagnóstico; CUH-7216B (southbridge no indicado): falla sin diagnóstico | **No** |
 | Aeolia (Fat CUH-10xx/11xx) | `bzImage-belize-7.1.7` según el README ("debería") | idem | Ninguna prueba | **No** |
 | Belize2 (`SB_BELIZE2`, 0x4) | El README no declara cuál; **ningún kernel local declara soporte** | idem | Ninguna con SB confirmado. **Posible southbridge de la CUH-2115B** (wiki) | **No** |
@@ -113,7 +113,7 @@ Lectura segura: la tabla dice qué asocia la documentación, no que funcione. El
 |---|---|---|
 | ¿Hay reportes de CUH-2115B? | Issues/PR de `ps4-linux-loader`, `X-F1REBALL-X/PS4-Linux` y `feeRnt/ps4-linux-12xx` (API de GitHub, 2026-10-16): **0 resultados** para "2115". **Única mención:** la release `v5.4.247__baikal` (2025-08-29) de `feeRnt/ps4-linux-12xx` dice "CUH-21xx (CUH-2115B): Tested functional" con un kernel **Baikal 5.4.247** | **TERCEROS, débil:** declaración del mantenedor sin logs, **firmware no indicado** (anterior al exploit 13.52). No sirve para 13.52 ni para los kernels 7.x locales. Contradice además su propia afirmación para CUH-7116B frente al README de la distribución (`KERNEL_SELECTION.md` #9) |
 | ¿Modelos "vecinos"? | CUH-2116A (Baikal, README de la distribución), CUH-2208B (Baikal, issue #10), Slim Belize sin CUH (issue #11) | **No sirven para esta consola** (D-002): el sufijo y el número de revisión pueden cambiar de placa; un mismo rango tiene Belize y Baikal |
-| ¿Southbridge de CUH-2115B? | **psdevwiki** (*Hardware Info*, copia Wayback 2025-12-18): CUH-2115B figura con **Baikal B1 (30201)** y con **Belize2 A0 (40100)**; CUH-2115A con Belize2 A0. *Southbridge* (Wayback 2026-03-03): chasis 2100 = Belize 2 (placas SAE-001/003) o Baikal (SAE-002/004). Lectura directa solo con `hw.sce_subsys_subid` (ejecutando código) o con el código de placa (abriendo la consola) | **DESCONOCIDO, pero ahora acotado a dos valores:** Baikal B1 o Belize2 A0 (HECHO según la wiki, colaborativa). El modelo no lo decide |
+| ¿Southbridge de CUH-2115B? | **psdevwiki** (*Hardware Info*, copia Wayback 2025-12-18): CUH-2115B figura con **Baikal B1 (30201)** y con **Belize2 A0 (40100)**; CUH-2115A con Belize2 A0. *Southbridge* (Wayback 2026-03-03): chasis 2100 = Belize 2 (placas SAE-001/003) o Baikal (SAE-002/004). Lectura directa solo con `hw.sce_subsys_subid` (ejecutando código) o con el código de placa (abriendo la consola) | El modelo no lo decide (wiki: Baikal B1 o Belize2 A0). **Resuelto por observación del operador: Baikal B1 (0x30201)**, coherente con una de las dos filas de la wiki; falta archivar la captura |
 | ¿Firmware 13.52 soportado? | Fila 13.52 en `fw_table` (verificado en el ELF y en el código); reportes de terceros de arranque en otros modelos | Soporte en código; **sin prueba en esta consola** |
 | Kernel Baikal `bzImage-baikal-7.0.8` | Declarado por el README de la distribución para CUH-2116A | Candidato **solo si** el southbridge fuera Baikal; sin evidencia para esta consola |
 | Kernel Belize `bzImage-belize-7.1.7` | Declarado para CUH-7116B (Pro); falla reportada sin diagnóstico en un Slim Belize (issue #11) y en CUH-7216B | Candidato **solo si** el southbridge fuera Belize/Aeolia; sin evidencia para esta consola |

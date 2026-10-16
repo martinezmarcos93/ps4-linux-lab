@@ -71,6 +71,8 @@ Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `T
 | [Auditoría del pipeline de imagen](docs/BUILD_PIPELINE_SAFETY_AUDIT.md) | Riesgos de `build-img.sh`/`write-img.ps1` y su mitigación |
 | [Preflight de imagen](docs/USB_IMAGE_BUILD_PREFLIGHT.md) | Planificador de solo lectura del pipeline upstream |
 | [Compilación aislada del loader](docs/LOADER_BUILD_REPRO.md) | Revisión de la cadena, entorno sin red, resultados y límites |
+| [Auditoría de la cadena Baikal](docs/AUDITORIA_CADENA_BAIKAL.md) | Kernel Baikal 7.0.8, correspondencia de la cadena, USB-only y riesgos |
+| [Plan de validación Baikal](docs/PLAN_VALIDACION_BAIKAL.md) | Etapas V0-V5 con aceptación, aborto y rollback |
 | [Selección del kernel](docs/KERNEL_SELECTION.md) | Evidencia de southbridge para CUH-2115B, criterios de aceptación/rechazo y conclusión |
 | [Diseño USB-only](docs/USB_ONLY_DESIGN.md) | Propiedades verificables, qué está demostrado, bloqueos y arquitectura recomendada |
 | [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes, licencias y nivel de confianza de cada binario |
@@ -95,6 +97,7 @@ python3 tools/build_usb_image.py --salida img.img --initramfs ... --kernel ... -
 python3 tools/payload_static.py goldhen.bin --referencia <oficial>   # análisis estático, sin ejecutar
 python3 tools/elf_audit.py linux-1024mb.elf --fuente fw_offsets.h    # ELF vs. código fuente fijado
 python3 tools/inventariar_artefactos.py --raiz etiqueta=ruta --catalogo manifests/arranque-catalogo.json --markdown  # hashes y procedencia, solo lectura
+python3 tools/kernel_inspect.py <bzImage>    # versión, config embebida y compresión del kernel, solo lectura
 python3 tools/check_docs.py                 # enlaces, referencias, estados del roadmap
 bash scripts/build_loader_isolated.sh <src-loader> <salida-nueva> [--patch p] # compila el loader en contenedor sin red; falla si falta algún artefacto
 ```

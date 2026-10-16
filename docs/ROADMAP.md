@@ -94,6 +94,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 - [x] `TESTS` `fat32_add_file.py`: agrega archivos a la FAT de una imagen sin root, contrastado con `fsck.vfat -n` y 7z (12 tests).
 - [x] `TESTS` `build_usb_image.py` (hallazgo R-IMG-01 cerrado: sin `fsck.vfat`/`e2fsck` la construcción falla salvo `--omitir-fsck`, que queda registrado como NO verificada; ext4 verificado con `e2fsck -fn`; informe `.informe.json`): construye un `.img` (nunca un dispositivo), sin root, con validación de rutas/entradas/tamaños y limpieza ante fallo (20 tests con imágenes de 72 MiB). **No ejecutado con el rootfs real** (requiere `fakeroot` para propietarios correctos).
 - [x] `TESTS` `verify_loader_build.py` + `scripts/build_loader_isolated.sh`: compilación aislada que **no puede reportar éxito falso** (propaga el código de `make`, exige 9 ELF + 9 BIN + 20 `kexec.bin` válidos); 15 pruebas de inyección de fallos (23 en `tests/test_loader_build_script.py`) y 6 mutaciones detectadas. Entorno fijado por digest, snapshot y lock de paquetes (`docs/LOADER_BUILD_REPRO.md`).
+- [x] `TESTS` `kernel_inspect.py`: versión, compresión, pie de tamaño y configuración embebida de un `bzImage` (10 tests con kernels ficticios; ejecutado sobre los kernels reales: Baikal `X86_PS4_BAIKAL=y`).
 - [x] `TESTS` `plan_usb_image_build.py` (origen: rama `chatgpt/image-build-preflight`, integrada): planificador de solo lectura del pipeline upstream, 13 tests; auditoría del pipeline en [`docs/BUILD_PIPELINE_SAFETY_AUDIT.md`](BUILD_PIPELINE_SAFETY_AUDIT.md).
 - [x] `TESTS` `payload_static.py` y `elf_audit.py`: análisis estático de solo lectura de payloads y ELF (16 + 10 tests).
 - [x] `TESTS` `loader_model.py`: modelo de la resolución de rutas upstream y de la variante USB-only (21 tests; incluye el parche).
@@ -110,7 +111,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 - [ ] `BLOQUEADO` Construir/preparar la imagen de esta consola: **no se construyó** (D-022). Faltan el kernel (southbridge desconocido) y, para `build_usb_image.py`, un rootfs como directorio; la ruta A (`USB_ONLY_DESIGN.md` §8) parte de la imagen publicada y solo necesita el kernel elegido.
 - [x] `TESTS` Inventario real de artefactos locales con hash, procedencia y formato (`tools/inventariar_artefactos.py`, 9 tests; `manifests/inventario-local-2026-10-16.json`). Imagen publicada verificada en solo lectura: `fsck.vfat -n` y `e2fsck -fn` rc 0.
 - [x] `TESTS` Verificar formato, particiones y filesystem de la imagen de prueba (`fsck.vfat -n` sobre p1, lectura de p2 con `debugfs`).
-- [ ] `BLOQUEADO` Confirmar correspondencia kernel/initramfs/rootfs con el hardware identificado: southbridge desconocido.
+- [ ] `PENDIENTE` Correspondencia kernel/initramfs/rootfs con el hardware: auditada estáticamente para Baikal 7.0.8 (`AUDITORIA_CADENA_BAIKAL.md` §3: coherente, sin prueba en hardware); falta archivar la captura del southbridge y revisión cruzada (`PLAN_VALIDACION_BAIKAL.md` V0-V1).
 - [x] `IMPLEMENTADO` Política de kernel en el USB: el `bzImage` va **dentro de la FAT** (USB-only, D-008); no se usan kernels de repuesto renombrados para esta consola.
 - [x] `TESTS` Validar el procedimiento con imagen virtual antes de escribir a un disco real (incluye una imagen de prueba con artefactos reales en una ubicación temporal, descartada).
 

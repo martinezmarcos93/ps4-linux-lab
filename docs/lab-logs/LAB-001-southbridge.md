@@ -21,3 +21,6 @@
 3. Confirmar que el flujo de arranque sea estrictamente USB-only, sin fallback interno.
 4. Revisar el diff de la rama opencode/ps4-usb-build-hardening y ejecutar sus pruebas en el commit exacto.
 5. No escribir el USB físico ni iniciar Linux sin autorización específica posterior.
+
+## Nota de la auditoría estática (2026-10-16)
+Ver `docs/AUDITORIA_CADENA_BAIKAL.md`: el kernel `bzImage-baikal-7.0.8` tiene `CONFIG_X86_PS4_BAIKAL=y` (coherente con este resultado) y no hay evidencia de compatibilidad con esta unidad. Pendiente para cerrar este registro: archivar la captura de *Información del sistema* y la de *About GoldHEN* y anotar sus SHA-256 (la versión informada, 2.2.3, no coincide con el binario conocido `v2.4b18.12`). Plan por etapas: `docs/PLAN_VALIDACION_BAIKAL.md`.
