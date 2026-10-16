@@ -19,11 +19,14 @@ La política candidata es deliberadamente más estricta que el verificador gené
 | USB-MIN-09 | Kernel e initramfs pertenecen a releases distintas | Rechaza el nivel de integridad |
 | USB-MIN-10 | Interrumpir una lectura o simular error de I/O | Rechaza sin reutilizar datos parciales |
 
-## Resultado de inspección del código actual
+## Resultado de inspección del código actual (actualizado 2026-10-16)
 
-- `verificar_estructura()` comprueba los obligatorios y, si los opcionales existen, comprueba que sean archivos regulares, legibles, no vacíos y de tamaño limitado.
-- `verificar_formato()` valida el contenido de los opcionales si están presentes.
-- No existe todavía un parámetro de política que rechace los opcionales por el mero hecho de estar presentes.
-- Los tests actuales de `TestEstructura` y `TestFormato` verifican casos inválidos y formatos válidos, pero no la política estricta de ausencia.
+- `tools/strict_usb_preflight.py` implementa una política explícita de ausencia para `bootargs.txt` y `vram.txt`; se apoya en el verificador genérico para los dos archivos obligatorios.
+- La política ahora rechaza también variantes de mayúsculas/minúsculas (`BOOTARGS.TXT`, `VRAM.TXT`) y symlinks rotos con esos nombres reservados. Esto es conservador frente a diferencias entre el filesystem del host y FAT.
+- `tests/test_strict_usb_preflight.py` cubre presencia de opcionales válidos/vacíos, directorio, symlink roto, archivo obligatorio ausente, directorio inválido y, en la última iteración, variantes en mayúsculas y symlink roto con nombre alternativo.
+- La suite debe pasar en CI para considerar validada la modificación; los tests unitarios no verifican el comportamiento real de la capa FAT del sistema de destino.
+- USB-MIN-08/09 siguen siendo pruebas del nivel de integridad y deben ejecutarse mediante el verificador/catálogo, no el preflight mínimo. USB-MIN-10 sigue pendiente: requiere inyección de fallos o abstracción de lectura; no debe simularse con una afirmación documental.
 
-Por tanto, la próxima modificación de código debe añadir una política explícita de modo estricto y tests que prueben USB-MIN-01 a USB-MIN-09. USB-MIN-10 requiere inyección de fallos o una abstracción de lectura; no debe simularse con una afirmación documental.
+## Riesgo residual
+
+El preflight estricto rechaza los dos nombres de configuración reservados, pero no demuestra que el kernel/initramfs/rootfs no realicen accesos al almacenamiento interno en runtime. Tampoco valida por sí mismo hashes, licencias, procedencia ni compatibilidad.
