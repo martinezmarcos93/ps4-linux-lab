@@ -7,5 +7,5 @@ cd "$(dirname "$0")/.."
 PY=${PYTHON:-python3}
 "$PY" -m compileall -q tools tests
 "$PY" -m unittest discover -v
-"$PY" tools/check_docs.py
+"$PY" tools/check_docs.py .
 echo "CHECK_OK"

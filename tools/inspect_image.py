@@ -152,7 +152,10 @@ def _parse_gpt(fd: int, size: int, warnings: list[str]) -> list[dict[str, Any]] 
 
 
 def inspect_image(path: str) -> dict[str, Any]:
-    fd, size = _open_regular(path)
+    try:
+        fd, size = _open_regular(path)
+    except OSError as exc:
+        raise ImageError(f"no se puede abrir: {exc.strerror or exc}") from exc
     warnings: list[str] = []
     try:
         report: dict[str, Any] = {"ruta": path, "tamano_bytes": size, "solo_lectura": True}
@@ -191,7 +194,7 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     try:
         r = inspect_image(a.imagen)
-    except ImageError as exc:
+    except (ImageError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
     if a.json:

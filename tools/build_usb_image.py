@@ -179,35 +179,60 @@ def _publicar_sin_sobrescribir(parcial: Path, destino: Path) -> None:
 def construir(plan: dict) -> Path:
     sfdisk, mkvfat, mkext4 = _herramienta("sfdisk"), _herramienta("mkfs.vfat"), _herramienta("mkfs.ext4")
     destino = Path(plan["salida"])
-    parcial = destino.with_name(f".{destino.name}.parcial")
-    if os.path.lexists(parcial):
-        raise BuildError(f"existe un temporal previo '{parcial}'; revíselo y bórrelo manualmente")
+    parcial_img = destino.with_name(f".{destino.name}.parcial")
+    parcial_json = destino.with_suffix(".json.parcial")
+    informe_json = destino.with_suffix(".json")
+    
+    if os.path.lexists(parcial_img):
+        raise BuildError(f"existe un temporal previo '{parcial_img}'; revíselo y bórrelo manualmente")
     try:
-        fd = os.open(parcial, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
+        fd = os.open(parcial_img, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
         try:
             os.ftruncate(fd, plan["tamano_total_mib"] * MIB)  # archivo disperso
         finally:
             os.close(fd)
         p1, p2 = plan["p1_mib"], plan["p2_mib"]
-        subprocess.run([sfdisk, "--quiet", str(parcial)], input=f"label: dos\nstart=2048, size={p1}MiB, type=c\ntype=83\n",
+        subprocess.run([sfdisk, "--quiet", str(parcial_img)], input=f"label: dos\nstart=2048, size={p1}MiB, type=c\ntype=83\n",
                        text=True, capture_output=True, check=True, timeout=120)
-        _ejecutar([mkvfat, "-F", "32", "-n", "PS4BOOT", "--offset", "2048", str(parcial), str(p1 * 1024)])
-        off1, size1 = fat.particion_mbr(parcial, 1)
-        fat.agregar_archivo(parcial, off1, size1, "initramfs.cpio.gz", Path(plan["initramfs"]).read_bytes())
-        fat.agregar_archivo(parcial, off1, size1, "bzImage", Path(plan["kernel"]).read_bytes())
-        off2, size2 = fat.particion_mbr(parcial, 2)
+        _ejecutar([mkvfat, "-F", "32", "-n", "PS4BOOT", "--offset", "2048", str(parcial_img), str(p1 * 1024)])
+        off1, size1 = fat.particion_mbr(parcial_img, 1)
+        fat.agregar_archivo(parcial_img, off1, size1, "initramfs.cpio.gz", Path(plan["initramfs"]).read_bytes())
+        fat.agregar_archivo(parcial_img, off1, size1, "bzImage", Path(plan["kernel"]).read_bytes())
+        off2, size2 = fat.particion_mbr(parcial_img, 2)
         _ejecutar([mkext4, "-q", "-F", "-L", "psxitarch", "-E", f"offset={off2}", "-d", plan["rootfs_dir"],
-                   str(parcial), str(size2 // 1024)])
-        _verificar_p1(parcial, off1, size1)
-        _publicar_sin_sobrescribir(parcial, destino)
+                   str(parcial_img), str(size2 // 1024)])
+        _verificar_p1(parcial_img, off1, size1)
+
+        # Informe atómico (rutas anonimizadas) junto a la imagen
+        plan_anon = plan.copy()
+        for k in ("salida", "initramfs", "kernel", "rootfs_dir"):
+            plan_anon[k] = str(Path(plan_anon[k]).name)
+        informe = {"imagen": destino.name, "plan": plan_anon, "estado": "ok"}
+        with open(parcial_json, "w", encoding="utf-8") as f:
+            json.dump(informe, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+
+        # Publicación de la imagen: NO usar os.replace. destino ya pasó por
+        # validar_salida() (no existía al planificar), y os.replace pisaría sin
+        # aviso un archivo que haya aparecido ahí durante la construcción (TOCTOU).
+        # _publicar_sin_sobrescribir usa os.link + FileExistsError para evitarlo.
+        _publicar_sin_sobrescribir(parcial_img, destino)
+
+        # El informe .json es metadato complementario, no el artefacto de arranque:
+        # un .json residual de una build anterior con el mismo nombre de salida se
+        # reemplaza intencionalmente (os.replace sigue siendo atómico en el mismo fs).
+        os.replace(parcial_json, informe_json)
         return destino
-    except subprocess.CalledProcessError as exc:
-        raise BuildError(f"falló {exc.cmd[0]}: {(exc.stderr or exc.stdout or '').strip()[:400]}") from exc
-    except (fat.FatError, OSError) as exc:
+    except (subprocess.CalledProcessError, fat.FatError, OSError) as exc:
         raise BuildError(str(exc)) from exc
     finally:
-        if os.path.lexists(parcial):
-            os.unlink(parcial)
+        if os.path.lexists(parcial_img):
+            os.unlink(parcial_img)
+        if os.path.lexists(parcial_json):
+            os.unlink(parcial_json)
+        if os.path.lexists(informe_json) and not os.path.lexists(destino):
+            os.unlink(informe_json)
 
 
 def _verificar_p1(imagen: Path, off: int, size: int) -> None:
