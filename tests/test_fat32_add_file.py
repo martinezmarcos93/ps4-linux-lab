@@ -2,7 +2,9 @@
 
 Se omiten si faltan las herramientas. Nunca se usan dispositivos: solo archivos en un directorio temporal.
 """
+import contextlib
 import hashlib
+import io
 import os
 import random
 import shutil
@@ -128,7 +130,8 @@ class TestFat32(unittest.TestCase):
         self.assertEqual(off, 2048 * 512)
         k = self.dir / "k.bin"
         k.write_bytes(aleatorio(50_000, 9))
-        self.assertEqual(fa.main([str(img), "--nombre", "bzImage", "--archivo", str(k)]), 0)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(fa.main([str(img), "--nombre", "bzImage", "--archivo", str(k)]), 0)
         parte = self.dir / "p1.img"
         with open(img, "rb") as f:
             f.seek(off)
@@ -137,7 +140,8 @@ class TestFat32(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         with self.assertRaises(fa.FatError):
             fa.particion_mbr(img, 2)
-        self.assertEqual(fa.main([str(img), "--nombre", "bzImage", "--archivo", str(k)]), 2)  # duplicado
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(fa.main([str(img), "--nombre", "bzImage", "--archivo", str(k)]), 2)  # duplicado
 
 
 if __name__ == "__main__":

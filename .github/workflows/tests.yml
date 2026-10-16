@@ -21,3 +21,5 @@ jobs:
           python-version: "3.11"
       - name: Run unit tests
         run: python -m unittest discover -v
+      - name: Check documentation consistency
+        run: python tools/check_docs.py

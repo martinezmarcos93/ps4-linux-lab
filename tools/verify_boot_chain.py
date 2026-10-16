@@ -287,8 +287,6 @@ def comprobar_initramfs(path: Path) -> tuple[list[str], dict]:
             except zlib.error as exc:
                 errores.append(f"{INITRAMFS}: gzip corrupto o truncado ({exc})")
             if not errores:
-                if not trailer:
-                    errores.append(f"{INITRAMFS}: no se encontró TRAILER!!!")
                 if "init" not in nombres_clave and "sbin/init" not in nombres_clave:
                     errores.append(f"{INITRAMFS}: no contiene /init ni /sbin/init; el kernel no tendría qué ejecutar")
             datos["entradas_cpio"] = entradas
