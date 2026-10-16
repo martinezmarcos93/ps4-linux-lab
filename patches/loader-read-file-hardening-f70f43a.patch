@@ -11,10 +11,9 @@ and releases resources on every error path.
 
 This is a source patch only. It is not compiled or executed by this file.
 
----
- a/linux/main-aio.c
+--- a/linux/main-aio.c
 +++ b/linux/main-aio.c
-@@
+@@ -170,20 +170,49 @@
  int read_file(char *path, char **ptr, unsigned long long *sz)
  {
      int fd = open(path, O_RDONLY);
@@ -80,7 +79,7 @@ This is a source patch only. It is not compiled or executed by this file.
 +    close(fd);
 +    return -1;
  }
-@@
+@@ -428,29 +457,14 @@
 -    char *cmdline = NULL; unsigned long long cmdline_size = 0;
 -    char *vramstr = NULL; unsigned long long vramstr_size = 0;
 -    int vram_mb = 0;
