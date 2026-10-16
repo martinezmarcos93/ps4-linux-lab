@@ -1,6 +1,6 @@
 # Workstream 05 — Imagen y cadena USB-only
 
-**Responsable principal:** Claude Code  
+**Responsable de implementación en esta iteración:** ChatGPT  
 **Revisión independiente de arquitectura y seguridad:** ChatGPT  
 **Prioridad:** 5 de 5 — mayor complejidad de las cinco categorías  
 **Objetivo:** preparar y auditar una imagen candidata y demostrar mediante evidencia suficiente que el diseño propuesto no depende de escribir en el almacenamiento interno. No incluye aún el primer arranque físico.
@@ -16,14 +16,14 @@ Depende de los workstreams 02 (tests), 03 (procedencia/licencias) y 04 (compatib
 - [x] I03 — Revisar fallback/mezcla de orígenes. El upstream mezcla por archivo; el parche USB-only evita rutas internas, pero se detectó un manejo incompleto de errores en archivos opcionales. Evidencia: `USB_ONLY_CHAIN_REVIEW_2026-10-16.md` y `PATCH_REVIEW_2026-10-16.md`.
 - [x] I04 — Definir invariantes USB-only y pruebas negativas. Evidencia: `USB_ONLY_CHAIN_REVIEW_2026-10-16.md`.
 - [ ] I05 — Revisar que los scripts de construcción operen solo sobre archivos/directorios de salida explícitos y no detecten ni escriban dispositivos automáticamente.
-- [ ] I06 — Ejecutar preflight/dry-run con fixtures sintéticos; no usar dispositivos físicos.
+- [ ] I06 — Ejecutar preflight/dry-run con fixtures sintéticos; no usar dispositivos físicos. Se añadió `tools/strict_usb_preflight.py` y `tests/test_strict_usb_preflight.py`; pendiente ejecución real de la suite/CI.
 - [ ] I07 — Verificar formato, estructura, tamaño, hashes y reproducibilidad de la imagen candidata en PC.
-- [ ] I08 — Incorporar pruebas de seguridad para paths, symlinks, nombres de dispositivo ambiguos, sobrescritura de salidas y fallos parciales.
+- [ ] I08 — Incorporar pruebas de seguridad para paths, symlinks, nombres de dispositivo ambiguos, sobrescritura de salidas y fallos parciales. Primera cobertura de opcionales y symlinks en `tests/test_strict_usb_preflight.py`; faltan paths/salidas y fallos de lectura.
 - [ ] I09 — Confirmar que el manifiesto referencia fuentes confiables y artefactos permitidos por licencia.
 - [ ] I10 — Documentar recuperación, condiciones de aborto y criterios de aprobación previos a una prueba física.
-- [ ] I11 — ChatGPT revisa de forma independiente el diseño, el diff, las rutas de escritura y los claims de seguridad. Revisión inicial del parche publicada en `PATCH_REVIEW_2026-10-16.md`; queda pendiente revisar la siguiente iteración tras resolver R-USB-001.
+- [ ] I11 — ChatGPT revisa de forma independiente el diseño, el diff, las rutas de escritura y los claims de seguridad. Revisión inicial publicada en `PATCH_REVIEW_2026-10-16.md`; nueva iteración de contención documentada en `R_USB_001_CONTAINMENT.md` y `USB_MINIMAL_CONFIG_TEST_PLAN.md`.
 - [ ] I12 — Emitir informe final con propiedades demostradas, no demostradas, limitaciones y decisión go/no-go para una futura prueba física.
-- [ ] I13 — Resolver R-USB-001: manejar errores parciales de lectura de `bootargs.txt`/`vram.txt` y probar archivos opcionales ausentes, vacíos, truncados o no regulares; o excluirlos de forma explícita del manifiesto candidato.
+- [ ] I13 — Resolver R-USB-001: se adoptó como contención excluir `bootargs.txt`/`vram.txt` del candidato inicial y se añadió un preflight estricto; el defecto general de `read_file()` sigue abierto y requiere corrección/reconstrucción o exclusión formal de los opcionales en la configuración final. Evidencia: `R_USB_001_CONTAINMENT.md`.
 
 ## Criterios de aceptación
 
@@ -37,3 +37,11 @@ Depende de los workstreams 02 (tests), 03 (procedencia/licencias) y 04 (compatib
 ## Restricciones
 
 No editar `main` directamente. No escribir USB físico, no ejecutar payloads y no arrancar la consola. La autorización para prueba de hardware es un hito independiente y queda fuera de esta rama.
+
+## Avance de esta iteración (2026-10-16)
+
+- Añadido `tools/strict_usb_preflight.py`: comprueba la estructura y rechaza expresamente `bootargs.txt`/`vram.txt` presentes. Es un preflight host-side, no toca hardware.
+- Añadido `tests/test_strict_usb_preflight.py`: cubre obligatorios ausentes, opcionales presentes/vacíos, directorio, symlink roto y directorio de entrada inválido.
+- Añadidos `R_USB_001_CONTAINMENT.md` y `USB_MINIMAL_CONFIG_TEST_PLAN.md` para hacer explícita la política conservadora y sus límites.
+- Estado de validación: los archivos están publicados en esta rama, pero todavía no se afirma que los tests pasen; se necesita ejecutar CI o la suite en un entorno host-side.
+- No se modificó `main`, no se ejecutó payload ni se escribió un dispositivo físico.
