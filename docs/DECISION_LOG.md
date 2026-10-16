@@ -152,3 +152,16 @@ Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-
 - **Contexto:** el repositorio no tenía licencia definida para el código propio; se documentó la decisión de licenciar los componentes propios y se agregó `LICENSE` a la raíz.
 - **Decisión:** el código y la documentación propios (`tools/`, `tests/`, `scripts/`, `docs/`, `README.md`) se publican bajo MIT.
 - **Límite:** no se extiende a componentes de terceros (loader, kernels, payloads, rootfs, parches ni binarios upstream); cada uno mantiene su propia licencia y condiciones. La licencia del laboratorio no autoriza redistribuir artefactos externos.
+
+
+## D-022 — Autorización de publicación del repositorio
+- **Fecha:** 2026-10-16. **Estado:** ACEPTADA.
+- **Contexto:** la auditoría documental encontró una decisión histórica que decía que la publicación pública todavía no estaba autorizada.
+- **Decisión:** Marcos confirmó que autorizó la publicación del repositorio. Se registra la autorización para reconciliar el registro histórico con el estado actual.
+- **Límite:** esta autorización no habilita ejecución de payloads, escrituras al almacenamiento interno, escritura de imágenes en dispositivos físicos ni pruebas destructivas.
+
+## D-025 — Arquitectura candidata de loader USB-only
+- **Fecha:** 2026-10-16. **Estado:** DISEÑO ACEPTADO; implementación pendiente.
+- **Contexto:** el loader upstream busca kernel, initramfs y configuración en USB y después en rutas internas; USB prioritario no equivale a USB exclusivo.
+- **Decisión:** la arquitectura candidata debe partir de un loader con firmware 13.52 y southbridge compatibles, parcheado para elegir una única carpeta USB y fallar cerrado sin fallback al HDD interno.
+- **Límite:** no se aprueba todavía ningún binario/payload concreto. El parche debe aplicarse a una etiqueta upstream fijada, compilarse reproduciblemente, probarse en host y superar auditoría de initramfs/rootfs. No autoriza prueba física.
