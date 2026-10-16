@@ -2,7 +2,7 @@
 
 **Rama revisada:** `claude/2026-10-16-inventario-imagen`  
 **Método:** inspección estática de archivos publicados en GitHub; no se ejecutaron los tests ni se accedió al disco local.  
-**Estado de la rama al revisar:** divergida respecto de `main` (3 commits por delante, 1 por detrás). No integrar directamente sin actualizar y resolver solapamientos.
+**Estado de la rama al revisar inicialmente:** divergida respecto de `main` (3 commits por delante, 1 por detrás). En la actualización posterior de Claude, la rama quedó en 6 commits por delante y 0 por detrás de `main`; ese problema de base quedó resuelto.
 
 ## Hallazgos
 
@@ -10,7 +10,7 @@
 
 `manifests/inventario-local-2026-10-16.json` contiene una ruta absoluta que incluye el nombre del usuario, el UUID/etiqueta del volumen y la estructura local de carpetas.
 
-**Acción requerida antes de integrar:** sustituir la raíz por un alias portable, por ejemplo `artefactos`, mantener las rutas relativas de cada archivo y añadir una nota de que la raíz real se define localmente. No hace falta publicar la ruta de montaje para conservar trazabilidad mediante SHA-256, tamaño y ruta relativa.
+**Estado actualizado:** Claude regeneró el manifiesto y su respuesta indica que ya no contiene rutas absolutas. Este punto queda pendiente de confirmar con una inspección directa de la versión más reciente de ese archivo; no debe tratarse como bloqueo vigente si la ruta personal efectivamente desapareció.
 
 **Impacto:** privacidad y portabilidad. No invalida por sí mismo los hashes de los artefactos.
 
@@ -28,9 +28,9 @@ El informe generado distingue FAT/ext4 verificados de comprobaciones omitidas. E
 
 La documentación y el CLI deben mantener esta distinción y evitar usar el resultado como autorización para escribir un USB físico.
 
-### CR-004 — La rama requiere reconciliación antes de integración
+### CR-004 — La rama ya no está divergida de main, pero hay solapamientos entre ramas de trabajo
 
-La comparación con `main` muestra que la rama está divergida y modifica documentos que también cambia la rama `chatgpt/ps4-audit-roadmap` (`README.md`, `ROADMAP.md`, `DECISION_LOG.md`, `TEST_PLAN.md`). Resolver los cambios contra la versión actual de `main` antes de abrir una integración; no hacer merge automático entre ramas de agentes.
+En la revisión inicial la rama estaba divergida; la actualización posterior de Claude la dejó 6 commits por delante y 0 por detrás de `main`. No hay necesidad de reconciliarla con `main` por divergencia. Sin embargo, las ramas `claude/2026-10-16-inventario-imagen` y `chatgpt/ps4-audit-roadmap` modifican en paralelo documentos comunes (`README.md`, `ROADMAP.md`, `DECISION_LOG.md`, `TEST_PLAN.md`). La integración debe preservar ambos conjuntos de cambios mediante una revisión deliberada; no hacer merge automático entre ramas de agentes.
 
 ## Resultado
 
