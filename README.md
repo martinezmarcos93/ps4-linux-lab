@@ -66,6 +66,7 @@ Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `T
 | [Seguridad de herramientas](docs/SAFETY_AND_TOOLING.md) | Requisitos para scripts futuros |
 | [Plan de ejecución siguiente](docs/NEXT_EXECUTION_PLAN.md) | Tareas inmediatas, responsables y puertas de seguridad |
 | [Plan de acción inmediata](docs/PLAN_ACCION_INMEDIATA.md) | Secuencia de cierre, preparación de imagen y puertas operativas |
+| [Plan de recuperación](docs/RECOVERY_PLAN.md) | Criterios de aborto, diagnóstico por etapas y límites de recuperación |
 | [Manifiestos de artefactos](docs/ARTIFACT_MANIFEST.md) | Formato y uso del verificador de integridad |
 | [Auditoría del pipeline de imagen](docs/BUILD_PIPELINE_SAFETY_AUDIT.md) | Riesgos de `build-img.sh`/`write-img.ps1` y su mitigación |
 | [Preflight de imagen](docs/USB_IMAGE_BUILD_PREFLIGHT.md) | Planificador de solo lectura del pipeline upstream |
@@ -73,6 +74,7 @@ Etiquetas de evidencia como en el [roadmap](docs/ROADMAP.md): `IMPLEMENTADO`, `T
 | [Diseño USB-only](docs/USB_ONLY_DESIGN.md) | Propiedades verificables, qué está demostrado, bloqueos y arquitectura recomendada |
 | [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes, licencias y nivel de confianza de cada binario |
 | [Diagnóstico del CI](docs/CI_DIAGNOSIS.md) | Por qué falla Actions (facturación) y la alternativa local |
+| [Auditoría transversal 2026-10-16](docs/CROSS_DOC_AUDIT_2026-10-16.md) | Inconsistencias detectadas entre documentos, correcciones y bloqueos abiertos |
 
 ## Convenciones de evidencia
 Estado de fase: PLANNED, IN_PROGRESS, BLOCKED, COMPLETADA, VERIFIED y REJECTED. `VERIFIED` exige prueba propia en hardware con registro y hashes (etiqueta `LAB`); documentación, código escrito o reportes de terceros no bastan.
