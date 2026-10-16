@@ -71,6 +71,7 @@ Estados: `PLANNED`, `IN_PROGRESS`, `BLOCKED`, `VERIFIED` y `REJECTED`. Una puert
 - [ ] `inspect-host`/`doctor`: sistema operativo, herramientas disponibles, espacio y permisos. (Pendiente).
 - [x] Primera versión de `verify-artifacts`: SHA-256, tamaño opcional y manifiesto JSON de solo lectura (`tools/verify_artifacts.py`). Formato y uso: `docs/ARTIFACT_MANIFEST.md`.
 - [ ] Ampliar `verify-artifacts` con procedencia, versión y formato de artefacto cuando exista un manifiesto fuente verificable.
+- [x] `verify_boot_chain`: verifica estructura requerida para boot USB-only (`tools/verify_boot_chain.py`, 4 tests).
 - [ ] `inspect-disks`: lista discos con modelo, tamaño, bus, serial y particiones.
 - [ ] `build-usb-image`: construcción en directorio temporal único; limpiar solo archivos propios, no borrar rutas arbitrarias.
 - [ ] `write-usb-image`: modo seguro, reidentificación del disco justo antes de escribir, doble confirmación, sin bypass genérico tipo `--force` que elimine las comprobaciones estructurales.
