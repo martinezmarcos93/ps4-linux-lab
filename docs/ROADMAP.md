@@ -27,8 +27,8 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Salida:** documentos de gobernanza coherentes; no implica soporte de hardware.
 
 ## Fase 1 — Identificación de consola
-**Estado:** PARCIAL — firmware 13.52 **observado**, familia Slim **inferida** de una foto, capacidad 861,4 GB **observada**; CUH y southbridge **desconocidos**. La identificación de la consola sigue incompleta y por eso **la selección de kernel no está resuelta**. Registro: [`docs/lab-logs/LAB-000-identificacion-consola.md`](lab-logs/LAB-000-identificacion-consola.md). Ejecutable como caso **TP-01** de [`docs/TEST_PLAN.md`](TEST_PLAN.md).
-- [ ] `PENDIENTE` Registrar modelo CUH y revisión visible.
+**Estado:** PARCIAL — firmware 13.52 **observado**, modelo **CUH-2115B confirmado**, familia Slim confirmada por el modelo y capacidad 861,4 GB **observada**; southbridge **desconocido**. La identificación de la consola sigue incompleta y por eso **la selección de kernel no está resuelta**. Registro: [`docs/lab-logs/LAB-000-identificacion-consola.md`](lab-logs/LAB-000-identificacion-consola.md). Ejecutable como caso **TP-01** de [`docs/TEST_PLAN.md`](TEST_PLAN.md).
+- [x] `IMPLEMENTADO` Registrar CUH-2115B confirmado en `docs/lab-logs/LAB-000-identificacion-consola.md` y `docs/COMPATIBILITY_MATRIX.md`.
 - [ ] `PENDIENTE` Registrar firmware exacto sin actualizarlo.
 - [ ] `PENDIENTE` Registrar estado de arranque original y síntomas existentes.
 - [ ] `PENDIENTE` Determinar qué datos requieren respaldo.
@@ -69,7 +69,7 @@ Una puerta de salida requiere evidencia registrada; una declaración upstream no
 **Salida:** informe reproducible de análisis estático, sin ejecución del payload (`docs/EXPLOIT_AUDIT_13.52.md`). Conclusión sostenida: "identificable como GoldHEN, sin hosts ajenos en cadenas"; **no sostenida**: que sea seguro.
 
 ## Fase 3 — Selección del método de arranque
-**Estado:** BLOQUEADA — la política está decidida (D-008: USB-only) pero **no validada**, y falta identificar CUH/southbridge, por lo que **no se puede elegir kernel**. Procedimiento con citas de código en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md); diseño verificable en [`docs/USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
+**Estado:** BLOQUEADA — la política está decidida (D-008: USB-only) pero **no validada**, y aunque el CUH-2115B ya está identificado, falta resolver el southbridge/compatibilidad, por lo que **no se puede elegir kernel**. Procedimiento con citas de código en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md); diseño verificable en [`docs/USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
 - [x] `TERCEROS` Existe un exploit/payload que dice cubrir el firmware registrado (13.52): guías y repositorio `raw13g` (no verificado por nosotros); depende de GoldHEN (D-010). La lista de 20 firmwares con offsets está en `UPSTREAM_CODE_MAP.md` §1.7 (`CÓDIGO`).
 - [x] `CÓDIGO` Requisitos y riesgos del método seleccionado — `docs/TROUBLESHOOTING.md` y `UPSTREAM_CODE_MAP.md` §1.6.
 - [ ] `BLOQUEADO` **Elegir kernel según revisión/southbridge.** No resuelto: el southbridge de la consola es desconocido y solo se obtiene ejecutando el payload (`GetSouthbridgeName()`), lo que exige autorización. Tabla de decisión por southbridge en `COMPATIBILITY_MATRIX.md` §7; no se selecciona ningún binario para esta consola.
