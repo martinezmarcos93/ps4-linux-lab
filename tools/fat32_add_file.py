@@ -82,15 +82,20 @@ class _Fat32:
 
     def _cadena(self, c: int) -> list[int]:
         cad, vistos = [], set()
-        while 2 <= c < 0x0FFFFFF8:
-            if c in vistos or len(cad) > self.clusters:
-                raise FatError("cadena de clusters con ciclo")
-            if c >= self.clusters + 2:
+        while True:
+            # Solo 0x0FFFFFF8..0x0FFFFFFF son marcadores válidos de fin de cadena.
+            # Un cluster libre/reservado/dañado no puede aceptarse como terminación.
+            if c >= 0x0FFFFFF8:
+                return cad
+            if c in (0, 1) or 0x0FFFFFF0 <= c <= 0x0FFFFFF7:
+                raise FatError("cadena de clusters termina en un valor FAT inválido")
+            if c < 2 or c >= self.clusters + 2:
                 raise FatError("cadena de clusters fuera de rango")
+            if c in vistos or len(cad) >= self.clusters:
+                raise FatError("cadena de clusters con ciclo")
             vistos.add(c)
             cad.append(c)
             c = self._fat_entrada(c)
-        return cad
 
     def _libres(self, n: int) -> list[int]:
         libres: list[int] = []
