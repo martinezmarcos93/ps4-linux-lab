@@ -5,7 +5,7 @@ Estado: **V0 en curso; evidencia visual recibida y registrada, artefactos de ima
 Reglas comunes: un solo cambio de variable por intento; máximo 3 intentos por etapa con la misma combinación; nunca escribir en el almacenamiento interno; nunca ejecutar `install-psxitarch.sh`; hashes de todos los artefactos registrados antes de cada intento; no incluir claves ni credenciales en los registros.
 
 ## V0 — Cierre de evidencia en la PC (sin consola)
-- **Hecho:** capturas recibidas y SHA-256 registrados en `LAB-001`; payload candidato decidido por D-025: loader parcheado USB-only.
+- **Hecho:** southbridge Baikal B1 observado y registrado en `LAB-001` (sin captura archivada ni hash verificable — ver nota de consolidación en ese archivo y riesgo R-23); payload candidato decidido por D-028: loader parcheado USB-only.
 - **Pendiente:** comprobar que los artefactos están disponibles en el entorno de trabajo; ejecutar las verificaciones de kernel/initramfs/rootfs/loader y construir la imagen candidata como archivo regular en la PC si los insumos existen. No escribir un dispositivo físico.
 - **Aceptación:** capturas registradas con hash; artefactos presentes y catalogados; todos los niveles de verificación en OK; ni un `bzImage.*` sobrante en la FAT; hash de imagen igual al informe; `bootargs.txt` y `vram.txt` válidos si existen.
 - **Aborto:** discrepancia southbridge (el ID no es 0x30201), hash distinto del catálogo, nivel en FALLO, falta de espacio.

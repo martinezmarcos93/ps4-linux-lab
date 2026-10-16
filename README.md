@@ -79,6 +79,9 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Auditoría del pipeline de imagen](docs/BUILD_PIPELINE_SAFETY_AUDIT.md) | Riesgos de `build-img.sh`/`write-img.ps1` y su mitigación |
 | [Preflight de imagen](docs/USB_IMAGE_BUILD_PREFLIGHT.md) | Planificador de solo lectura del pipeline upstream |
 | [Compilación aislada del loader](docs/LOADER_BUILD_REPRO.md) | Revisión de la cadena, entorno sin red, resultados y límites |
+| [Auditoría de la cadena Baikal](docs/AUDITORIA_CADENA_BAIKAL.md) | Kernel Baikal 7.0.8, correspondencia de la cadena, USB-only y riesgos |
+| [Plan de validación Baikal](docs/PLAN_VALIDACION_BAIKAL.md) | Etapas V0-V5 con aceptación, aborto y rollback |
+| [Selección del kernel](docs/KERNEL_SELECTION.md) | Evidencia de southbridge para CUH-2115B, criterios de aceptación/rechazo y conclusión |
 | [Diseño USB-only](docs/USB_ONLY_DESIGN.md) | Propiedades verificables, qué está demostrado, bloqueos y arquitectura recomendada |
 | [Inventario de artefactos](docs/ARTIFACT_INVENTORY.md) | Procedencia, hashes, licencias y nivel de confianza de cada binario |
 | [Diagnóstico de CI](docs/CI_DIAGNOSIS.md) | Estado del workflow y alternativas |
@@ -106,12 +109,12 @@ python3 tools/verify_boot_chain.py <carpeta-con-bzImage-e-initramfs> --catalogo 
 python3 tools/verify_artifacts.py --manifest /ruta/a/tu-manifiesto.json --root .
 python3 tools/plan_usb_image_build.py rootfs.tar.xz initramfs.cpio.gz salida.img
 python3 tools/build_usb_image.py --salida img.img --initramfs ... --kernel ... --rootfs-dir ... --dry-run
-python3 tools/payload_static.py goldhen.bin --referencia <referencia-verificada>
-python3 tools/elf_audit.py linux-1024mb.elf --fuente fw_offsets.h
-python3 tools/check_docs.py
-python3 tools/kernel_inspect.py /ruta/a/bzImage
-python3 tools/inventariar_artefactos.py --raiz kernel=/ruta/a/artefactos --markdown
-bash scripts/build_loader_isolated.sh <src-loader> <salida-nueva> [--patch p]
+python3 tools/payload_static.py goldhen.bin --referencia <oficial>   # análisis estático, sin ejecutar
+python3 tools/elf_audit.py linux-1024mb.elf --fuente fw_offsets.h    # ELF vs. código fuente fijado
+python3 tools/inventariar_artefactos.py --raiz etiqueta=ruta --catalogo manifests/arranque-catalogo.json --markdown  # hashes y procedencia, solo lectura
+python3 tools/kernel_inspect.py <bzImage>    # versión, config embebida y compresión del kernel, solo lectura
+python3 tools/check_docs.py                 # enlaces, referencias, estados del roadmap
+bash scripts/build_loader_isolated.sh <src-loader> <salida-nueva> [--patch p] # compila el loader en contenedor sin red; falla si falta algún artefacto
 ```
 
 Un resultado positivo en estructura, hash o formato no demuestra compatibilidad ni arranque. Un hash solo verifica igualdad con un valor esperado; no acredita por sí mismo la autenticidad de la fuente.

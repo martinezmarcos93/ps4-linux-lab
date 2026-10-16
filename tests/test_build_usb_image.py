@@ -38,7 +38,7 @@ class Base(unittest.TestCase):
 
     def args(self, **cambios):
         base = dict(salida=self.dir / "out" / "prueba.img", initramfs=self.initramfs, kernel=self.kernel,
-                    rootfs_dir=self.rootfs, p1_mib=40, tamano_mib=72, omitir_verificacion=False, dry_run=False)
+                    rootfs_dir=self.rootfs, p1_mib=40, tamano_mib=72, omitir_verificacion=False, omitir_fsck=False, dry_run=False)
         base.update(cambios)
         return argparse.Namespace(**base)
 
@@ -148,37 +148,13 @@ class TestValidaciones(Base):
             self.assertEqual(bu.main(["--salida", "/dev/x.img"] + base[2:]), 2)
 
 
-class TestPublicacionAtomica(unittest.TestCase):
-    def test_no_sobrescribe_destino_que_aparece_durante_build(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            raiz = Path(tmp)
-            parcial = raiz / ".imagen.img.parcial"
-            destino = raiz / "imagen.img"
-            parcial.write_bytes(b"imagen-generada")
-            destino.write_bytes(b"archivo-ajeno")
-            with self.assertRaisesRegex(bu.BuildError, "no se sobrescribe"):
-                bu._publicar_sin_sobrescribir(parcial, destino)
-            self.assertEqual(destino.read_bytes(), b"archivo-ajeno")
-            self.assertEqual(parcial.read_bytes(), b"imagen-generada")
-
-    def test_publica_sin_reemplazo_y_quita_temporal(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            raiz = Path(tmp)
-            parcial = raiz / ".imagen.img.parcial"
-            destino = raiz / "imagen.img"
-            parcial.write_bytes(b"imagen-generada")
-            bu._publicar_sin_sobrescribir(parcial, destino)
-            self.assertEqual(destino.read_bytes(), b"imagen-generada")
-            self.assertFalse(parcial.exists())
-
-
 @unittest.skipIf(ES_ROOT or FALTAN, f"root o faltan herramientas: {FALTAN}")
 class TestConstruccion(Base):
     def test_construye_imagen_verificable(self):
         plan = bu.planificar(self.args())
         destino = bu.construir(plan)
         self.assertTrue(destino.is_file())
-        self.assertEqual(sorted(p.name for p in (self.dir / "out").iterdir()), ["prueba.img", "prueba.json"])  # sin temporales
+        self.assertEqual(sorted(p.name for p in (self.dir / "out").iterdir()), ["prueba.img", "prueba.img.informe.json"])  # sin temporales
         off1, size1 = fat.particion_mbr(destino, 1)
         off2, size2 = fat.particion_mbr(destino, 2)
         self.assertEqual(off1, 2048 * 512)
@@ -248,59 +224,231 @@ class TestConstruccion(Base):
             bu.construir(plan)
         self.assertEqual(previo.read_bytes(), b"ajeno")
 
-    def test_temporal_json_previo_se_respeta_y_no_se_borra(self):
-        # Regresión OCH-001: el .json.parcial debe tratarse con la misma
-        # cautela que el .img.parcial, no sobrescribirse en silencio.
-        plan = bu.planificar(self.args())
-        previo = self.dir / "out" / "prueba.json.parcial"
-        previo.write_bytes(b"ajeno")
-        with self.assertRaisesRegex(bu.BuildError, "temporal previo"):
-            bu.construir(plan)
-        self.assertEqual(previo.read_bytes(), b"ajeno")
+    def _sin(self, *nombres):
+        real = bu._buscar
+        return mock.patch.object(bu, "_buscar", side_effect=lambda n: None if n in nombres else real(n))
 
-    def test_temporal_json_no_sigue_symlink(self):
-        # Regresión OCH-001: si ".json.parcial" es un symlink a otro archivo,
-        # construir() no debe escribir a través de él.
+    def test_sin_fsck_vfat_la_construccion_falla_y_no_publica_nada(self):
         plan = bu.planificar(self.args())
-        objetivo = self.dir / "fuera_de_out.txt"
-        objetivo.write_bytes(b"contenido ajeno")
-        enlace = self.dir / "out" / "prueba.json.parcial"
-        try:
-            enlace.symlink_to(objetivo)
-        except (OSError, NotImplementedError):
-            self.skipTest("symlinks no soportados")
-        with self.assertRaisesRegex(bu.BuildError, "temporal previo"):
+        with self._sin("fsck.vfat"):
+            with self.assertRaisesRegex(bu.BuildError, "falta fsck.vfat"):
+                bu.construir(plan)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
+
+    def test_sin_e2fsck_la_construccion_falla_y_no_publica_nada(self):
+        plan = bu.planificar(self.args())
+        with self._sin("e2fsck"):
+            with self.assertRaisesRegex(bu.BuildError, "falta e2fsck"):
+                bu.construir(plan)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
+
+    def test_omitir_fsck_explicito_queda_registrado_como_no_verificada(self):
+        plan = bu.planificar(self.args(omitir_fsck=True))
+        with self._sin("fsck.vfat", "e2fsck"):
+            destino = bu.construir(plan)
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertFalse(inf["totalmente_verificada"])
+        self.assertEqual(inf["verificaciones"]["fat"]["estado"], "OMITIDA")
+        self.assertEqual(inf["verificaciones"]["ext4"]["estado"], "OMITIDA")
+        self.assertNotIn("herramienta", inf["verificaciones"]["fat"])
+
+    def test_omitir_fsck_solo_omite_lo_que_falta(self):
+        plan = bu.planificar(self.args(omitir_fsck=True))
+        with self._sin("fsck.vfat"):
+            destino = bu.construir(plan)
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertEqual(inf["verificaciones"]["fat"]["estado"], "OMITIDA")
+        self.assertEqual(inf["verificaciones"]["ext4"]["estado"], "OK")
+        self.assertFalse(inf["totalmente_verificada"])
+
+    def test_fallo_de_fsck_no_publica_la_imagen(self):
+        plan = bu.planificar(self.args())
+        real = subprocess.run
+
+        def falso(cmd, *a, **k):
+            if cmd and str(cmd[0]).endswith("fsck.vfat"):
+                return subprocess.CompletedProcess(cmd, 4, "daño simulado", "")
+            return real(cmd, *a, **k)
+
+        with mock.patch("tools.build_usb_image.subprocess.run", side_effect=falso):
+            with self.assertRaisesRegex(bu.BuildError, "fsck.vfat reporta problemas"):
+                bu.construir(plan)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
+
+    def test_fallo_de_e2fsck_no_publica_la_imagen(self):
+        plan = bu.planificar(self.args())
+        real = subprocess.run
+
+        def falso(cmd, *a, **k):
+            if cmd and str(cmd[0]).endswith("e2fsck"):
+                return subprocess.CompletedProcess(cmd, 4, "daño simulado", "")
+            return real(cmd, *a, **k)
+
+        with mock.patch("tools.build_usb_image.subprocess.run", side_effect=falso):
+            with self.assertRaisesRegex(bu.BuildError, "e2fsck reporta problemas"):
+                bu.construir(plan)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
+
+    def test_informe_de_una_construccion_completa(self):
+        import hashlib
+        destino = bu.construir(bu.planificar(self.args()))
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertTrue(inf["totalmente_verificada"])
+        self.assertEqual(inf["verificaciones"]["fat"]["herramienta"], "fsck.vfat -n")
+        self.assertEqual(inf["verificaciones"]["ext4"]["herramienta"], "e2fsck -fn")
+        self.assertEqual(inf["sha256_imagen"], hashlib.sha256(destino.read_bytes()).hexdigest())
+        self.assertEqual(inf["entradas"]["kernel"]["sha256"], hashlib.sha256(self.kernel.read_bytes()).hexdigest())
+
+    def test_cli_no_dice_verificada_si_se_omitio(self):
+        import io, contextlib
+        base = ["--salida", str(self.dir / "out" / "cli2.img"), "--initramfs", str(self.initramfs), "--kernel", str(self.kernel),
+                "--rootfs-dir", str(self.rootfs), "--p1-mib", "40", "--tamano-mib", "72", "--omitir-fsck"]
+        out, err = io.StringIO(), io.StringIO()
+        with self._sin("fsck.vfat", "e2fsck"), contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = bu.main(base)
+        self.assertEqual(rc, 0)
+        self.assertNotIn("verificados ->", out.getvalue())
+        self.assertIn("NO totalmente verificada", err.getvalue())
+
+    def test_cli_sin_fsck_falla_con_codigo_2(self):
+        import io, contextlib
+        base = ["--salida", str(self.dir / "out" / "cli3.img"), "--initramfs", str(self.initramfs), "--kernel", str(self.kernel),
+                "--rootfs-dir", str(self.rootfs), "--p1-mib", "40", "--tamano-mib", "72"]
+        with self._sin("fsck.vfat"), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(bu.main(base), 2)
+        self.assertEqual(list((self.dir / "out").iterdir()), [])
+
+    # ---- publicación atómica del par imagen + informe
+    def _carpeta_limpia(self):
+        return sorted(p.name for p in (self.dir / "out").iterdir())
+
+    def test_informe_preexistente_se_rechaza_en_el_plan_y_no_se_toca(self):
+        previo = self.dir / "out" / "prueba.img.informe.json"
+        previo.write_text("ajeno")
+        with self.assertRaisesRegex(bu.BuildError, "ya existe .*informe"):
+            bu.planificar(self.args())
+        self.assertEqual(previo.read_text(), "ajeno")
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img.informe.json"])
+
+    def test_informe_que_aparece_despues_del_plan_no_se_sobrescribe_ni_se_publica_la_imagen(self):
+        plan = bu.planificar(self.args())
+        previo = self.dir / "out" / "prueba.img.informe.json"
+        previo.write_text("ajeno")
+        with self.assertRaisesRegex(bu.BuildError, "ya existe"):
             bu.construir(plan)
-        self.assertEqual(objetivo.read_bytes(), b"contenido ajeno")
+        self.assertEqual(previo.read_text(), "ajeno")
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img.informe.json"])
+
+    def test_el_informe_aparece_durante_la_construccion(self):
+        plan = bu.planificar(self.args())
+        previo = self.dir / "out" / "prueba.img.informe.json"
+        real = bu._verificar_sistemas_de_archivos
+
+        def con_carrera(*a, **k):
+            previo.write_text("ajeno")
+            return real(*a, **k)
+
+        with mock.patch.object(bu, "_verificar_sistemas_de_archivos", side_effect=con_carrera):
+            with self.assertRaisesRegex(bu.BuildError, "apareció durante la construcción"):
+                bu.construir(plan)
+        self.assertEqual(previo.read_text(), "ajeno")
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img.informe.json"])
+
+    def test_el_destino_aparece_durante_la_construccion_no_se_sobrescribe_y_se_retira_el_informe_propio(self):
+        plan = bu.planificar(self.args())
+        destino = self.dir / "out" / "prueba.img"
+        real = bu._verificar_sistemas_de_archivos
+
+        def con_carrera(*a, **k):
+            destino.write_text("ajeno")
+            return real(*a, **k)
+
+        with mock.patch.object(bu, "_verificar_sistemas_de_archivos", side_effect=con_carrera):
+            with self.assertRaisesRegex(bu.BuildError, "apareció durante la construcción"):
+                bu.construir(plan)
+        self.assertEqual(destino.read_text(), "ajeno")
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img"], "debe quedar solo el archivo ajeno, sin informe huérfano ni temporales")
+
+    def test_error_al_escribir_el_informe_no_deja_imagen_publicada(self):
+        plan = bu.planificar(self.args())
+        with mock.patch.object(bu, "_preparar_informe", side_effect=OSError("disco lleno simulado")):
+            with self.assertRaisesRegex(bu.BuildError, "disco lleno"):
+                bu.construir(plan)
+        self.assertEqual(self._carpeta_limpia(), [])
+
+    def test_error_a_mitad_del_informe_deja_el_directorio_limpio(self):
+        plan = bu.planificar(self.args())
+        with mock.patch.object(bu, "_sha256", side_effect=OSError("lectura fallida simulada")):
+            with self.assertRaises(bu.BuildError):
+                bu.construir(plan)
+        self.assertEqual(self._carpeta_limpia(), [])
+
+    def test_fallo_al_publicar_la_imagen_retira_el_informe_ya_publicado(self):
+        plan = bu.planificar(self.args())
+        real = bu._publicar
+        llamadas = []
+
+        def segunda_falla(o, d):
+            llamadas.append(d.name)
+            if len(llamadas) == 2:
+                raise bu.BuildError("fallo simulado al publicar la imagen")
+            return real(o, d)
+
+        with mock.patch.object(bu, "_publicar", side_effect=segunda_falla):
+            with self.assertRaisesRegex(bu.BuildError, "fallo simulado"):
+                bu.construir(plan)
+        self.assertEqual(llamadas, ["prueba.img.informe.json", "prueba.img"], "el informe se publica primero")
+        self.assertEqual(self._carpeta_limpia(), [])
+
+    def test_el_informe_describe_exactamente_las_comprobaciones_ejecutadas(self):
+        real = subprocess.run
+        invocadas = []
+
+        def registra(cmd, *a, **k):
+            invocadas.append(os.path.basename(str(cmd[0])))
+            return real(cmd, *a, **k)
+
+        with mock.patch("tools.build_usb_image.subprocess.run", side_effect=registra):
+            destino = bu.construir(bu.planificar(self.args()))
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertIn("fsck.vfat", invocadas)
+        self.assertIn("e2fsck", invocadas)
+        self.assertEqual({k: v["estado"] for k, v in inf["verificaciones"].items()}, {"fat": "OK", "ext4": "OK"})
+        # y a la inversa: lo omitido no ejecuta la herramienta ni consta como OK
+        shutil.rmtree(self.dir / "out")
+        (self.dir / "out").mkdir()
+        invocadas.clear()
+        with self._sin("fsck.vfat", "e2fsck"), mock.patch("tools.build_usb_image.subprocess.run", side_effect=registra):
+            destino = bu.construir(bu.planificar(self.args(omitir_fsck=True)))
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertNotIn("fsck.vfat", invocadas)
+        self.assertNotIn("e2fsck", invocadas)
+        self.assertTrue(all(v["estado"] == "OMITIDA" for v in inf["verificaciones"].values()))
+        self.assertFalse(inf["totalmente_verificada"])
+
+    def test_hash_del_informe_es_el_de_la_imagen_publicada(self):
+        import hashlib
+        destino = bu.construir(bu.planificar(self.args()))
+        inf = json.loads((destino.parent / (destino.name + ".informe.json")).read_text())
+        self.assertEqual(inf["sha256_imagen"], hashlib.sha256(destino.read_bytes()).hexdigest())
+        self.assertEqual(self._carpeta_limpia(), ["prueba.img", "prueba.img.informe.json"])
+
+    def test_publicar_sin_enlaces_duros_sigue_sin_sobrescribir(self):
+        a, b = self.dir / "a", self.dir / "b"
+        a.write_text("nuevo")
+        with mock.patch("os.link", side_effect=OSError("sin enlaces duros")):
+            bu._publicar(a, b)
+            self.assertEqual(b.read_text(), "nuevo")
+            self.assertFalse(a.exists())
+            a.write_text("otro")
+            with self.assertRaisesRegex(bu.BuildError, "apareció"):
+                bu._publicar(a, b)
+        self.assertEqual(b.read_text(), "nuevo")
 
     def test_herramienta_faltante(self):
         with mock.patch("shutil.which", return_value=None), mock.patch("os.path.exists", return_value=False):
             with self.assertRaisesRegex(bu.BuildError, "falta la herramienta"):
-                bu.construir({"salida": str(self.dir / "out" / "x.img"), "tamano_total_mib": 0})
-
-    def test_informe_preexistente(self):
-        plan = bu.planificar(self.args())
-        (self.dir / "out" / "prueba.json").write_bytes(b"{}")
-        destino = bu.construir(plan)
-        self.assertTrue(destino.is_file())
-        self.assertTrue((self.dir / "out" / "prueba.json").is_file())
-        informe = json.loads((self.dir / "out" / "prueba.json").read_text(encoding="utf-8"))
-        self.assertNotIn(str(self.dir), json.dumps(informe))
-
-    def test_rutas_anonimizadas(self):
-        plan = bu.planificar(self.args())
-        bu.construir(plan)
-        informe = json.loads((self.dir / "out" / "prueba.json").read_text(encoding="utf-8"))
-        self.assertEqual(informe["plan"]["initramfs"], "i.cpio.gz")
-        self.assertEqual(informe["plan"]["kernel"], "k.bin")
-        self.assertEqual(informe["plan"]["rootfs_dir"], "rootfs")
-
-    def test_fsck_falla_limpia(self):
-        plan = bu.planificar(self.args())
-        with mock.patch("tools.build_usb_image._verificar_p1", side_effect=bu.BuildError("fsck falló")):
-            with self.assertRaisesRegex(bu.BuildError, "fsck falló"):
-                bu.construir(plan)
-        self.assertEqual(list((self.dir / "out").iterdir()), [])
+                bu.construir({"salida": str(self.dir / "out" / "x.img")})
 
 
 if __name__ == "__main__":

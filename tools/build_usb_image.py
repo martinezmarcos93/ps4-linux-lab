@@ -14,6 +14,7 @@ rootfs real, prepare el directorio y ejecute esta herramienta bajo `fakeroot`.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -36,15 +37,20 @@ P1_MIN_MIB = 40  # mkfs.fat necesita >= 65525 clusters; con clusters de 512 B so
 P2_MIN_MIB = 16
 TOTAL_MAX_MIB = 64 * 1024
 PREFIJOS_PROHIBIDOS = ("/dev", "/proc", "/sys", "/run", "/boot", "/etc", "/bin", "/sbin", "/usr", "/lib", "/var/lib")
-HERRAMIENTAS = {"sfdisk": "/usr/sbin/sfdisk", "mkfs.vfat": "/usr/sbin/mkfs.vfat", "mkfs.ext4": "/usr/sbin/mkfs.ext4"}
+HERRAMIENTAS = {"sfdisk": "/usr/sbin/sfdisk", "mkfs.vfat": "/usr/sbin/mkfs.vfat", "mkfs.ext4": "/usr/sbin/mkfs.ext4",
+                "fsck.vfat": "/usr/sbin/fsck.vfat", "e2fsck": "/usr/sbin/e2fsck"}
 
 
 class BuildError(Exception):
     pass
 
 
+def _buscar(nombre: str) -> str | None:
+    return shutil.which(nombre) or (HERRAMIENTAS[nombre] if os.path.exists(HERRAMIENTAS[nombre]) else None)
+
+
 def _herramienta(nombre: str) -> str:
-    ruta = shutil.which(nombre) or (HERRAMIENTAS[nombre] if os.path.exists(HERRAMIENTAS[nombre]) else None)
+    ruta = _buscar(nombre)
     if not ruta:
         raise BuildError(f"falta la herramienta '{nombre}' (paquetes util-linux, dosfstools, e2fsprogs)")
     return ruta
@@ -145,7 +151,10 @@ def planificar(args) -> dict:
         err, _ = vbc.comprobar_initramfs(initramfs)
         if err:
             raise BuildError("el initramfs no pasa la comprobación de formato: " + "; ".join(err))
-    return {"salida": str(salida), "p1_mib": p1, "p2_mib": p2, "tamano_total_mib": total,
+    informe = salida.with_name(salida.name + ".informe.json")
+    if os.path.lexists(informe):
+        raise BuildError(f"ya existe '{informe}'; no se sobrescribe (bórrelo usted si es de una construcción descartada)")
+    return {"omitir_fsck": bool(getattr(args, "omitir_fsck", False)), "salida": str(salida), "p1_mib": p1, "p2_mib": p2, "tamano_total_mib": total,
             "initramfs": str(initramfs), "kernel": str(kernel), "rootfs_dir": str(rootfs),
             "bytes_a_copiar": usado}
 
@@ -156,109 +165,148 @@ def _ejecutar(cmd: list[str]) -> None:
         raise BuildError(f"falló {' '.join(cmd[:2])}: {(r.stderr or r.stdout).strip()[:400]}")
 
 
-def _publicar_sin_sobrescribir(parcial: Path, destino: Path) -> None:
-    """Publica un archivo temporal de forma atómica sin reemplazar un destino concurrente.
-
-    Ambos paths deben estar en el mismo filesystem. os.link falla si el destino existe;
-    después se elimina el nombre temporal. No usar os.replace: podría pisar un archivo
-    creado después de validar_salida() (TOCTOU).
-    """
-    try:
-        os.link(parcial, destino, follow_symlinks=False)
-    except FileExistsError as exc:
-        raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe") from exc
-    except OSError as exc:
-        raise BuildError(f"no se pudo publicar la imagen sin sobrescribir: {exc}") from exc
-    try:
-        os.unlink(parcial)
-    except OSError as exc:
-        # El destino ya es una publicación válida; el temporal sobrante se informa.
-        raise BuildError(f"imagen publicada en '{destino}', pero no se pudo retirar el temporal '{parcial}': {exc}") from exc
-
-
 def construir(plan: dict) -> Path:
     sfdisk, mkvfat, mkext4 = _herramienta("sfdisk"), _herramienta("mkfs.vfat"), _herramienta("mkfs.ext4")
     destino = Path(plan["salida"])
-    parcial_img = destino.with_name(f".{destino.name}.parcial")
-    parcial_json = destino.with_suffix(".json.parcial")
-    informe_json = destino.with_suffix(".json")
-    
-    if os.path.lexists(parcial_img):
-        raise BuildError(f"existe un temporal previo '{parcial_img}'; revíselo y bórrelo manualmente")
-    if os.path.lexists(parcial_json):
-        raise BuildError(f"existe un temporal previo '{parcial_json}'; revíselo y bórrelo manualmente")
+    informe_final = destino.with_name(destino.name + ".informe.json")
+    parcial = destino.with_name(f".{destino.name}.parcial")
+    informe_parcial = destino.with_name(f".{destino.name}.informe.json.parcial")
+    for previo in (parcial, informe_parcial):
+        if os.path.lexists(previo):
+            raise BuildError(f"existe un temporal previo '{previo}'; revíselo y bórrelo manualmente")
+    for existente in (destino, informe_final):
+        if os.path.lexists(existente):
+            raise BuildError(f"ya existe '{existente}'; no se sobrescribe")
+    exito = False
+    publicados: list[Path] = []  # archivos finales creados por ESTA ejecución (para revertir si algo falla después)
     try:
-        fd = os.open(parcial_img, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
+        fd = os.open(parcial, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
         try:
             os.ftruncate(fd, plan["tamano_total_mib"] * MIB)  # archivo disperso
         finally:
             os.close(fd)
         p1, p2 = plan["p1_mib"], plan["p2_mib"]
-        subprocess.run([sfdisk, "--quiet", str(parcial_img)], input=f"label: dos\nstart=2048, size={p1}MiB, type=c\ntype=83\n",
+        subprocess.run([sfdisk, "--quiet", str(parcial)], input=f"label: dos\nstart=2048, size={p1}MiB, type=c\ntype=83\n",
                        text=True, capture_output=True, check=True, timeout=120)
-        _ejecutar([mkvfat, "-F", "32", "-n", "PS4BOOT", "--offset", "2048", str(parcial_img), str(p1 * 1024)])
-        off1, size1 = fat.particion_mbr(parcial_img, 1)
-        fat.agregar_archivo(parcial_img, off1, size1, "initramfs.cpio.gz", Path(plan["initramfs"]).read_bytes())
-        fat.agregar_archivo(parcial_img, off1, size1, "bzImage", Path(plan["kernel"]).read_bytes())
-        off2, size2 = fat.particion_mbr(parcial_img, 2)
+        _ejecutar([mkvfat, "-F", "32", "-n", "PS4BOOT", "--offset", "2048", str(parcial), str(p1 * 1024)])
+        off1, size1 = fat.particion_mbr(parcial, 1)
+        fat.agregar_archivo(parcial, off1, size1, "initramfs.cpio.gz", Path(plan["initramfs"]).read_bytes())
+        fat.agregar_archivo(parcial, off1, size1, "bzImage", Path(plan["kernel"]).read_bytes())
+        off2, size2 = fat.particion_mbr(parcial, 2)
         _ejecutar([mkext4, "-q", "-F", "-L", "psxitarch", "-E", f"offset={off2}", "-d", plan["rootfs_dir"],
-                   str(parcial_img), str(size2 // 1024)])
-        _verificar_p1(parcial_img, off1, size1)
-
-        # Informe atómico (rutas anonimizadas) junto a la imagen
-        plan_anon = plan.copy()
-        for k in ("salida", "initramfs", "kernel", "rootfs_dir"):
-            plan_anon[k] = str(Path(plan_anon[k]).name)
-        informe = {"imagen": destino.name, "plan": plan_anon, "estado": "ok"}
-        # Igual que parcial_img: O_EXCL + O_NOFOLLOW evita pisar un archivo
-        # preexistente o escribir a través de un symlink plantado en esa ruta
-        # (hallazgo OCH-001 de la revisión de la rama opencode original).
-        fd_json = os.open(parcial_json, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
-        with os.fdopen(fd_json, "w", encoding="utf-8") as f:
-            json.dump(informe, f, indent=2, ensure_ascii=False)
-            f.flush()
-            os.fsync(f.fileno())
-
-        # Publicación de la imagen: NO usar os.replace. destino ya pasó por
-        # validar_salida() (no existía al planificar), y os.replace pisaría sin
-        # aviso un archivo que haya aparecido ahí durante la construcción (TOCTOU).
-        # _publicar_sin_sobrescribir usa os.link + FileExistsError para evitarlo.
-        _publicar_sin_sobrescribir(parcial_img, destino)
-
-        # El informe .json es metadato complementario, no el artefacto de arranque:
-        # un .json residual de una build anterior con el mismo nombre de salida se
-        # reemplaza intencionalmente (os.replace sigue siendo atómico en el mismo fs).
-        os.replace(parcial_json, informe_json)
+                   str(parcial), str(size2 // 1024)])
+        verificaciones = _verificar_sistemas_de_archivos(parcial, off1, size1, off2, plan.get("omitir_fsck", False))
+        # El informe se prepara (hash de la imagen incluido) ANTES de publicar nada y se publica PRIMERO:
+        # si algo falla, nunca queda una imagen final sin su informe de verificación.
+        _preparar_informe(informe_parcial, parcial, destino, plan, verificaciones)
+        _publicar(informe_parcial, informe_final)
+        publicados.append(informe_final)
+        _publicar(parcial, destino)
+        publicados.append(destino)
+        exito = True
         return destino
-    except (subprocess.CalledProcessError, fat.FatError, OSError) as exc:
+    except subprocess.CalledProcessError as exc:
+        raise BuildError(f"falló {exc.cmd[0]}: {(exc.stderr or exc.stdout or '').strip()[:400]}") from exc
+    except (fat.FatError, OSError) as exc:
         raise BuildError(str(exc)) from exc
     finally:
-        if os.path.lexists(parcial_img):
-            os.unlink(parcial_img)
-        if os.path.lexists(parcial_json):
-            os.unlink(parcial_json)
-        if os.path.lexists(informe_json) and not os.path.lexists(destino):
-            os.unlink(informe_json)
+        if not exito:
+            for p in publicados:  # se retira lo que ESTA ejecución llegó a publicar: nada queda a medias
+                if os.path.lexists(p):
+                    os.unlink(p)
+        for temporal in (parcial, informe_parcial):
+            if os.path.lexists(temporal):
+                os.unlink(temporal)
 
 
-def _verificar_p1(imagen: Path, off: int, size: int) -> None:
-    fsck = shutil.which("fsck.vfat") or ("/usr/sbin/fsck.vfat" if os.path.exists("/usr/sbin/fsck.vfat") else None)
-    if not fsck:
+def _publicar(origen: Path, destino: Path) -> None:
+    """Publica `origen` como `destino` SIN sobrescribir: enlace duro (falla si existe) y, si el sistema de archivos
+    no admite enlaces duros, comprobación previa + os.replace (ventana mínima de carrera)."""
+    try:
+        os.link(origen, destino)
+    except FileExistsError as exc:
+        raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe") from exc
+    except OSError:
+        if os.path.lexists(destino):
+            raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe")
+        os.replace(origen, destino)
         return
-    with tempfile.TemporaryDirectory(dir=imagen.parent, prefix=".p1-") as t:
-        extraida = Path(t) / "p1.img"
-        with open(imagen, "rb") as src, open(extraida, "wb") as dst:
-            src.seek(off)
-            restante = size
-            while restante:
-                bloque = src.read(min(restante, 8 * MIB))
-                if not bloque:
-                    break
-                dst.write(bloque)
-                restante -= len(bloque)
-        r = subprocess.run([fsck, "-n", str(extraida)], capture_output=True, text=True, timeout=600)
+    os.unlink(origen)
+
+
+def _verificar_sistemas_de_archivos(imagen: Path, off1: int, size1: int, off2: int, omitir: bool) -> dict:
+    """Comprueba FAT (fsck.vfat -n) y ext4 (e2fsck -fn) sin escribir. Devuelve qué se ejecutó DE VERDAD.
+
+    Si falta una herramienta, la construcción FALLA salvo que se pidiera `--omitir-fsck`; en ese caso el estado es
+    OMITIDA y queda registrado: nunca se presenta como verificado un sistema de archivos que no se comprobó.
+    """
+    resultado: dict = {}
+    # --- FAT
+    fsck = _buscar("fsck.vfat")
+    if fsck is None:
+        if not omitir:
+            raise BuildError("falta fsck.vfat: la FAT no se puede verificar. Instale dosfstools o use --omitir-fsck "
+                             "(la imagen quedará registrada como SIN verificar)")
+        resultado["fat"] = {"estado": "OMITIDA", "motivo": "fsck.vfat no está instalado y se pidió --omitir-fsck"}
+    else:
+        with tempfile.TemporaryDirectory(dir=imagen.parent, prefix=".p1-") as t:
+            extraida = Path(t) / "p1.img"
+            with open(imagen, "rb") as src, open(extraida, "wb") as dst:
+                src.seek(off1)
+                restante = size1
+                while restante:
+                    bloque = src.read(min(restante, 8 * MIB))
+                    if not bloque:
+                        break
+                    dst.write(bloque)
+                    restante -= len(bloque)
+            r = subprocess.run([fsck, "-n", str(extraida)], capture_output=True, text=True, timeout=600)
         if r.returncode != 0:
             raise BuildError("fsck.vfat reporta problemas en la partición de arranque: " + (r.stdout + r.stderr).strip()[:400])
+        resultado["fat"] = {"estado": "OK", "herramienta": "fsck.vfat -n", "ruta": fsck}
+    # --- ext4 (e2fsck lee la partición in situ con ?offset=; -n = solo lectura)
+    e2 = _buscar("e2fsck")
+    if e2 is None:
+        if not omitir:
+            raise BuildError("falta e2fsck: el ext4 no se puede verificar. Instale e2fsprogs o use --omitir-fsck "
+                             "(la imagen quedará registrada como SIN verificar)")
+        resultado["ext4"] = {"estado": "OMITIDA", "motivo": "e2fsck no está instalado y se pidió --omitir-fsck"}
+    else:
+        r = subprocess.run([e2, "-fn", f"{imagen}?offset={off2}"], capture_output=True, text=True, timeout=1800)
+        if r.returncode != 0:
+            raise BuildError("e2fsck reporta problemas en el ext4: " + (r.stdout + r.stderr).strip()[-400:])
+        resultado["ext4"] = {"estado": "OK", "herramienta": "e2fsck -fn", "ruta": e2}
+    return resultado
+
+
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for b in iter(lambda: f.read(8 * MIB), b""):
+            h.update(b)
+    return h.hexdigest()
+
+
+def _preparar_informe(informe_parcial: Path, imagen_parcial: Path, destino: Path, plan: dict, verificaciones: dict) -> None:
+    """Escribe el informe en un temporal (nuevo, nunca sobrescribe): entradas con hash, hash de la imagen terminada y
+    verificaciones realmente ejecutadas. El hash se calcula sobre la imagen parcial, que es la que se publicará."""
+    informe = {
+        "imagen": destino.name,
+        "sha256_imagen": _sha256(imagen_parcial),
+        "bytes_imagen": imagen_parcial.stat().st_size,
+        "entradas": {n: {"archivo": plan[n], "sha256": _sha256(Path(plan[n])), "bytes": Path(plan[n]).stat().st_size}
+                     for n in ("initramfs", "kernel")},
+        "rootfs_dir": plan["rootfs_dir"],
+        "particiones_mib": {"p1": plan["p1_mib"], "p2": plan["p2_mib"]},
+        "verificaciones": verificaciones,
+        "totalmente_verificada": all(v["estado"] == "OK" for v in verificaciones.values()),
+        "nota": "Una imagen verificada no prueba compatibilidad con la consola ni que arranque; el rootfs puede ser ficticio.",
+    }
+    with open(informe_parcial, "x", encoding="utf-8") as f:
+        json.dump(informe, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+        f.flush()
+        os.fsync(f.fileno())
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -270,6 +318,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--p1-mib", type=int, default=512)
     ap.add_argument("--tamano-mib", type=int, default=12 * 1024)
     ap.add_argument("--omitir-verificacion", action="store_true", help="no comprobar el formato de kernel/initramfs (no recomendado)")
+    ap.add_argument("--omitir-fsck", action="store_true",
+                    help="permitir construir aunque falten fsck.vfat/e2fsck; la imagen se registra como SIN verificar")
     ap.add_argument("--dry-run", action="store_true", help="validar y mostrar el plan sin crear nada")
     args = ap.parse_args(argv)
     try:
@@ -281,7 +331,13 @@ def main(argv: list[str] | None = None) -> int:
     except BuildError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
-    print(f"OK: imagen creada en {destino}. No se escribió en ningún dispositivo.")
+    informe = json.loads(destino.with_name(destino.name + ".informe.json").read_text(encoding="utf-8"))
+    v = informe["verificaciones"]
+    estado = ", ".join(f"{k}: {x['estado']}" + (f" ({x['herramienta']})" if x["estado"] == "OK" else f" — {x['motivo']}") for k, x in v.items())
+    if informe["totalmente_verificada"]:
+        print(f"OK: imagen creada en {destino} (sha256 {informe['sha256_imagen']}). Sistemas de archivos verificados -> {estado}. No se escribió en ningún dispositivo.")
+    else:
+        print(f"ATENCIÓN: imagen creada en {destino} pero NO totalmente verificada -> {estado}. No se escribió en ningún dispositivo.", file=sys.stderr)
     return 0
 
 

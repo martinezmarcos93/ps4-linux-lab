@@ -145,6 +145,26 @@ Las decisiones describen opciones aceptadas y condiciones para revisarlas; no tr
 - **Decisión:** Marcos eligió MIT para el código y la documentación propios (`tools/`, `tests/`, `scripts/`, `docs/`, `README.md`). Se agrega `LICENSE` en la raíz y se actualiza `docs/LICENSE_POLICY.md`.
 - **Límite:** no se extiende a componentes de terceros (loader, kernels, payloads, rootfs, parches, binarios upstream); cada uno mantiene su propia licencia según el inventario existente.
 
+## D-024 — Southbridge Baikal B1 informado por el operador; el kernel Baikal 7.0.8 pasa a candidato prioritario, sin selección ni autorización de arranque
+- **Fecha:** 2026-10-16. **Estado:** ACEPTADA.
+- **Hecho (OPERADOR):** `LAB-001`: Baikal B1, ID `0x30201`, leído en *Información del sistema* con GoldHEN cargado; GoldHEN "v2.2.3" según la pantalla *About*; **sin captura archivada ni hash**. No lo reprodujimos.
+- **Auditoría estática (`AUDITORIA_CADENA_BAIKAL.md`):** el kernel tiene `CONFIG_X86_PS4_BAIKAL=y` (el Belize no); casi monolítico; chain consistente por release; sin contradicciones con D-008 en la documentación o el código; riesgos nuevos R-21..R-24.
+- **Decisión:** `bzImage-baikal-7.0.8` es candidato prioritario. No se declara compatible, no se selecciona para arrancar y no se construye una imagen final hasta que se cumpla V0 de `PLAN_VALIDACION_BAIKAL.md` (captura archivada, decisión de payload, revisión cruzada). Cualquier etapa sobre la consola requiere autorización específica de Marcos.
+- **Pendiente de reconciliar:** versión de GoldHEN reportada (2.2.3) frente al binario de raw13g (`v2.4b18.12`); ver riesgo R-23 de `AUDITORIA_CADENA_BAIKAL.md`.
+
+## D-026 — Inventario local cerrado; no se construye imagen mientras el kernel no pueda elegirse
+- **Nota de consolidación:** cronológicamente esta decisión y D-027 preceden a D-024 (se tomaron cuando el southbridge todavía era desconocido); se numeran después por una colisión de números D-022/D-023 entre dos ramas fusionadas el mismo día. No reflejan un orden temporal real.
+- **Fecha:** 2026-10-16. **Estado:** ACEPTADA (superada por D-024: el southbridge ya se observó).
+- **Hechos:** CUH-2115B confirmado por Marcos (LAB-000); southbridge desconocido al momento de esta decisión; 0 reportes del modelo exacto en los repositorios upstream consultados. Inventario real de 20 archivos en `manifests/inventario-local-2026-10-16.json` (sin descargas nuevas). Hallazgo R-IMG-01 de `docs/REVIEW_BUILD_USB_IMAGE.md` confirmado y corregido.
+- **Decisión:** no se selecciona kernel por analogía con CUH vecinos ni se construye una imagen "de demostración" con un kernel arbitrario. La imagen se prepara por la ruta A de `USB_ONLY_DESIGN.md` §8 cuando el southbridge esté resuelto.
+- **Límite:** el inventario prueba qué archivos hay y sus hashes, no que sean auténticos ni compatibles.
+
+## D-027 — El CUH-2115B no determina el southbridge; selección de kernel por procedimiento con criterios
+- **Fecha:** 2026-10-16. **Estado:** ACEPTADA (contexto superado por D-024: el southbridge ya se observó como Baikal B1).
+- **Hecho nuevo:** la wiki PS4 Developer lista CUH-2115B con **dos** southbridges (Baikal B1 y Belize2 A0) y el chasis 2100 usa Belize 2 o Baikal según la placa (S-17, S-18). Ningún kernel local declara soporte Belize 2.
+- **Decisión:** no se elige kernel ni se construye una imagen candidata hasta tener el southbridge `CONFIRMADO` (lectura directa). Procedimiento, criterios de aceptación/rechazo y veredicto por southbridge: `docs/KERNEL_SELECTION.md`. La fecha de fabricación y el modelo son inferencias que acotan, no confirman.
+- **No se autoriza:** identificar el southbridge ejecutando código en la consola; sigue sujeto al "sí" de Marcos (D-010, D-014).
+
 ## Preguntas abiertas
 
 Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-008) surgen de la auditoría de código de esta sesión y son más específicas.
@@ -157,23 +177,18 @@ Las primeras cinco son bloqueos generales de fase; las tres últimas (Q-006 a Q-
 - **Q-006:** CERRADA por D-008: la escritura en `/data/linux/boot/` no es una opción. La pregunta vigente pasa a ser si USB-only es demostrable (`USB_ONLY_DESIGN.md` §4).
 - **Q-007:** ¿existe tolerancia a repetir el ciclo de jailbreak varias veces en la misma sesión de prueba? El propio upstream documenta que 2-3 intentos son normales (ver `docs/TROUBLESHOOTING.md` caso 2) — afecta cuánto tiempo de sesión planificar, no es una decisión técnica.
 - **Q-008:** RESPUESTA PARCIAL (rama `chatgpt/research-audits`, integrada): la investigación bibliográfica de `GPU_AND_LLM_RESEARCH.md` §5 concluye que ROCm no tiene soporte oficial para Liverpool/PS4 en la matriz consultada y que Vulkan/RADV con `llama.cpp` es un candidato experimental, todo `INFERENCE` sin prueba en la consola. Pregunta original: ¿vale la pena, antes de tener la consola, investigar específicamente soporte ROCm/Vulkan-compute para GCN1-GCN4 (vacío identificado en `docs/GPU_AND_LLM_RESEARCH.md` §5) para no descubrir un descarte evitable recién en la Fase de compute/LLM? Es una pregunta de priorización de tiempo, no de autorización.
-
-
-## D-023 — Licencia MIT para el código propio del repositorio
-- **Fecha:** 2026-10-16. **Estado:** ACEPTADA.
-- **Contexto:** el repositorio no tenía licencia definida para el código propio; se documentó la decisión de licenciar los componentes propios y se agregó `LICENSE` a la raíz.
-- **Decisión:** el código y la documentación propios (`tools/`, `tests/`, `scripts/`, `docs/`, `README.md`) se publican bajo MIT.
-- **Límite:** no se extiende a componentes de terceros (loader, kernels, payloads, rootfs, parches ni binarios upstream); cada uno mantiene su propia licencia y condiciones. La licencia del laboratorio no autoriza redistribuir artefactos externos.
-
-
-## D-022 — Autorización de publicación del repositorio
-- **Fecha:** 2026-10-16. **Estado:** ACEPTADA.
-- **Contexto:** la auditoría documental encontró una decisión histórica que decía que la publicación pública todavía no estaba autorizada.
-- **Decisión:** Marcos confirmó que autorizó la publicación del repositorio. Se registra la autorización para reconciliar el registro histórico con el estado actual.
-- **Límite:** esta autorización no habilita ejecución de payloads, escrituras al almacenamiento interno, escritura de imágenes en dispositivos físicos ni pruebas destructivas.
-
 ## D-025 — Arquitectura candidata de loader USB-only
 - **Fecha:** 2026-10-16. **Estado:** DISEÑO ACEPTADO; implementación pendiente.
 - **Contexto:** el loader upstream busca kernel, initramfs y configuración en USB y después en rutas internas; USB prioritario no equivale a USB exclusivo.
 - **Decisión:** la arquitectura candidata debe partir de un loader con firmware 13.52 y southbridge compatibles, parcheado para elegir una única carpeta USB y fallar cerrado sin fallback al HDD interno.
 - **Límite:** no se aprueba todavía ningún binario/payload concreto. El parche debe aplicarse a una etiqueta upstream fijada, compilarse reproduciblemente, probarse en host y superar auditoría de initramfs/rootfs. No autoriza prueba física.
+
+- **Q-009:** ¿el southbridge de esta CUH-2115B es Baikal B1 o Belize2 A0? RESPONDIDA POR EL OPERADOR (D-024): Baikal B1; queda archivar la evidencia. Acota: fecha de fabricación (si figura en etiqueta/caja), código de placa SAE-00x (exige abrir) o `hw.sce_subsys_subid` (exige ejecutar código autorizado). Ver `KERNEL_SELECTION.md` §3.
+
+## D-028 — Capturas recibidas y estrategia de loader USB-only seleccionada para la imagen candidata
+- **Fecha:** 2026-10-16. **Estado:** ACEPTADA para preparar artefactos en la PC; no autoriza ejecución en la consola.
+- **Evidencia aportada por el operador:** la captura de Información del sistema muestra Baikal B1 (0x30201) y HEN 13.52. Hashes de los PNG recibidos registrados originalmente en `docs/lab-logs/LAB-001-southbridge.md`, pero esos hashes y la versión de GoldHEN `v2.4b18.12` que se les atribuía no están respaldados por evidencia verificable (ver nota de consolidación en `LAB-001` y riesgo R-23 de `AUDITORIA_CADENA_BAIKAL.md`); la versión reportada en pantalla por el operador es `v2.2.3`.
+- **Decisión de payload:** usar como candidato de laboratorio el loader construido desde el commit upstream fijado y el parche USB-only auditado en `patches/loader-usb-only-f70f43a.patch`, no el ELF de distribución ni el flujo que sube archivos a `/data/linux/boot/`. La variante parcheada elimina las rutas internas conocidas del loader, pero no demuestra por sí sola que kernel/initramfs/rootfs no accedan al disco interno.
+- **Decisión de kernel:** priorizar `bzImage-baikal-7.0.8` porque la configuración embebida declara `CONFIG_X86_PS4_BAIKAL=y`. Mantenerlo como candidato hasta completar verificaciones de archivo y procedencia; no afirmar compatibilidad de arranque.
+- **Próximo trabajo:** verificar disponibilidad real de todos los insumos en el entorno de trabajo, ejecutar tests estáticos sobre archivos ficticios, resolver R-23, y construir una imagen candidata solo si los artefactos de entrada están presentes y las validaciones pasan.
+- **Límite:** esta decisión autoriza trabajo documental y de PC con archivos regulares; no autoriza escribir USB físico, ejecutar payloads ni modificar el almacenamiento interno.

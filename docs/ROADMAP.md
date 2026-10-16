@@ -64,26 +64,42 @@ Auditoría cruzada documental 2026-10-16: [`docs/CROSS_DOC_AUDIT_2026-10-16.md`]
 **Salida:** informe reproducible de análisis estático, sin ejecución del payload (`docs/EXPLOIT_AUDIT_13.52.md`). Conclusión sostenida: "identificable como GoldHEN, sin hosts ajenos en cadenas"; **no sostenida**: que sea seguro.
 
 ## Fase 2.2 — Herramientas de verificación y tests
-**Estado:** utilidades y suite host-side implementadas; el resultado actual debe confirmarse ejecutando el comando en el entorno de trabajo. Seguimiento detallado tarea por tarea en [`docs/workstreams/02-tools-tests/ROADMAP.md`](workstreams/02-tools-tests/ROADMAP.md).
-- [x] `IMPLEMENTADO` Verificación de manifiestos y hashes.
-- [x] `IMPLEMENTADO` Verificación por niveles de cadena de arranque.
-- [x] `IMPLEMENTADO` Análisis estático de ELF/payload.
-- [x] `IMPLEMENTADO` Constructor/preflight de imagen con modo de simulación.
-- [x] `IMPLEMENTADO` Validaciones de documentación y pruebas automatizadas.
-- [ ] `PENDIENTE` Ejecutar `bash scripts/check.sh` en entorno limpio y conservar el resultado actual.
+**Estado:** IN_PROGRESS — verificación, inspección y construcción de imágenes **solo-archivo** implementadas y con tests; la escritura a medio físico **no se implementa a propósito** (queda como paso manual revisado). Suite local: `bash scripts/check.sh` (CI remoto bloqueado por facturación, `docs/CI_DIAGNOSIS.md`). Requisitos de seguridad en [`docs/SAFETY_AND_TOOLING.md`](SAFETY_AND_TOOLING.md). Seguimiento detallado tarea por tarea en [`docs/workstreams/02-tools-tests/ROADMAP.md`](workstreams/02-tools-tests/ROADMAP.md).
+- [ ] `PENDIENTE` `inspect-host`/`doctor`: sistema operativo, herramientas disponibles, espacio y permisos.
+- [x] `TESTS` `verify_artifacts.py`: SHA-256, tamaño opcional y manifiesto JSON de solo lectura (`docs/ARTIFACT_MANIFEST.md`).
+- [x] `TESTS` `verify_boot_chain.py`: cinco niveles independientes (estructura, integridad, formato, compatibilidad, arranque) con catálogo de procedencia (`manifests/arranque-catalogo.json`) y detección de mezcla de releases; 59 tests. **Un resultado OK no prueba que la consola arranque.**
+- [x] `TESTS` `inspect_image.py`: MBR/GPT de imágenes (24 tests, con pruebas de mutación).
+- [x] `TESTS` `fat32_add_file.py`: agrega archivos a la FAT de una imagen sin root, contrastado con `fsck.vfat -n` y 7z (12 tests).
+- [x] `TESTS` `build_usb_image.py` (hallazgo R-IMG-01 cerrado: sin `fsck.vfat`/`e2fsck` la construcción falla salvo `--omitir-fsck`, que queda registrado como NO verificada; ext4 verificado con `e2fsck -fn`; informe `.informe.json` con hash SHA-256 de la imagen y de las entradas; publicación sin sobrescritura también para el informe): construye un `.img` (nunca un dispositivo), sin root, con validación de rutas/entradas/tamaños y limpieza ante fallo. **No ejecutado con el rootfs real** (requiere `fakeroot` para propietarios correctos); no corrido en este entorno Windows por falta de `sfdisk`/`mkfs.vfat`/`mkfs.ext4`/`fsck.vfat`/`e2fsck`.
+- [x] `TESTS` `verify_loader_build.py` + `scripts/build_loader_isolated.sh`: compilación aislada que **no puede reportar éxito falso** (propaga el código de `make`, exige 9 ELF + 9 BIN + 20 `kexec.bin` válidos); 15 pruebas de inyección de fallos (23 en `tests/test_loader_build_script.py`) y 6 mutaciones detectadas. Entorno fijado por digest, snapshot y lock de paquetes (`docs/LOADER_BUILD_REPRO.md`).
+- [x] `TESTS` `kernel_inspect.py`: versión, compresión, pie de tamaño y configuración embebida de un `bzImage` (10 tests con kernels ficticios; ejecutado sobre los kernels reales: Baikal `X86_PS4_BAIKAL=y`).
+- [x] `TESTS` `plan_usb_image_build.py`: planificador de solo lectura del pipeline upstream, 13 tests; auditoría del pipeline en [`docs/BUILD_PIPELINE_SAFETY_AUDIT.md`](BUILD_PIPELINE_SAFETY_AUDIT.md).
+- [x] `TESTS` `payload_static.py` y `elf_audit.py`: análisis estático de solo lectura de payloads y ELF (16 + 10 tests).
+- [x] `TESTS` `loader_model.py`: modelo de la resolución de rutas upstream y de la variante USB-only (21 tests; incluye el parche).
+- [x] `IMPLEMENTADO` Validaciones de documentación y pruebas automatizadas (`tools/check_docs.py`).
+- [ ] `PENDIENTE` `inspect-disks`: lista discos con modelo, tamaño, bus, serial y particiones.
+- [ ] `BLOQUEADO` `write-usb-image`: no se implementa mientras no haya aprobación de Marcos para escribir en un dispositivo físico (límite del encargo); procedimiento propuesto en `USB_ONLY_DESIGN.md`/`SAFETY_AND_TOOLING.md`.
+- [ ] `PENDIENTE` `verify-usb-image` posterior a la escritura; `collect-diagnostics`.
+- [x] `TESTS` Pruebas de integración con imágenes virtuales (`build_usb_image`, `fat32_add_file`); nunca con discos reales.
+- [ ] `PENDIENTE` Ejecutar `bash scripts/check.sh` en entorno limpio (Linux, con todas las herramientas) y conservar el resultado actual.
 - [ ] `PENDIENTE` Confirmar que CI corre y publica un estado verificable.
 
+**Puerta de salida:** tests automáticos demuestran que los casos ambiguos o peligrosos abortan (destino ambiguo, disco de sistema, tamaño insuficiente, confirmación ausente) — cumplida para la construcción de imágenes; pendiente para la escritura física (no implementada).
+
 ## Fase 3 — Selección del método de arranque
-**Estado:** BLOQUEADA — la política USB-only (D-008) sigue sin validación técnica. Southbridge observado: Baikal B1 (`0x30201`). `bzImage-baikal-7.0.8` es candidato prioritario para revisión, no una selección final ni una aprobación de arranque. Procedimiento con citas de código en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md); diseño verificable en [`docs/USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
+**Estado:** BLOQUEADA — la política está decidida (D-008: USB-only) pero **no validada**, con CUH-2115B identificado y southbridge Baikal B1 **observado por el operador**; falta validar la cadena de arranque (hallazgos en `AUDITORIA_CADENA_BAIKAL.md`), por lo que **no se declara ningún kernel compatible**. Procedimiento con citas de código en [`docs/BOOT_FLOW.md`](BOOT_FLOW.md); diseño verificable en [`docs/USB_ONLY_DESIGN.md`](USB_ONLY_DESIGN.md).
 - [x] `TERCEROS` Existe un exploit/payload que dice cubrir el firmware registrado (13.52): guías y repositorio `raw13g` (no verificado por nosotros); depende de GoldHEN (D-010). La lista de 20 firmwares con offsets está en `UPSTREAM_CODE_MAP.md` §1.7 (`CÓDIGO`).
 - [x] `CÓDIGO` Requisitos y riesgos del método seleccionado — `docs/TROUBLESHOOTING.md` y `UPSTREAM_CODE_MAP.md` §1.6.
-- [x] `LAB` Identificar el southbridge observado: Baikal B1 (`0x30201`), registro `docs/lab-logs/LAB-001-southbridge.md`.
-- [ ] `PENDIENTE` Seleccionar formalmente el kernel tras revisar hashes, procedencia y coherencia kernel/initramfs/rootfs. Baikal 7.0.8 es candidato prioritario, no selección final.
+- [x] `TERCEROS` Investigación de evidencia de compatibilidad de CUH-2115B/FW 13.52 y de métodos para identificar el southbridge (2026-10-16): el modelo corresponde a **dos** southbridges posibles (wiki); procedimiento y criterios en [`KERNEL_SELECTION.md`](KERNEL_SELECTION.md). Es evidencia de terceros, no verificada en la consola.
+- [x] `LAB` Identificar el southbridge observado: Baikal B1 (`0x30201`), registro `docs/lab-logs/LAB-001-southbridge.md`. Sin captura archivada ni hash: dato del operador, no reproducido por nosotros.
+- [ ] `BLOQUEADO` **Elegir kernel formalmente.** El southbridge ya no es la incógnita; falta validar la cadena kernel + initramfs + rootfs + loader (ver `AUDITORIA_CADENA_BAIKAL.md`) y revisar hashes/procedencia. `bzImage-baikal-7.0.8` es **candidato prioritario** (no seleccionado, no autorizado para arrancar). Procedimiento por etapas: `PLAN_VALIDACION_BAIKAL.md`.
 - [x] `IMPLEMENTADO` Decisión D-008 tomada: USB-only como arquitectura objetivo; la escritura interna no es fallback (ver `DECISION_LOG.md`).
 - [ ] `PENDIENTE` Demostrar que el flujo USB-only es una propiedad real. Hecho: loader original y parcheado **compilados** en contenedor sin red y comparados estáticamente (`TESTS`/`CÓDIGO`, `LOADER_BUILD_REPRO.md`). Falta: comprobar rutas internas vacías y observar el disco interno antes y después en laboratorio (`USB_ONLY_DESIGN.md` §4).
 - [x] `IMPLEMENTADO` Ruta de rollback por paso — `BOOT_FLOW.md` Fase 6 y `TROUBLESHOOTING.md` (documental; no ensayada).
 - [ ] `PENDIENTE` Registrar qué cambios persisten en el sistema original: por código, el loader no escribe archivos (D-017); falta probar el kernel/rootfs en runtime.
 - [x] `IMPLEMENTADO` Ensayo documental del procedimiento — `BOOT_FLOW.md` y `TEST_PLAN.md` (TP-01 a TP-07); **ningún caso se ha ejecutado**.
+
+**Puerta de salida:** procedimiento específico revisado y documentado (cumplida en lo documental); ejecución real bloqueada por la Fase 1 y por la validación de USB-only.
 
 ## Fase 4 — Diseño USB-only
 **Estado:** arquitectura decidida; aislamiento completo no demostrado.
@@ -94,10 +110,11 @@ Auditoría cruzada documental 2026-10-16: [`docs/CROSS_DOC_AUDIT_2026-10-16.md`]
 - [ ] `BLOQUEADO` Declarar USB-only verificado hasta tener evidencia suficiente, no solo una revisión de código.
 
 ## Fase 5 — Preparación de medio externo
-**Estado:** BLOCKED — el southbridge ya se identificó como Baikal B1; la fase depende de la selección final del kernel, la procedencia y las licencias. Ejecutable como casos **TP-02 a TP-04** de `docs/TEST_PLAN.md`.
+**Estado:** BLOCKED — el southbridge ya se identificó como Baikal B1 (observado, no `LAB`); la fase depende de la selección final del kernel, la procedencia y las licencias. Ejecutable como casos **TP-02 a TP-04** de `docs/TEST_PLAN.md`.
 - [ ] `PENDIENTE` Construir imagen reproducible en PC: la herramienta existe (`tools/build_usb_image.py`); falta ejecutarla con el rootfs real bajo `fakeroot` y con el kernel que corresponda.
-- [x] `TESTS` Verificar formato, particiones y filesystem de la imagen de prueba (`fsck.vfat -n` sobre p1, lectura de p2 con `debugfs`).
-- [ ] `BLOQUEADO` Confirmar correspondencia kernel/initramfs/rootfs con Baikal B1 (`0x30201`); el dato de hardware está identificado, pero la cadena completa aún no está validada.
+- [x] `TESTS` Inventario real de artefactos locales con hash, procedencia y formato (`tools/inventariar_artefactos.py`, 9 tests; `manifests/inventario-local-2026-10-16.json`).
+- [x] `TESTS` Verificar formato, particiones y filesystem de la imagen de prueba: `fsck.vfat -n` sobre p1 **y** `e2fsck -fn` sobre p2 (hallazgo R-IMG-01 cerrado — antes, la falta de `fsck.vfat` no impedía publicar la imagen como si estuviera verificada; ahora `build_usb_image.py` falla salvo `--omitir-fsck`, que queda registrado como NO verificada en el `.informe.json`).
+- [ ] `BLOQUEADO` Confirmar correspondencia kernel/initramfs/rootfs con Baikal B1 (`0x30201`); el dato de hardware está identificado, pero la cadena completa aún no está validada (`AUDITORIA_CADENA_BAIKAL.md` §3, `PLAN_VALIDACION_BAIKAL.md` V0-V1).
 - [x] `IMPLEMENTADO` Política de kernel en el USB: el `bzImage` va **dentro de la FAT** (USB-only, D-008); no se usan kernels de repuesto renombrados para esta consola.
 - [x] `TESTS` Validar el procedimiento con imagen virtual antes de escribir a un disco real (incluye una imagen de prueba con artefactos reales en una ubicación temporal, descartada).
 

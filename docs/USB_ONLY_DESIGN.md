@@ -90,3 +90,19 @@ La compilación completa (`make`) en contenedor sin red y la comparación estát
 
 ## 7. Qué no cubre este documento
 Seguridad del payload GoldHEN, red/PSN (D-012/D-016), elección del kernel (depende del southbridge, `COMPATIBILITY_MATRIX.md` §7) ni la política de licencias (`LICENSE_POLICY.md`).
+
+## 8. Diagnóstico de faltantes para la imagen virtual de esta consola (2026-10-16)
+
+**No se construyó ninguna imagen**, a propósito: no se simula una construcción exitosa. Qué falta, exactamente:
+
+| # | Falta | Estado | Cómo se desbloquea |
+|---|---|---|---|
+| 1 | **Kernel elegido.** Hay dos candidatos locales (Baikal 7.0.8 y Belize 7.1.7); el southbridge de la CUH-2115B es desconocido y la wiki lo da como **Baikal B1 o Belize2 A0** (el modelo no lo decide); ningún kernel local declara soporte Belize 2 (`KERNEL_SELECTION.md`, `COMPATIBILITY_MATRIX.md` §7.4) | BLOQUEANTE | Southbridge confirmado con evidencia fiable; hoy solo se obtiene ejecutando código en la consola (no autorizado) |
+| 2 | **Rootfs como entrada.** No existe como archivo/tarball/directorio; solo dentro de p2 de la imagen publicada (ext4, `e2fsck -fn` OK) | No bloqueante si se parte de la imagen publicada | Ver ruta A |
+| 3 | `bzImage` dentro de la FAT del USB: la imagen publicada trae `bzImage.belize` (renombrado), no `bzImage` | Resuelto por herramienta (`fat32_add_file.py`), pendiente del punto 1 | – |
+
+**Ruta A (recomendada cuando el punto 1 esté resuelto; no requiere root ni extraer el rootfs):** copiar `psxitarch-usb.img` (8,9 GB, hash `badd4873…0143`) a un directorio de trabajo con ≥ 9 GB libres → `python3 tools/fat32_add_file.py <copia> --particion 1 --nombre bzImage --archivo <kernel elegido>` → `fsck.vfat -n` sobre p1, `e2fsck -fn <copia>?offset=1050624*512` sobre p2 y `tools/verify_boot_chain.py` sobre la FAT extraída con `--catalogo manifests/arranque-catalogo.json --southbridge <confirmado>` → registrar hashes. Mecánica ya ensayada sobre una copia de p1 (2026-10-15); no se repite con un kernel porque elegirlo sería inventar compatibilidad.
+**Ruta B:** `tools/build_usb_image.py` exige `--rootfs-dir` con propietarios correctos (root:root). Extraer p2 con `debugfs rdump` no conserva propietarios; haría falta `fakeroot` o root. Más costosa y sin ventaja mientras el rootfs publicado sirva.
+
+Verificación ya hecha sobre la imagen publicada (solo lectura): MBR válido, p1 FAT32 `fsck.vfat -n` rc 0, p2 ext4 `e2fsck -fn` rc 0 (249 277 de 516 096 inodos usados). Eso valida los sistemas de archivos, no el contenido del rootfs ni el arranque.
+

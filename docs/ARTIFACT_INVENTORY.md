@@ -65,3 +65,42 @@ Fecha de la consulta: 2026-10-15. Nada de lo listado se incorpora al repositorio
 | Kernels, initramfs, rootfs (B-03…B-06) | **No**: hash = valores publicados por el mismo autor; sin fuente ni build reproducible |
 | `goldhen.bin` de raw13g (A-04/B-07) | **No**: sin fuente; identificado solo estáticamente |
 | Releases del loader (B-01) | **No**: no descargados |
+
+## 6. Inventario local real (2026-10-16)
+
+Obtenido con `tools/inventariar_artefactos.py` (solo lectura, sin seguir symlinks; 2 min 12 s para ~14 GB) sobre `PS4-Linux-artefactos/` en el disco externo, contrastando con `manifests/arranque-catalogo.json`, `manifests/distro-66e21cb.json`, `manifests/raw13g-9ba2f07.json` y la `SHA256SUMS` publicada por el autor del release. Detalle completo (20 archivos, hashes completos, validaciones): `manifests/inventario-local-2026-10-16.json`. **No se descargó nada nuevo.**
+
+| Rol | Archivos encontrados | Procedencia | Formato |
+|---|---|---|---|
+| Kernel | `distro/boot/baikal/bzImage` (13 841 408 B), `distro/boot/belize/bzImage` (20 415 488 B) | coinciden con el catálogo (hash publicado por el mismo autor) | cabecera x86 válida; Linux 7.0.8 y 7.1.7 |
+| Initramfs | `distro/boot/initramfs.cpio.gz` (4 102 011 B) | catálogo | gzip + cpio íntegros (48 entradas) |
+| Payloads del loader | 9 × `distro/payload/linux-*mb.elf` (320 936 B) | lista del autor (no independiente) | ELF con `fw_table` de 20 filas |
+| Imagen | `release-v1.0/psxitarch-usb.img` (8 871 489 536 B, `badd4873…0143`) | lista del autor | MBR; p1 FAT32 512 MiB; p2 ext4 `psxitarch`; **`fsck.vfat -n` rc 0 y `e2fsck -fn` rc 0 en solo lectura** |
+| Imagen comprimida y partes | `psxitarch-usb.img.xz` (`153cec02…89b3`) y `.part1`/`.part2` | lista del autor | sin comprobación de formato (no se descomprimió) |
+| GoldHEN | oficial 2.4b18 (`.7z` `d0c84c79…`, `goldhen.bin` `eb9fee5e…`) y raw13g (`goldhen.bin` = `payload2.bin`, `df3f27c1…`) | oficial: sin referencia en manifiestos (descargado del release del autor); raw13g: manifiesto local | sin validación de formato (blobs; ver `EXPLOIT_AUDIT_13.52.md`) |
+| **Rootfs como archivo** (`psxitarch.tar.xz`, tarball, directorio) | **NO existe** en ninguna raíz | – | El rootfs solo existe dentro de p2 de la imagen publicada |
+| **Kernel 5.4.247** del issue #10, **otros kernels**, **zips de releases del loader** | **NO existen** | – | – |
+
+Alcance: se buscó por nombre en `/home/marcos`, `/media/marcos` (disco externo), `/mnt`, `/opt`, `/srv` y `/var/tmp`. Fuera de `PS4-Linux-artefactos/` solo aparecieron ISOs de Ubuntu/Mint, imágenes de Android y un `Setup.iso`, sin relación con este proyecto (no se inventariaron). Un archivo ausente de esta tabla no existe **en esas ubicaciones**.
+
+Sobre la imagen `.img` publicada: contiene `initramfs.cpio.gz` y `bzImage.belize` (kernel Belize renombrado) en p1, **sin `bzImage` a secas**: tal como viene, el loader no encontraría kernel en el USB.
+
+## 6b. Kernel Baikal 7.0.8: inspección estática (2026-10-16)
+`tools/kernel_inspect.py` sobre `distro/boot/baikal/bzImage`: Linux `7.0.8-Strawberry-FullLTO-Baikal-+` (clang 21.1.8, compilado en `pask@pask-MacBookPro16-1`, 2026-09-08), carga zstd de 43 755 952 B descomprimidos con pie de tamaño coincidente, configuración embebida (`sha256 ca48fc48…6835`, 5 068 líneas) con `CONFIG_X86_PS4_BAIKAL=y`. Tabla completa de artefactos, correspondencia de la cadena y riesgos: [`AUDITORIA_CADENA_BAIKAL.md`](AUDITORIA_CADENA_BAIKAL.md).
+
+## 7. Candidatos NO obtenidos y condiciones de uso (investigación del 2026-10-16)
+
+Metadatos por la API pública de GitHub (solo texto; **no se descargó ningún binario**). `NOASSERTION` = GitHub no reconoció una licencia única (los forks de Linux traen `COPYING` con GPL-2.0).
+
+| Candidato | Dónde | Estado/fecha | Licencia declarada | Observaciones |
+|---|---|---|---|---|
+| Kernel Baikal 5.4.247 (`bzImage*`, 9,1-9,9 MB; configs) | `feeRnt/ps4-linux-12xx`, releases `v5.4.247__neocine-1.1` (2026-03-10) y `v5.4.247__baikal*` (2025) | Base `DFAUS-git/ps4-baikal-5.4.247-kernel` (último push 2023-07-04) | NOASSERTION (kernel Linux ⇒ GPL-2.0) | Es la compilación 5.4.247 que menciona el issue #10. Declara "CUH-2115B tested functional" (S-20). **No obtenido; sin hash local** |
+| Kernel Belize 5.15.15 | idem, `v5.15.15__obsidianx-4.0` | base `codedwrench/ps4-linux` (push 2022-03-23) | NOASSERTION | Probado en CUH-1216; "will crash on Aeolia". **No obtenido** |
+| Kernel Aeolia/Belize 6.15.4 | idem, `v6.15.4__crashnt-4.8.3` (2026-10-12) | base `crashniels/linux` | NOASSERTION | Probado en CUH-1216. **No obtenido** |
+| `ps4-which-southbridge` | `tomfitzhenry/ps4-which-southbridge` | 1 commit, 2026-09-25 | **ninguna** | Es un payload (código que se ejecutaría en la consola): requiere auditoría previa si algún día se usa. **No obtenido** |
+
+Condiciones de uso de lo que sí está en disco:
+- `bzImage-*` (GPL-2.0): para uso privado no hay restricción práctica; **redistribuirlos** exige ofrecer las fuentes, que la distribución no enlaza. Este repositorio no los redistribuye (D-004).
+- `LICENSE` de la distribución: es GPL-3.0 pero está guardado en **UTF-16** (71 648 B, el doble de lo normal), por lo que `grep`/lectores simples no lo ven como texto; se identificó leyéndolo con la codificación correcta.
+- `ps4-linux-loader` y GoldHEN no declaran licencia; el código `ps4-kexec-common` es BSD de 2 cláusulas (archivo `LICENSE` del propio directorio).
+

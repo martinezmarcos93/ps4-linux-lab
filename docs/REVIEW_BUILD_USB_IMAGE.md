@@ -24,3 +24,13 @@ Esto no demuestra que la imagen esté corrupta; significa que el resultado no di
 - Es una revisión estática del código alojado en la rama, no una prueba de ejecución.
 - No se ha verificado si la suite actual ya cubre total o parcialmente este caso; debe comprobarse antes de añadir tests redundantes.
 - No se recomienda preparar el medio físico hasta cerrar la compatibilidad del kernel, validar los artefactos concretos y verificar la imagen virtual.
+
+## Estado al 2026-10-16: R-IMG-01 CERRADO (verificado por ejecución)
+
+El hallazgo seguía vigente: `_verificar_p1()` retornaba sin comprobar nada si faltaba `fsck.vfat` y el mensaje final decía "OK"; además el ext4 nunca se verificaba (solo `mkfs.ext4 -d` terminando sin error). Corrección (`tools/build_usb_image.py`):
+- falta de `fsck.vfat` o `e2fsck` ⇒ la construcción **falla** y no publica la imagen, salvo `--omitir-fsck` explícito;
+- FAT: `fsck.vfat -n` sobre una copia de la partición; ext4: `e2fsck -fn <imagen>?offset=N` en solo lectura (comprobado que e2fsck acepta `?offset=` y valida sin extraer);
+- se escribe `<imagen>.informe.json` con las verificaciones **realmente ejecutadas** (`OK`/`OMITIDA`), hashes de entradas e imagen y `totalmente_verificada`; una omisión se imprime como "NO totalmente verificada" y no como OK;
+- 9 tests nuevos (herramienta ausente, fallo de fsck/e2fsck sin publicar, omisión registrada, omisión parcial, informe completo, CLI); 2 mutaciones (tolerar el faltante, declarar siempre verificada) detectadas.
+Límite: "verificada" significa que los comprobadores de sistemas de archivos no encontraron errores; no prueba compatibilidad ni arranque, y el rootfs de las pruebas es ficticio.
+
