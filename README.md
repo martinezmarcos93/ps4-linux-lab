@@ -83,6 +83,8 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Diagnóstico de CI](docs/CI_DIAGNOSIS.md) | Estado del workflow y alternativas |
 | [Informe de estado público](docs/PUBLIC_PROJECT_STATUS.md) | Relevamiento de avances y pendientes |
 | [Auditoría de publicación pública](docs/PUBLICATION_AUDIT.md) | Revisión de documentación para un repositorio público |
+| [Workstreams activos](docs/WORKSTREAMS.md) | Las cinco categorías de trabajo en curso, su rama y responsable |
+| [Plan de workstreams](docs/WORKSTREAM_PLAN.md) | Orden de ejecución, dependencias y protocolo entre categorías |
 
 ## Herramientas locales
 
