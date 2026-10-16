@@ -90,6 +90,7 @@ Antes de reutilizar componentes, consultar [auditoría upstream](docs/UPSTREAM_A
 | [Revisión de kernel_inspect](docs/REVIEW_KERNEL_INSPECT_ZSTD_2026-10-16.md) | Límites de la inspección estática del kernel |
 | [Revisión independiente OpenCode](docs/OPENCODE_REVIEW_2026-10-16.md) | Hallazgos técnicos de revisión cruzada |
 | [Revisión cruzada documental](docs/CROSS_DOC_AUDIT_2026-10-16.md) | Contradicciones y tareas de consolidación |
+| [Integración de ramas](docs/INTEGRACION_RAMAS_2026-10-16.md) | Merges, portado manual, conflictos y límites de consolidación |
 | [Auditoría de recursos externos y plan revisado](docs/AUDITORIA_RECURSOS_EXTERNOS_Y_PLAN_2026-10-16.md) | Análisis de todos los recursos propuestos, selección de kernel/initramfs y nuevas puertas de decisión |
 
 ## Herramientas locales
