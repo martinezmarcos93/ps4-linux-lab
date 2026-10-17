@@ -220,17 +220,21 @@ def construir(plan: dict) -> Path:
 
 
 def _publicar(origen: Path, destino: Path) -> None:
-    """Publica `origen` como `destino` SIN sobrescribir: enlace duro (falla si existe) y, si el sistema de archivos
-    no admite enlaces duros, comprobación previa + os.replace (ventana mínima de carrera)."""
+    """Publica `origen` como `destino` sin sobrescribir.
+
+    Los temporales se crean en el mismo directorio que el destino, por lo que la publicación normal usa un enlace
+    duro atómico que falla si el nombre final ya existe. Si el sistema de archivos no admite enlaces duros o devuelve
+    cualquier otro error, se falla de forma cerrada: no se sustituye por una comprobación seguida de os.replace,
+    porque esa secuencia reabre una carrera TOCTOU y puede sobrescribir un archivo ajeno.
+    """
     try:
         os.link(origen, destino)
     except FileExistsError as exc:
         raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe") from exc
-    except OSError:
-        if os.path.lexists(destino):
-            raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe")
-        os.replace(origen, destino)
-        return
+    except OSError as exc:
+        raise BuildError(
+            f"no se pudo publicar '{destino}' de forma atómica y sin sobrescritura: {exc}"
+        ) from exc
     os.unlink(origen)
 
 
