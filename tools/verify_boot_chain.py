@@ -373,22 +373,48 @@ def cargar_catalogo(path: Path) -> dict:
     arts = cat.get("artefactos")
     if not isinstance(arts, list) or not arts:
         raise BootChainError("catálogo inválido: 'artefactos' debe ser una lista no vacía")
-    vistos: set[str] = set()
-    for a in arts:
+    vistos_ids: set[str] = set()
+    vistos_artefactos: set[tuple[str, str]] = set()
+    for indice, a in enumerate(arts):
+        prefijo = f"catálogo inválido: artefactos[{indice}]"
         if not isinstance(a, dict):
-            raise BootChainError("catálogo inválido: cada artefacto debe ser un objeto")
+            raise BootChainError(f"{prefijo} debe ser un objeto")
         for campo in ("id", "rol", "sha256", "size_bytes", "release"):
             if campo not in a:
-                raise BootChainError(f"catálogo inválido: artefacto sin '{campo}'")
-        if a["rol"] not in ("kernel", "initramfs"):
-            raise BootChainError(f"catálogo inválido: rol '{a['rol']}' desconocido")
-        if not isinstance(a["sha256"], str) or not SHA256_RE.match(a["sha256"]):
-            raise BootChainError(f"catálogo inválido: sha256 de '{a['id']}' no es hexadecimal de 64 caracteres")
+                raise BootChainError(f"{prefijo} sin '{campo}'")
+        ident = a["id"]
+        if not isinstance(ident, str) or not ident.strip():
+            raise BootChainError(f"{prefijo}: 'id' debe ser texto no vacío")
+        if not isinstance(a["rol"], str) or a["rol"] not in ("kernel", "initramfs"):
+            raise BootChainError(f"{prefijo}: rol '{a['rol']}' desconocido")
+        if not isinstance(a["sha256"], str) or not SHA256_RE.fullmatch(a["sha256"]):
+            raise BootChainError(f"{prefijo}: sha256 de '{ident}' no es hexadecimal minúsculo de 64 caracteres")
         if not isinstance(a["size_bytes"], int) or isinstance(a["size_bytes"], bool) or a["size_bytes"] <= 0:
-            raise BootChainError(f"catálogo inválido: size_bytes de '{a['id']}'")
-        if a["id"] in vistos:
-            raise BootChainError(f"catálogo inválido: id duplicado '{a['id']}'")
-        vistos.add(a["id"])
+            raise BootChainError(f"{prefijo}: size_bytes de '{ident}' debe ser un entero positivo")
+        if not isinstance(a["release"], str) or not a["release"].strip():
+            raise BootChainError(f"{prefijo}: 'release' debe ser texto no vacío")
+        if ident in vistos_ids:
+            raise BootChainError(f"catálogo inválido: id duplicado '{ident}'")
+        vistos_ids.add(ident)
+
+        clave = (a["rol"], a["sha256"])
+        if clave in vistos_artefactos:
+            raise BootChainError(
+                f"catálogo inválido: sha256 duplicado para rol '{a['rol']}' "
+                f"({a['sha256'][:12]}…); la procedencia sería ambigua")
+        vistos_artefactos.add(clave)
+
+        if "southbridges" in a:
+            sbs = a["southbridges"]
+            if not isinstance(sbs, list) or any(not isinstance(sb, str) or not sb.strip() for sb in sbs):
+                raise BootChainError(f"{prefijo}: 'southbridges' debe ser una lista de textos no vacíos")
+            normalizados = [sb.strip().lower() for sb in sbs]
+            if len(normalizados) != len(set(normalizados)):
+                raise BootChainError(f"{prefijo}: 'southbridges' contiene valores duplicados")
+        if "evidencia_compatibilidad" in a and (
+            not isinstance(a["evidencia_compatibilidad"], str) or not a["evidencia_compatibilidad"].strip()
+        ):
+            raise BootChainError(f"{prefijo}: 'evidencia_compatibilidad' debe ser texto no vacío")
     return cat
 
 
