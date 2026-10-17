@@ -1,14 +1,14 @@
 # Selección del kernel para la PS4 Slim CUH-2115B (firmware 13.52)
 
-Fecha de la investigación: 2026-10-16. Alcance: investigación documental y estática; **no se ejecutó nada en la consola** ni se identificó el southbridge sobre ella. Este documento fija el procedimiento y los criterios; **no selecciona ningún kernel**.
+Fecha de la investigación: 2026-10-16. Alcance: investigación documental y estática; **no se ejecutó Linux ni se probó ningún kernel en la consola**. El southbridge fue leído por el operador como Baikal B1 (`0x30201`) mediante GoldHEN v2.2.3; la captura original no está archivada, por lo que el nivel de evidencia permanece `OBSERVADO`. Este documento fija el procedimiento y los criterios; **no aprueba ningún kernel para arranque**.
 
 Niveles de evidencia usados: **HECHO** (confirmado por una fuente que se consultó directamente, citada), **TERCEROS** (lo reporta alguien, sin reproducción nuestra), **INFERENCIA** (deducción nuestra), **PENDIENTE** (falta una comprobación), **FÍSICO** (exige intervención sobre la consola).
 
 ## 1. Conclusión técnica
 
-**Actualización 2026-10-16 (posterior):** el operador informa haber leído el southbridge de esta consola: **Baikal B1 (`0x30201`)** (`LAB-001`; sin captura archivada). Con ese dato, **hay base para preparar una imagen candidata como archivo** (etapa V0 de `PLAN_VALIDACION_BAIKAL.md`), una vez archivada la captura; **no hay evidencia de compatibilidad** del kernel con esta unidad (auditoría en `AUDITORIA_CADENA_BAIKAL.md`). El resto de este documento conserva el razonamiento original, redactado cuando el southbridge era desconocido.
+**Estado vigente:** el operador informó una lectura directa de **Baikal B1 (`0x30201`)** (`LAB-001`; captura no archivada). El modelo CUH por sí solo no habría bastado para identificarlo. Esto permite mantener `bzImage-baikal-7.0.8` como candidato débil para revisión en PC, pero no demuestra que el kernel sea compatible ni que arranque. La auditoría de la cadena y el plan V0 siguen siendo obligatorios.
 
-**Conclusión original (southbridge aún desconocido): no había evidencia suficiente para construir una imagen candidata.** Faltaba un único dato decisivo y verificable: el **southbridge** de la CUH-2115B. La razón era un HECHO documentado:
+**Contexto histórico:** antes de la lectura reportada en `LAB-001`, no había evidencia suficiente para elegir una familia de kernel. La siguiente evidencia explica por qué el modelo CUH-2115B por sí solo no determina el southbridge:
 
 > La wiki PS4 Developer (tabla *Hardware Info*, copia de Wayback del 2025-12-18) lista **tres filas** del modelo `CUH-2115` y **dos southbridges distintos para CUH-2115B**: `30201 (Baikal B1)` y `40100 (Belize2 A0)` (la CUH-2115A figura con `40100 (Belize2 A0)`). Las tablas de la página *Southbridge* (Wayback 2026-03-03) lo confirman por placa: el chasis 2100 usa **Belize 2** con las placas SAE-001/003 y **Baikal** con SAE-002/004.
 
@@ -38,9 +38,9 @@ Por tanto **el CUH-2115B no determina el southbridge**, y la elección de kernel
 | Método | ¿Requiere ejecutar código/abrir? | Fiabilidad | Estado |
 |---|---|---|---|
 | Número de modelo (CUH-2115B) | No | **Insuficiente**: dos southbridges posibles (HECHO #1) | Ya usado; agotado |
-| Fecha de fabricación (¿figura en la etiqueta o la caja?) | No | Solo acota (INFERENCIA #3): antes de 2017-11 ⇒ Baikal; 2017-11/12 ambiguo | **PENDIENTE**: comprobar si la etiqueta/caja de Marcos la muestra (no se afirma que figure) |
+| Fecha de fabricación (¿figura en la etiqueta o la caja?) | No | Solo acota (INFERENCIA #3): antes de 2017-11 ⇒ Baikal; 2017-11/12 ambiguo | Opcional; ya existe una lectura de southbridge reportada en `LAB-001` |
 | Código de placa SAE-00x impreso en la placa | **FÍSICO** (abrir la consola; sellos) | Alta (HECHO #2: cada placa tiene su southbridge) | No se hace: `LAB-000` prohíbe abrirla |
-| Subsys ID por software (`ps4-which-southbridge` o GoldHEN "Southbridge info") | **Ejecuta código en la PS4** (exploit + payload) | Alta (es lo que el loader usa) | **BLOQUEADO** por D-010/D-014: requiere "sí" de Marcos |
+| Subsys ID por software (`ps4-which-southbridge` o GoldHEN "Southbridge info") | **Ejecuta código en la PS4** (exploit + payload) | Alta (es lo que el loader usa) | **Lectura realizada y reportada** en `LAB-001`; la captura no está archivada. Esta autorización no cubre escritura USB ni arranque Linux |
 | `hw_model`/NVS del Serial Flash | Volcado de flash (hardware o exploit) | Alta pero invasiva | Fuera de alcance |
 | Prueba y error con kernels (LED blanco ⇒ otro kernel) | Ejecuta el loader varias veces | **Baja** (un fallo no distingue SB incorrecto de otros fallos: exploit, offsets, vídeo) | Rechazado como método de identificación |
 
@@ -48,7 +48,7 @@ Por tanto **el CUH-2115B no determina el southbridge**, y la elección de kernel
 
 ## 4. Procedimiento de selección del kernel
 
-**Entradas obligatorias:** modelo (CUH-2115B ✔), firmware (13.52 ✔), **southbridge confirmado** con su ID (✘), catálogo de artefactos con hash (`manifests/arranque-catalogo.json`).
+**Entradas disponibles:** modelo (CUH-2115B), firmware (13.52) y southbridge Baikal B1 (`0x30201`) reportado por lectura directa (`OBSERVADO`; captura no archivada). El catálogo de artefactos con hashes está en `manifests/arranque-catalogo.json`. La lectura del southbridge no sustituye la evidencia de compatibilidad del kernel.
 
 **Paso 1 — Clasificar el dato de southbridge.**
 - `CONFIRMADO` solo si proviene de lectura directa (ID por software autorizado o código de placa fotografiado). Una inferencia (fecha, analogía de modelo) es `INFERIDO` y **no habilita** una selección.
@@ -84,14 +84,13 @@ southbridge `INFERIDO` o desconocido; el kernel declara otro codename; evidencia
 | `bzImage-belize-7.1.7` | **Sin evidencia suficiente** para esta consola | Sin soporte declarado para Belize 2; contradicción sobre 7116B |
 | Kernels de `feeRnt/ps4-linux-12xx` (Baikal 5.4.247, Belize 5.15.15, Aeolia/Belize 6.15.4) | **No obtenidos**, no inventariados | Mencionan CUH-2115B solo la release Baikal 5.4.247 (TERCEROS, FW desconocido) |
 | `initramfs.cpio.gz` (v0.9.1) y rootfs de la imagen publicada | **Validados estructuralmente** (cpio/gzip; FAT y ext4 sanos) | Contenido del rootfs sin auditar |
-| Southbridge de la consola | **Desconocido** | Dos valores posibles para CUH-2115B |
+| Southbridge de la consola | **Baikal B1 (`0x30201`) observado** | Lectura reportada por el operador; captura no archivada, sin prueba de arranque |
 
 ## 6. Procedencia y condiciones de uso (resumen; detalle en `ARTIFACT_INVENTORY.md` §7)
 Los kernels son derivados de Linux (GPL-2.0): quien los **redistribuye** debe ofrecer las fuentes. `X-F1REBALL-X/PS4-Linux` declara GPL-3.0 para guía/scripts (su `LICENSE` es un UTF-16 de 71 648 B, ilegible como texto plano sin convertirlo) y que kernel, initramfs y rootfs "mantienen sus licencias"; sin enlaces a las fuentes de los kernels. Los repositorios de kernels que inspeccioné (`feeRnt`, `codedwrench`, `crashniels`, `DFAUS-git`, `eeply`, `Ps3itaTeam`) son forks del kernel y la API de GitHub devuelve `NOASSERTION` (traen `COPYING` de Linux). `ps4-linux-loader` y `GoldHEN` no declaran licencia. Este laboratorio no redistribuye binarios (D-004); el uso privado de archivos ya descargados no se ve afectado, pero cualquier publicación de imágenes sí lo estaría.
 
 ## 7. Siguiente bloqueo y qué lo resuelve
-**(Texto original; el southbridge ya fue informado como Baikal B1 — ver la actualización del §1. El bloqueo vigente es archivar la captura y completar `PLAN_VALIDACION_BAIKAL.md`.)**
-**Bloqueo original:** southbridge de la CUH-2115B (Baikal B1 o Belize2 A0).
+**Bloqueo vigente:** el southbridge está observado, pero falta archivar la captura original y resolver la discrepancia R-23 sobre la versión del binario GoldHEN. El bloqueo técnico principal sigue siendo la procedencia/compatibilidad de la cadena kernel + initramfs + rootfs y la reproducción del loader parcheado.
 1. **Sin tocar la consola:** buscar la fecha de fabricación en etiqueta/caja y registrarla (acota, no confirma).
 2. **Con autorización expresa de Marcos:** leer el subsys ID con el procedimiento más pequeño disponible (hoy: payload de espacio de usuario tras el jailbreak; previa auditoría estática de ese binario y barrera de red D-016). Resultado → completar la tabla del Paso 4 y recién entonces preparar la imagen por la ruta A de `USB_ONLY_DESIGN.md` §8.
 3. **Si el resultado es Belize2:** no hay kernel candidato; el siguiente trabajo sería buscar un kernel con soporte declarado para Belize 2 (investigación, no ejecución).
