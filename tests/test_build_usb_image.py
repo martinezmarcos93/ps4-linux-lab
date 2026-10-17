@@ -451,6 +451,24 @@ class TestConstruccion(Base):
         self.assertEqual(a.read_text(), "nuevo")
         self.assertEqual(b.read_text(), "ajeno")
 
+    def test_publicar_revierte_el_destino_si_falla_el_unlink_del_temporal(self):
+        a, b = self.dir / "a", self.dir / "b"
+        a.write_text("nuevo")
+        unlink_real = os.unlink
+        llamadas = []
+
+        def falla_una_vez(path, *args, **kwargs):
+            llamadas.append(Path(path))
+            if len(llamadas) == 1:
+                raise PermissionError("fallo simulado al retirar temporal")
+            return unlink_real(path, *args, **kwargs)
+
+        with mock.patch("os.unlink", side_effect=falla_una_vez):
+            with self.assertRaisesRegex(bu.BuildError, "no se pudo retirar el temporal"):
+                bu._publicar(a, b)
+        self.assertTrue(a.exists(), "el temporal original debe quedar disponible para diagnóstico")
+        self.assertFalse(b.exists(), "la publicación debe revertirse si no se pudo retirar el temporal")
+
     def test_herramienta_faltante(self):
         with mock.patch("shutil.which", return_value=None), mock.patch("os.path.exists", return_value=False):
             with self.assertRaisesRegex(bu.BuildError, "falta la herramienta"):
