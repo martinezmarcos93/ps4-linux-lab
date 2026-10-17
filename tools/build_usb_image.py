@@ -235,7 +235,24 @@ def _publicar(origen: Path, destino: Path) -> None:
         raise BuildError(
             f"no se pudo publicar '{destino}' de forma atómica y sin sobrescritura: {exc}"
         ) from exc
-    os.unlink(origen)
+
+    # La publicación ya creó un enlace al mismo inode. Si retirar el temporal falla, revertir
+    # únicamente si el nombre final todavía apunta al inode que acabamos de publicar.
+    try:
+        os.unlink(origen)
+    except OSError as exc:
+        try:
+            origen_st = os.stat(origen, follow_symlinks=False)
+            destino_st = os.stat(destino, follow_symlinks=False)
+            if (origen_st.st_dev, origen_st.st_ino) == (destino_st.st_dev, destino_st.st_ino):
+                os.unlink(destino)
+        except OSError:
+            # No ocultar el fallo original; el mensaje indica que la limpieza manual puede ser necesaria.
+            pass
+        raise BuildError(
+            f"se creó '{destino}', pero no se pudo retirar el temporal '{origen}'; "
+            f"se intentó revertir la publicación: {exc}"
+        ) from exc
 
 
 def _verificar_sistemas_de_archivos(imagen: Path, off1: int, size1: int, off2: int, omitir: bool) -> dict:
