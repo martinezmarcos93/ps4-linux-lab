@@ -47,7 +47,7 @@ Ninguna opción cubre P5 por sí sola: solo se puede comprobar con acceso a la c
 3. **P5 requiere hardware.** Comprobar que `/data/linux/boot/` y `/user/system/boot/` están vacíos exige el servidor FTP de GoldHEN, es decir, ejecutar el exploit y el payload GoldHEN (D-010).
 4. **La prueba final es de laboratorio.** Que el primer arranque no modifique el disco interno solo se demuestra con un procedimiento de laboratorio (hash/listado del interno antes y después, en una consola que Marcos autorice a ejecutar).
 
-**Solución técnica concreta para desbloquear (estado 2026-10-16):**
+**Solución técnica concreta para desbloquear (estado 2026-10-16; actualización del trabajo de PC):**
 1. ~~Compilar `f70f43a` sin parche en un entorno desechable y comparar con `linux-1024mb.elf`.~~ **Hecho, resultado parcial:** compila y es repetible en el entorno fijado, pero **no es idéntico bit a bit** (otro compilador); coincide en tabla de offsets, rutas y símbolos. Para cerrar la procedencia del binario de la distribución haría falta su compilador exacto (GCC 16.2.1-20260810) o el código fuente de los releases.
 2. ~~Compilar con el parche y comprobar que no hay rutas internas.~~ **Hecho:** el ELF parcheado no contiene los bytes `/data/linux` ni `/user/system`, solo `/mnt/usb0/` y `/mnt/usb1/`; 4 funciones nuevas; `kexec.bin` idénticos a los originales.
 3. Pendiente: P4 (ningún componente escribe en el interno en runtime) y P5 siguen exigiendo laboratorio con autorización.
@@ -57,7 +57,7 @@ Ninguna opción cubre P5 por sí sola: solo se puede comprobar con acceso a la c
 Capas, de la PC a la consola; cada una es verificable por separado:
 
 1. **Catálogo de procedencia** (`manifests/arranque-catalogo.json`): hashes, tamaños y *release* de kernels e initramfs. Es la fuente de P3.
-2. **Construcción de la imagen** con `tools/build_usb_image.py`: genera un `.img` (nunca un dispositivo) con `bzImage` + `initramfs.cpio.gz` en la FAT, tras validar el formato de ambos. Ejemplo (el kernel concreto depende del southbridge, aún desconocido):
+2. **Construcción de la imagen** con `tools/build_usb_image.py`: genera un `.img` (nunca un dispositivo) con `bzImage` + `initramfs.cpio.gz` en la FAT, tras validar el formato de ambos. Ejemplo (el operador reportó Baikal B1 `0x30201`; `bzImage-baikal-7.0.8` es candidato prioritario, pero no está seleccionado formalmente ni probado en esta consola; ver `docs/KERNEL_SELECTION.md` y `docs/AUDITORIA_CADENA_BAIKAL.md`):
    ```bash
    python3 tools/build_usb_image.py --salida ~/ps4/usb-prueba.img --initramfs <initramfs.cpio.gz> \
        --kernel <bzImage> --rootfs-dir <directorio-rootfs> --p1-mib 512 --tamano-mib 12288 --dry-run
@@ -97,7 +97,7 @@ Seguridad del payload GoldHEN, red/PSN (D-012/D-016), elección del kernel (depe
 
 | # | Falta | Estado | Cómo se desbloquea |
 |---|---|---|---|
-| 1 | **Kernel elegido.** Hay dos candidatos locales (Baikal 7.0.8 y Belize 7.1.7); el southbridge de la CUH-2115B es desconocido y la wiki lo da como **Baikal B1 o Belize2 A0** (el modelo no lo decide); ningún kernel local declara soporte Belize 2 (`KERNEL_SELECTION.md`, `COMPATIBILITY_MATRIX.md` §7.4) | BLOQUEANTE | Southbridge confirmado con evidencia fiable; hoy solo se obtiene ejecutando código en la consola (no autorizado) |
+| 1 | **Kernel formalmente seleccionado.** `bzImage-baikal-7.0.8` es candidato prioritario porque el operador reportó Baikal B1 (`0x30201`); la captura no está archivada y la compatibilidad de este binario con esta consola sigue sin probarse. Belize 7.1.7 no declara soporte Belize 2. Ver `KERNEL_SELECTION.md` y `AUDITORIA_CADENA_BAIKAL.md`. | BLOQUEANTE para cerrar V0 | Archivar la captura original de la lectura de southbridge con hash verificable y completar las verificaciones host-side; no sustituir esa evidencia por una inferencia basada en el modelo. |
 | 2 | **Rootfs como entrada.** No existe como archivo/tarball/directorio; solo dentro de p2 de la imagen publicada (ext4, `e2fsck -fn` OK) | No bloqueante si se parte de la imagen publicada | Ver ruta A |
 | 3 | `bzImage` dentro de la FAT del USB: la imagen publicada trae `bzImage.belize` (renombrado), no `bzImage` | Resuelto por herramienta (`fat32_add_file.py`), pendiente del punto 1 | – |
 
