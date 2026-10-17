@@ -109,7 +109,7 @@ class TestValidaciones(Base):
     def test_informe_hash_usa_snapshot_incorporada_no_fuente_actual(self):
         kernel_snapshot = self.kernel.read_bytes()
         initramfs_snapshot = self.initramfs.read_bytes()
-        self.kernel.write_bytes(b"contenido distinto posterior a la instantánea")
+        self.kernel.write_bytes("contenido distinto posterior a la instantánea".encode("utf-8"))
         imagen_parcial = self.dir / "imagen.parcial"
         informe_parcial = self.dir / "informe.parcial"
         imagen_parcial.write_bytes(b"imagen ficticia")
