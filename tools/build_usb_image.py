@@ -93,6 +93,34 @@ def validar_entrada(ruta: Path, nombre: str) -> Path:
     return Path(ruta)
 
 
+def _leer_snapshot_entrada(ruta: Path, nombre: str, sha_esperado: str | None = None,
+                            bytes_esperados: int | None = None) -> bytes:
+    """Lee una instantánea desde un archivo regular sin seguir symlinks y verifica su identidad/contenido."""
+    ruta = Path(ruta)
+    try:
+        previo = os.lstat(ruta)
+        if not stat.S_ISREG(previo.st_mode):
+            raise BuildError(f"{nombre}: '{ruta}' dejó de ser un archivo regular")
+        flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(ruta, flags)
+        with os.fdopen(fd, "rb") as f:
+            abierto = os.fstat(f.fileno())
+            if not stat.S_ISREG(abierto.st_mode) or (abierto.st_dev, abierto.st_ino) != (previo.st_dev, previo.st_ino):
+                raise BuildError(f"{nombre}: '{ruta}' cambió durante la apertura")
+            contenido = f.read()
+    except BuildError:
+        raise
+    except OSError as exc:
+        raise BuildError(f"{nombre}: no se pudo leer una instantánea segura de '{ruta}': {exc.strerror or exc}") from exc
+
+    digest = hashlib.sha256(contenido).hexdigest()
+    if sha_esperado is not None and digest != sha_esperado:
+        raise BuildError(f"{nombre}: '{ruta}' cambió desde la planificación (SHA-256 distinto)")
+    if bytes_esperados is not None and len(contenido) != bytes_esperados:
+        raise BuildError(f"{nombre}: '{ruta}' cambió desde la planificación (tamaño distinto)")
+    return contenido
+
+
 def validar_rootfs(directorio: Path) -> Path:
     try:
         st = os.lstat(directorio)
@@ -125,6 +153,17 @@ def planificar(args) -> dict:
     salida = validar_salida(args.salida)
     initramfs = validar_entrada(args.initramfs, "initramfs")
     kernel = validar_entrada(args.kernel, "kernel")
+    # Fijar hash/tamaño antes de validar formato; construir() volverá a leer y exigirá
+    # exactamente esta instantánea antes de incorporar los bytes a la imagen.
+    instantaneas = {
+        "initramfs": _leer_snapshot_entrada(initramfs, "initramfs"),
+        "kernel": _leer_snapshot_entrada(kernel, "kernel"),
+    }
+    metadatos_entrada = {
+        nombre: {"sha256": hashlib.sha256(datos).hexdigest(), "bytes": len(datos)}
+        for nombre, datos in instantaneas.items()
+    }
+    del instantaneas
     rootfs = validar_rootfs(args.rootfs_dir)
     p1, total = args.p1_mib, args.tamano_mib
     if p1 < P1_MIN_MIB:
@@ -134,7 +173,7 @@ def planificar(args) -> dict:
     p2 = total - p1 - 1  # 1 MiB de alineación inicial
     if p2 < P2_MIN_MIB:
         raise BuildError(f"p2 quedaría en {p2} MiB; mínimo {P2_MIN_MIB} (aumente --tamano-mib)")
-    arranque = initramfs.stat().st_size + kernel.stat().st_size
+    arranque = metadatos_entrada["initramfs"]["bytes"] + metadatos_entrada["kernel"]["bytes"]
     datos_rootfs = _tamano_rootfs(rootfs)
     usado = arranque + datos_rootfs
     if arranque * 11 // 10 > p1 * MIB:
@@ -156,7 +195,7 @@ def planificar(args) -> dict:
         raise BuildError(f"ya existe '{informe}'; no se sobrescribe (bórrelo usted si es de una construcción descartada)")
     return {"omitir_fsck": bool(getattr(args, "omitir_fsck", False)), "salida": str(salida), "p1_mib": p1, "p2_mib": p2, "tamano_total_mib": total,
             "initramfs": str(initramfs), "kernel": str(kernel), "rootfs_dir": str(rootfs),
-            "bytes_a_copiar": usado}
+            "entradas": metadatos_entrada, "bytes_a_copiar": usado}
 
 
 def _ejecutar(cmd: list[str]) -> None:
