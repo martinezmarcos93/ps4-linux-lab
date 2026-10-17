@@ -92,6 +92,13 @@ class TestPreflightMinimo(unittest.TestCase):
         errores = verificar_configuracion_minima(self.boot, "rescue-shell")
         self.assertTrue(any("supera 2047 bytes" in e for e in errores))
 
+    def test_rescue_shell_rechaza_parametros_conflictivos_adicionales(self):
+        (self.boot / "bootargs.txt").write_text(
+            CMDLINE_DEFAULT + " rescueshell panic=1", encoding="ascii"
+        )
+        errores = verificar_configuracion_minima(self.boot, "rescue-shell")
+        self.assertTrue(any("parámetros adicionales" in e for e in errores))
+
     def test_rescue_shell_rechaza_vram_opcional(self):
         (self.boot / "bootargs.txt").write_text(CMDLINE_DEFAULT + " rescueshell", encoding="ascii")
         (self.boot / "vram.txt").write_text("1024\\n", encoding="ascii")
