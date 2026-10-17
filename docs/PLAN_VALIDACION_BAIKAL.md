@@ -7,13 +7,14 @@ Reglas comunes: un solo cambio de variable por intento; máximo 3 intentos por e
 ## V0 — Cierre de evidencia en la PC (sin consola)
 - **Hecho:** southbridge Baikal B1 observado y registrado en `LAB-001` (sin captura archivada ni hash verificable — ver nota de consolidación en ese archivo y riesgo R-23); payload candidato decidido por D-028: loader parcheado USB-only.
 - **Pendiente:** comprobar que los artefactos están disponibles en el entorno de trabajo; ejecutar las verificaciones de kernel/initramfs/rootfs/loader y construir la imagen candidata como archivo regular en la PC si los insumos existen. No escribir un dispositivo físico.
-- **Aceptación:** capturas registradas con hash; artefactos presentes y catalogados; todos los niveles de verificación en OK; ni un `bzImage.*` sobrante en la FAT; hash de imagen igual al informe; `bootargs.txt` y `vram.txt` válidos si existen.
-- **Aborto:** discrepancia southbridge (el ID no es 0x30201), hash distinto del catálogo, nivel en FALLO, falta de espacio.
+- **Aceptación host-side:** artefactos presentes y catalogados; verificaciones de estructura, integridad, formato y consistencia del manifiesto en OK; ni un `bzImage.*` sobrante en la FAT; hash de imagen igual al informe; `bootargs.txt` y `vram.txt` válidos si existen; checks FAT/ext4 ejecutados y registrados o marcados explícitamente como omitidos. Los niveles `compatibilidad` y `arranque` quedan `NO_EVALUADO` en V0: no son criterios de aprobación de una fase que excluye la consola. El dato Baikal B1 (`0x30201`) sigue siendo informado por el operador y sin captura archivada; no debe presentarse como evidencia reproducible.
+- **Aborto:** discrepancia entre artefactos y catálogo, nivel host-side en FALLO, manifiesto incoherente, hash de imagen distinto del informe o falta de espacio. Una incompatibilidad documentada puede bloquear la selección de candidato sin convertir una verificación no ejecutada en fallo.
+- **Cierre:** V0 puede quedar `APROBADA` únicamente como preparación host-side; esto no equivale a `VERIFIED`, compatibilidad con esta unidad ni prueba de arranque. Nunca se fuerza `compatibilidad` o `arranque` a `OK` para completar la fase.
 - **Rollback:** borrar el archivo de imagen de trabajo; no hay nada en la consola.
 
 ## V1 — Revisión cruzada y autorización
-- **Hacer:** ChatGPT revisa el diff y esta cadena; Marcos autoriza por escrito la etapa V2 concreta (payload, imagen y USB identificados por hash).
-- **Aceptación:** revisión sin hallazgos bloqueantes abiertos y autorización registrada en `docs/lab-logs/`.
+- **Hacer:** revisión independiente del diff, manifiesto, hashes, informe de construcción y límites de la cadena. Marcos autoriza por escrito la etapa V2 concreta (payload, imagen y USB identificados por hash); la autorización no se hereda de una fase anterior ni de la aprobación host-side.
+- **Aceptación:** revisión sin hallazgos bloqueantes abiertos y autorización registrada en `docs/lab-logs/`. Los hallazgos no bloqueantes y las limitaciones de evidencia deben quedar enumerados explícitamente.
 - **Aborto:** cualquier hallazgo bloqueante sin resolver.
 
 ## V2 — Pre-chequeos de laboratorio (consola encendida en Orbis, sin Linux)
