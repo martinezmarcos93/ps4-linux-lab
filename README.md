@@ -25,7 +25,7 @@ Laboratorio público de investigación para ejecutar Linux desde almacenamiento 
 - **Flujo USB-only integral:** diseñado, no demostrado en hardware.
 - **Arranque Linux propio en la consola:** no realizado/verificado.
 - **Pruebas de GPU, periféricos, temperatura y estabilidad:** pendientes.
-- **CI de GitHub Actions:** existe workflow, pero el estado registrado indica bloqueo previo a la ejecución del runner por facturación/configuración; volver a comprobar antes de darlo por resuelto.
+- **CI de GitHub Actions:** el run 111 sobre el commit `b080b3e` terminó correctamente el 2026-10-16. El PR de auditoría #16 tiene una ejecución nueva pendiente; consultar el estado más reciente antes de declarar validada esa rama.
 
 La evidencia se etiqueta como `IMPLEMENTADO`, `TESTS`, `CÓDIGO`, `TERCEROS`, `LAB`, `PENDIENTE` o `BLOQUEADO`. **Ningún resultado de escritorio, test unitario o informe upstream prueba por sí solo que la consola arranque.** `LAB` requiere prueba propia en hardware, registro, hashes y condiciones reproducibles.
 
