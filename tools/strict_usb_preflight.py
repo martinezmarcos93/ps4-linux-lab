@@ -60,6 +60,8 @@ def _validar_bootargs_rescue(ruta: Path, errores: list[str]) -> None:
                        + ", ".join(faltantes))
     if tokens.count("rescueshell") != 1:
         errores.append("bootargs.txt debe contener exactamente un token 'rescueshell'")
+    if not faltantes and tokens != requeridos + ["rescueshell"]:
+        errores.append("bootargs.txt debe ser la cmdline por defecto exacta seguida de 'rescueshell', sin parámetros adicionales")
 
 
 def verificar_configuracion_minima(boot_dir: Path, perfil: str = "minimal-default") -> list[str]:
