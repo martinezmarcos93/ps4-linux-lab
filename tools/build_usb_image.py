@@ -93,6 +93,20 @@ def validar_entrada(ruta: Path, nombre: str) -> Path:
     return Path(ruta)
 
 
+def _error_recorrido_rootfs(exc: OSError) -> None:
+    """Convierte errores de os.walk/scandir en fallo explícito; nunca acepta un árbol parcial."""
+    ruta = getattr(exc, "filename", None)
+    detalle = f" en '{ruta}'" if ruta else ""
+    raise BuildError(f"rootfs: no se pudo recorrer{detalle}: {exc.strerror or exc}") from exc
+
+
+def _lstat_rootfs(ruta: str | Path):
+    try:
+        return os.lstat(ruta)
+    except OSError as exc:
+        raise BuildError(f"rootfs: no se pudieron consultar los metadatos de '{ruta}': {exc.strerror or exc}") from exc
+
+
 def validar_rootfs(directorio: Path) -> Path:
     try:
         st = os.lstat(directorio)
@@ -100,22 +114,20 @@ def validar_rootfs(directorio: Path) -> Path:
         raise BuildError(f"rootfs: no se puede consultar '{directorio}': {exc.strerror or exc}") from exc
     if not stat.S_ISDIR(st.st_mode):
         raise BuildError(f"rootfs: '{directorio}' debe ser un directorio real (no symlink)")
-    for raiz, dirs, archivos in os.walk(directorio):
+    for raiz, dirs, archivos in os.walk(directorio, onerror=_error_recorrido_rootfs):
         for n in dirs + archivos:
-            modo = os.lstat(os.path.join(raiz, n)).st_mode
+            ruta = os.path.join(raiz, n)
+            modo = _lstat_rootfs(ruta).st_mode
             if not (stat.S_ISREG(modo) or stat.S_ISDIR(modo) or stat.S_ISLNK(modo)):
-                raise BuildError(f"rootfs: '{os.path.join(raiz, n)}' es un archivo especial (dispositivo/FIFO/socket)")
+                raise BuildError(f"rootfs: '{ruta}' es un archivo especial (dispositivo/FIFO/socket)")
     return Path(directorio)
 
 
 def _tamano_rootfs(directorio: Path) -> int:
     total = 0
-    for raiz, _d, archivos in os.walk(directorio):
+    for raiz, _d, archivos in os.walk(directorio, onerror=_error_recorrido_rootfs):
         for n in archivos:
-            try:
-                total += os.lstat(os.path.join(raiz, n)).st_size
-            except OSError:
-                pass
+            total += _lstat_rootfs(os.path.join(raiz, n)).st_size
     return total
 
 
