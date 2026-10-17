@@ -7,10 +7,10 @@
 
 - El repositorio se reporta actualmente como **público** en los metadatos de GitHub. La afirmación histórica de que era privado ya no describe el estado observado.
 - GitHub Actions está iniciando jobs y ejecutando pruebas. Por lo tanto, el bloqueo de facturación descrito abajo no es la explicación de los runs más recientes.
-- El run 31, sobre `main` en el commit `9e9527d16329d20c041bce97927ecff3869aa9e7`, ejecutó 262 tests y falló en `tests.test_check_docs.TestDocumentacionReal.test_la_documentacion_del_repositorio_es_coherente`.
-- El fallo encontró cinco enlaces relativos rotos en `docs/WORKSTREAMS.md`: los roadmaps están en ramas de trabajo, pero no existen en el árbol de `main`.
-- La corrección está propuesta en el PR #2: https://github.com/martinezmarcos93/ps4-linux-lab/pull/2. La ejecución de CI de ese PR todavía debe concluir antes de confirmar que la corrección resuelve el fallo.
-- El fallo observado es de consistencia documental; no debe atribuirse al loader ni a la compatibilidad de hardware.
+- El run 111, sobre `main` en el commit `b080b3ed5309ea45c5e35a4291364b114e3d7202`, terminó con `success` el 2026-10-16. Esto confirma que el workflow actual pasó en ese commit, no que cualquier rama posterior esté validada.
+- El run 31 y el PR #2 son antecedentes históricos: el validador detectó enlaces de roadmaps que apuntaban a ramas que no estaban en el árbol de `main`. La documentación de coordinación fue actualizada después para dejar de depender de esas ramas.
+- El PR #16 contiene una nueva revisión documental y una modificación del publicador no-clobber; su CI está pendiente al momento de redactar esta actualización. No marcar esta rama como validada hasta que termine.
+- Los fallos históricos eran de consistencia documental; no deben atribuirse al loader ni a la compatibilidad de hardware.
 
 ## Diagnóstico histórico del 2026-10-15
 
