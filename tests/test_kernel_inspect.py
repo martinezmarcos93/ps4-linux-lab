@@ -78,6 +78,16 @@ class TestKernelInspect(unittest.TestCase):
         self.comprobar(lambda v: subprocess.run(["zstd", "-c", "-q"], input=v, capture_output=True, check=True).stdout, "zstd")
 
     @unittest.skipUnless(shutil.which("zstd"), "sin zstd")
+    def test_zstd_rechaza_frame_valido_con_basura_antes_del_trailer(self):
+        vm = vmlinux_falso()
+        comprimido = subprocess.run(
+            ["zstd", "-c", "-q"], input=vm, capture_output=True, check=True
+        ).stdout
+        carga = comprimido + b"basura" + struct.pack("<I", len(vm))
+        with self.assertRaisesRegex(ki.KernelError, "zstd terminó con código"):
+            ki._descomprimir(carga)
+
+    @unittest.skipUnless(shutil.which("zstd"), "sin zstd")
     def test_zstd_rechaza_salida_mayor_que_tope_sin_acumularla(self):
         vm = b"A" * 4096
         comprimido = subprocess.run(
