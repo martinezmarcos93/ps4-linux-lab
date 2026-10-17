@@ -43,7 +43,7 @@ Ninguna opción cubre P5 por sí sola: solo se puede comprobar con acceso a la c
 ## 4. Bloqueo exacto: por qué USB-only todavía no se puede dar por demostrado
 
 1. **El binario que se usaría no es el que auditamos.** El workflow de CI del loader solo sube artefactos de Actions; los *releases* se publican aparte. Actualización 2026-10-16: se **compiló** `f70f43a` (con y sin parche) en un contenedor sin red y es repetible en el entorno fijado, pero **no es bit a bit idéntico** al ELF de la distribución (compilador distinto: GCC 16.2.1 vs 13.3.0); es consistente en tabla de offsets, rutas y símbolos. Detalle y límites en `docs/LOADER_BUILD_REPRO.md`.
-2. **El kernel Linux y el rootfs no están auditados.** Los kernels son binarios comunitarios (versiones reales 7.0.8 y 7.1.7 según su cabecera, D-009) y la imagen trae `systemd` y KDE (según su README; no auditados). Un `fstab` vacío no impide que un servicio monte el disco interno si Linux lo ve. Además `sys_kexec` añade en RAM al initramfs la clave `key/eap_hdd_key.bin` de la consola (`ps4-kexec-common/firmware.c`: `copy_eap_hdd_key`, usada en la línea 382), de modo que el sistema que arranca **tiene el material para descifrar el almacenamiento interno**. Que no lo use es una propiedad por demostrar, no un hecho.
+2. **Kernel y rootfs: auditoría estática parcial completada, no validación de runtime.** Las inspecciones de versiones/configuración del kernel, initramfs y rootfs están documentadas en `docs/AUDITORIA_CADENA_BAIKAL.md`; no equivalen a una auditoría de seguridad completa. Un `fstab` vacío no impide que un servicio monte el disco interno si Linux lo ve. Además `sys_kexec` añade en RAM al initramfs la clave `key/eap_hdd_key.bin` de la consola (`ps4-kexec-common/firmware.c`: `copy_eap_hdd_key`), de modo que el sistema que arranca **tiene el material para descifrar el almacenamiento interno**. Que no lo use sigue siendo una propiedad por demostrar, no un hecho.
 3. **P5 requiere hardware.** Comprobar que `/data/linux/boot/` y `/user/system/boot/` están vacíos exige el servidor FTP de GoldHEN, es decir, ejecutar el exploit y el payload GoldHEN (D-010).
 4. **La prueba final es de laboratorio.** Que el primer arranque no modifique el disco interno solo se demuestra con un procedimiento de laboratorio (hash/listado del interno antes y después, en una consola que Marcos autorice a ejecutar).
 
@@ -68,7 +68,7 @@ Capas, de la PC a la consola; cada una es verificable por separado:
 5. **Loader USB-only**: `patches/loader-usb-only-f70f43a.patch`. Aplica limpio con `git apply --check` y **compila** (`docs/LOADER_BUILD_REPRO.md`); el binario parcheado no contiene literales de rutas internas. No se ha ejecutado.
 6. **Precondición de laboratorio (P5)** antes de cada intento: listado FTP de solo lectura de las dos rutas internas; abortar si tienen contenido ajeno.
 
-**Por qué esta combinación:** A y C/D se pueden hacer ya y son reversibles; B es la única que vuelve P1/P2 una propiedad del binario, pero depende de un entorno de compilación y de una revisión que todavía no existen. Se recomienda A+C+D hoy y B en cuanto §4.1 esté resuelto; sin B, el sistema **no** es USB-only por construcción, solo por configuración y disciplina de laboratorio.
+**Estado de la combinación:** C/D comprueban estructura, integridad y mezcla de releases; no sustituyen el loader USB-only. La variante B ya se compiló en un entorno aislado y se verificó estáticamente el 2026-10-16 (`docs/LOADER_BUILD_REPRO.md`), pero no es el ELF publicado y no se ejecutó. El parche elimina las rutas internas del loader y exige kernel e initramfs en una misma carpeta USB; **no demuestra** P4 en runtime ni P5. Por tanto el flujo completo sigue sin estar demostrado como USB-only.
 
 ## 6. Cómo revisar y probar el parche sin ejecutar nada en la consola
 
@@ -84,7 +84,7 @@ python3 -m unittest tests.test_loader_model                          # lógica d
 La compilación completa (`make`) en contenedor sin red y la comparación estática de ELF se hicieron el 2026-10-16: `scripts/build_loader_isolated.sh`, `docs/LOADER_BUILD_REPRO.md`.
 
 ### Limitaciones del parche y del modelo
-- Es un parche de **diseño**: no se ha compilado a ELF ni ejecutado. `tools/loader_model.py` modela el algoritmo; no es el loader.
+- El parche se compiló a ELF en el entorno aislado y se verificó estáticamente; no se ejecutó. Los resultados y hashes están en `docs/LOADER_BUILD_REPRO.md`. `tools/loader_model.py` modela el algoritmo; no es el loader.
 - No corrige otros defectos observados en `main-aio.c` que quedan fuera del encargo: `read_file` trata el valor de retorno de `read` como `unsigned` (un error de lectura no se detecta), `mmap` sin comprobar y `get_sb_id()` devuelve `-1` sin manejo posterior (la familia de southbridge pasaría a `0xF`). Recomendable reportarlos aguas arriba.
 - Si falta `bootargs.txt`/`vram.txt` en la carpeta USB elegida, se usan los valores por defecto del loader (1024 MB); no se busca en ningún otro lugar.
 
