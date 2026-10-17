@@ -219,6 +219,12 @@ def construir(plan: dict) -> Path:
     exito = False
     publicados: list[Path] = []  # archivos finales creados por ESTA ejecución (para revertir si algo falla después)
     try:
+        instantaneas = {
+            nombre: _leer_snapshot_entrada(
+                Path(plan[nombre]), nombre, plan["entradas"][nombre]["sha256"], plan["entradas"][nombre]["bytes"]
+            )
+            for nombre in ("initramfs", "kernel")
+        }
         fd = os.open(parcial, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
         try:
             os.ftruncate(fd, plan["tamano_total_mib"] * MIB)  # archivo disperso
@@ -229,15 +235,15 @@ def construir(plan: dict) -> Path:
                        text=True, capture_output=True, check=True, timeout=120)
         _ejecutar([mkvfat, "-F", "32", "-n", "PS4BOOT", "--offset", "2048", str(parcial), str(p1 * 1024)])
         off1, size1 = fat.particion_mbr(parcial, 1)
-        fat.agregar_archivo(parcial, off1, size1, "initramfs.cpio.gz", Path(plan["initramfs"]).read_bytes())
-        fat.agregar_archivo(parcial, off1, size1, "bzImage", Path(plan["kernel"]).read_bytes())
+        fat.agregar_archivo(parcial, off1, size1, "initramfs.cpio.gz", instantaneas["initramfs"])
+        fat.agregar_archivo(parcial, off1, size1, "bzImage", instantaneas["kernel"])
         off2, size2 = fat.particion_mbr(parcial, 2)
         _ejecutar([mkext4, "-q", "-F", "-L", "psxitarch", "-E", f"offset={off2}", "-d", plan["rootfs_dir"],
                    str(parcial), str(size2 // 1024)])
         verificaciones = _verificar_sistemas_de_archivos(parcial, off1, size1, off2, plan.get("omitir_fsck", False))
         # El informe se prepara (hash de la imagen incluido) ANTES de publicar nada y se publica PRIMERO:
         # si algo falla, nunca queda una imagen final sin su informe de verificación.
-        _preparar_informe(informe_parcial, parcial, destino, plan, verificaciones)
+        _preparar_informe(informe_parcial, parcial, destino, plan, verificaciones, instantaneas)
         _publicar(informe_parcial, informe_final)
         publicados.append(informe_final)
         _publicar(parcial, destino)
@@ -326,15 +332,17 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def _preparar_informe(informe_parcial: Path, imagen_parcial: Path, destino: Path, plan: dict, verificaciones: dict) -> None:
-    """Escribe el informe en un temporal (nuevo, nunca sobrescribe): entradas con hash, hash de la imagen terminada y
-    verificaciones realmente ejecutadas. El hash se calcula sobre la imagen parcial, que es la que se publicará."""
+def _preparar_informe(informe_parcial: Path, imagen_parcial: Path, destino: Path, plan: dict,
+                       verificaciones: dict, instantaneas: dict[str, bytes]) -> None:
+    """Escribe informe con hashes de las mismas instantáneas incorporadas a FAT, nunca relee fuentes mutables."""
     informe = {
         "imagen": destino.name,
         "sha256_imagen": _sha256(imagen_parcial),
         "bytes_imagen": imagen_parcial.stat().st_size,
-        "entradas": {n: {"archivo": plan[n], "sha256": _sha256(Path(plan[n])), "bytes": Path(plan[n]).stat().st_size}
-                     for n in ("initramfs", "kernel")},
+        "entradas": {
+            n: {"archivo": plan[n], "sha256": hashlib.sha256(instantaneas[n]).hexdigest(), "bytes": len(instantaneas[n])}
+            for n in ("initramfs", "kernel")
+        },
         "rootfs_dir": plan["rootfs_dir"],
         "particiones_mib": {"p1": plan["p1_mib"], "p2": plan["p2_mib"]},
         "verificaciones": verificaciones,
