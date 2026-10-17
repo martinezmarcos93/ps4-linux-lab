@@ -91,6 +91,6 @@ Los kernels son derivados de Linux (GPL-2.0): quien los **redistribuye** debe of
 
 ## 7. Siguiente bloqueo y qué lo resuelve
 **Bloqueo vigente:** el southbridge está observado, pero falta archivar la captura original y resolver la discrepancia R-23 sobre la versión del binario GoldHEN. El bloqueo técnico principal sigue siendo la procedencia/compatibilidad de la cadena kernel + initramfs + rootfs y la reproducción del loader parcheado.
-1. **Sin tocar la consola:** buscar la fecha de fabricación en etiqueta/caja y registrarla (acota, no confirma).
-2. **Con autorización expresa de Marcos:** leer el subsys ID con el procedimiento más pequeño disponible (hoy: payload de espacio de usuario tras el jailbreak; previa auditoría estática de ese binario y barrera de red D-016). Resultado → completar la tabla del Paso 4 y recién entonces preparar la imagen por la ruta A de `USB_ONLY_DESIGN.md` §8.
-3. **Si el resultado es Belize2:** no hay kernel candidato; el siguiente trabajo sería buscar un kernel con soporte declarado para Belize 2 (investigación, no ejecución).
+1. **Cerrar la trazabilidad de la lectura existente:** si se conserva la captura original, archivarla sin editar y calcular su SHA-256; si ya no está disponible, mantener expresamente la limitación registrada en `LAB-001`. Resolver R-23 comparando la versión mostrada por GoldHEN con el artefacto realmente utilizado, sin inventar hashes ni versiones.
+2. **Completar la decisión de kernel en PC:** revisar las fuentes/configuración de Strawberry, el loader parcheado, el initramfs y el rootfs como una sola cadena. La lectura de Baikal B1 permite priorizar el candidato Baikal, pero no autoriza por sí sola una prueba física.
+3. **Si evidencia nueva contradice la lectura y apunta a Belize2:** detener la selección; ningún kernel local declara soporte suficiente para Belize2. Investigar un candidato compatible sin probar kernels por ensayo y error.
