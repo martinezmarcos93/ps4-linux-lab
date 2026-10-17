@@ -307,6 +307,14 @@ class TestFormato(Base):
         self.assertEqual(r["estado"], "OK")
         self.assertTrue(any("primera línea" in a for a in r["avisos"]))
 
+    def test_bootargs_con_byte_nulo_falla(self):
+        self.cadena_valida()
+        self.poner("bootargs.txt", b"panic=0\x00extra=1")
+        r = vbc.verificar_formato(self.dir)
+        self.assertEqual(r["estado"], "FALLO")
+        self.assertTrue(any("NUL" in e or "carácter" in e or "inválido" in e or "byte" in e for e in r["errores"]))
+
+
 
 class TestIntegridadYMezclas(Base):
     def setUp(self):
