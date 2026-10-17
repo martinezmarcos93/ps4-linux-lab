@@ -187,7 +187,7 @@ def comprobar_cabecera_bzimage(path: Path) -> tuple[list[str], dict]:
 
 
 class _LectorGzip:
-    """Descomprime gzip en streaming con tope de bytes descomprimidos."""
+    """Descomprime un único miembro gzip en streaming y rechaza cualquier dato posterior."""
 
     def __init__(self, f, tope: int):
         self.f = f
@@ -200,6 +200,15 @@ class _LectorGzip:
     def _llenar(self) -> bool:
         if self.fin:
             return False
+        if self.d.eof:
+            # Un gzip válido puede terminar antes del final del archivo. No aceptamos
+            # basura ni miembros concatenados silenciosamente: la política es un
+            # único miembro gzip, sin bytes residuales.
+            residual = self.d.unused_data
+            if residual or self.f.read(1):
+                raise zlib.error("hay datos posteriores al único miembro gzip permitido")
+            self.fin = True
+            return False
         crudo = self.f.read(256 * 1024)
         if not crudo:
             self.fin = True
@@ -211,8 +220,8 @@ class _LectorGzip:
         if self.total > self.tope:
             raise zlib.error(f"el contenido descomprimido supera {self.tope} bytes")
         self.buf += salida
-        if self.d.eof:
-            self.fin = True
+        if self.d.eof and self.d.unused_data:
+            raise zlib.error("hay datos posteriores al único miembro gzip permitido")
         return True
 
     def leer(self, n: int) -> bytes:
@@ -231,6 +240,12 @@ class _LectorGzip:
             del self.buf[:k]
             quitado += k
         return quitado
+
+    def verificar_fin(self) -> None:
+        """Consume el resto para validar CRC/EOF y rechazar datos fuera del miembro gzip."""
+        self.buf.clear()
+        while self._llenar():
+            self.buf.clear()
 
 
 def comprobar_initramfs(path: Path) -> tuple[list[str], dict]:
@@ -286,6 +301,8 @@ def comprobar_initramfs(path: Path) -> tuple[list[str], dict]:
                     errores.append(f"{INITRAMFS}: más de {MAX_ENTRADAS_CPIO} entradas; se aborta el recorrido")
             except zlib.error as exc:
                 errores.append(f"{INITRAMFS}: gzip corrupto o truncado ({exc})")
+            if not errores:
+                lector.verificar_fin()
             if not errores:
                 if "init" not in nombres_clave and "sbin/init" not in nombres_clave:
                     errores.append(f"{INITRAMFS}: no contiene /init ni /sbin/init; el kernel no tendría qué ejecutar")
