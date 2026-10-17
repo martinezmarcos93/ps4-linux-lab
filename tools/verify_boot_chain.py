@@ -302,7 +302,10 @@ def comprobar_initramfs(path: Path) -> tuple[list[str], dict]:
             except zlib.error as exc:
                 errores.append(f"{INITRAMFS}: gzip corrupto o truncado ({exc})")
             if not errores:
-                lector.verificar_fin()
+                try:
+                    lector.verificar_fin()
+                except zlib.error as exc:
+                    errores.append(f"{INITRAMFS}: gzip corrupto o con datos posteriores ({exc})")
             if not errores:
                 if "init" not in nombres_clave and "sbin/init" not in nombres_clave:
                     errores.append(f"{INITRAMFS}: no contiene /init ni /sbin/init; el kernel no tendría qué ejecutar")
