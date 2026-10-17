@@ -81,7 +81,7 @@ class TestPreflightMinimo(unittest.TestCase):
         self.assertTrue(any("exactamente un token" in e for e in errores))
 
     def test_rescue_shell_rechaza_controles_y_saltos_de_linea(self):
-        (self.boot / "bootargs.txt").write_text(CMDLINE_DEFAULT + " rescueshell\\n", encoding="ascii")
+        (self.boot / "bootargs.txt").write_bytes((CMDLINE_DEFAULT + " rescueshell").encode("ascii") + bytes([10]))
         errores = verificar_configuracion_minima(self.boot, "rescue-shell")
         self.assertTrue(any("ASCII imprimible" in e for e in errores))
 
