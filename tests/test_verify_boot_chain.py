@@ -352,6 +352,12 @@ class TestIntegridadYMezclas(Base):
         c = json.loads(json.dumps(base)); c["artefactos"][1]["id"] = "k"; casos.append(c)
         c = json.loads(json.dumps(base)); c["artefactos"][0]["size_bytes"] = True; casos.append(c)
         c = json.loads(json.dumps(base)); del c["artefactos"][0]["release"]; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["id"] = []; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["release"] = 7; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["southbridges"] = "baikal"; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["southbridges"] = ["baikal", None]; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["southbridges"] = ["baikal", "Baikal"]; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["evidencia_compatibilidad"] = []; casos.append(c)
         for caso in casos:
             ruta = self.dir.parent / "cat_tmp.json"
             ruta.write_text(json.dumps(caso), encoding="utf-8")
@@ -360,6 +366,21 @@ class TestIntegridadYMezclas(Base):
                     vbc.cargar_catalogo(ruta)
             finally:
                 ruta.unlink()
+
+
+    def test_catalogo_rechaza_hash_ambiguo_para_mismo_rol(self):
+        base = self.catalogo(self.k, self.i)
+        duplicado = json.loads(json.dumps(base["artefactos"][0]))
+        duplicado["id"] = "otro-kernel"
+        duplicado["release"] = "otra-release"
+        base["artefactos"].append(duplicado)
+        ruta = self.dir.parent / "cat_ambiguo_tmp.json"
+        ruta.write_text(json.dumps(base), encoding="utf-8")
+        try:
+            with self.assertRaisesRegex(BootChainError, "procedencia sería ambigua"):
+                vbc.cargar_catalogo(ruta)
+        finally:
+            ruta.unlink()
 
     def test_catalogo_no_json(self):
         ruta = self.dir.parent / "cat_tmp2.json"
