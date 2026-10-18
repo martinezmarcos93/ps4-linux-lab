@@ -66,5 +66,5 @@
 ## Actualización de autorización — 2026-10-16
 Marcos autorizó expresamente todas las acciones técnicas necesarias para descubrir el kernel compatible, incluida la identificación del southbridge por software mediante GoldHEN o lectura de `hw.sce_subsys_subid`, y la ejecución del exploit/payload necesario para esa lectura. Esta autorización **no** equivale a autorizar escritura en almacenamiento interno, escritura física de una imagen USB o arranque Linux.
 Procedimiento y límites: [`docs/AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md`](../AUTHORIZATION_KERNEL_IDENTIFICATION_2026-10-16.md).
-- Southbridge: pendiente de lectura observada.
+- Southbridge: lectura observada como Baikal B1 (`0x30201`); ver `LAB-001-southbridge.md`. La captura no está archivada.
 - Estado de laboratorio: se utilizó GoldHEN para leer el southbridge. No se escribió el USB físico ni se arrancó Linux.
