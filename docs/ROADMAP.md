@@ -28,7 +28,8 @@ Auditoría cruzada documental 2026-10-16: [`docs/CROSS_DOC_AUDIT_2026-10-16.md`]
 - [x] `IMPLEMENTADO` Registrar fuentes, riesgos, decisiones, inventario y reglas de evidencia.
 - [x] `IMPLEMENTADO` Preparar README y normas para colaboración pública.
 - [ ] `PENDIENTE` Verificar todos los documentos y enlaces internos tras el barrido público.
-- [ ] `PENDIENTE` Resolver la configuración del CI y decidir protección de `main`.
+- [x] `IMPLEMENTADO` CI de GitHub Actions operativo (runs `success` en `main`, 2026-10-16).
+- [ ] `PENDIENTE` Decidir protección de `main`.
 - [ ] `PENDIENTE` Revisar de forma completa los metadatos GitHub (descripción, topics, licencia visible y settings).
 
 ## Fase 1 — Identificación de consola
