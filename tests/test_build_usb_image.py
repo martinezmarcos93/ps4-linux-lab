@@ -97,6 +97,41 @@ class TestValidaciones(Base):
         with self.assertRaises(bu.BuildError):
             bu.planificar(self.args(kernel=Path("/dev/null")))
 
+    def test_plan_fija_hashes_y_rechaza_entrada_modificada(self):
+        plan = bu.planificar(self.args())
+        esperado = plan["entradas"]["kernel"]
+        self.assertEqual(esperado["bytes"], self.kernel.stat().st_size)
+        self.assertEqual(esperado["sha256"], bu.hashlib.sha256(self.kernel.read_bytes()).hexdigest())
+        self.kernel.write_bytes(b"kernel cambiado tras planificar")
+        with self.assertRaisesRegex(bu.BuildError, "cambió desde la planificación"):
+            bu._leer_snapshot_entrada(self.kernel, "kernel", esperado["sha256"], esperado["bytes"])
+
+    def test_informe_hash_usa_snapshot_incorporada_no_fuente_actual(self):
+        kernel_snapshot = self.kernel.read_bytes()
+        initramfs_snapshot = self.initramfs.read_bytes()
+        self.kernel.write_bytes("contenido distinto posterior a la instantánea".encode("utf-8"))
+        imagen_parcial = self.dir / "imagen.parcial"
+        informe_parcial = self.dir / "informe.parcial"
+        imagen_parcial.write_bytes(b"imagen ficticia")
+        plan = {
+            "kernel": str(self.kernel),
+            "initramfs": str(self.initramfs),
+            "rootfs_dir": str(self.rootfs),
+            "p1_mib": 40,
+            "p2_mib": 31,
+        }
+        bu._preparar_informe(
+            informe_parcial, imagen_parcial, self.dir / "final.img", plan,
+            {"fat": {"estado": "OK"}, "ext4": {"estado": "OK"}},
+            {"kernel": kernel_snapshot, "initramfs": initramfs_snapshot},
+        )
+        informe = json.loads(informe_parcial.read_text(encoding="utf-8"))
+        self.assertEqual(informe["entradas"]["kernel"]["sha256"],
+                         bu.hashlib.sha256(kernel_snapshot).hexdigest())
+        self.assertEqual(informe["entradas"]["kernel"]["bytes"], len(kernel_snapshot))
+        self.assertNotEqual(informe["entradas"]["kernel"]["sha256"],
+                            bu.hashlib.sha256(self.kernel.read_bytes()).hexdigest())
+
     def test_formato_invalido_rechazado_salvo_que_se_omita(self):
         self.kernel.write_bytes(b"dummy kernel")
         with self.assertRaisesRegex(bu.BuildError, "formato"):
@@ -122,6 +157,41 @@ class TestValidaciones(Base):
         os.mkfifo(fifo)
         with self.assertRaisesRegex(bu.BuildError, "especial"):
             bu.planificar(self.args())
+
+    def test_rootfs_recorrido_inaccesible_aborta(self):
+        def walk_falla(directorio, onerror=None):
+            exc = PermissionError("Permission denied", 13, str(Path(directorio) / "etc"))
+            if onerror is not None:
+                onerror(exc)
+            return iter(())
+
+        with mock.patch("tools.build_usb_image.os.walk", side_effect=walk_falla):
+            with self.assertRaisesRegex(bu.BuildError, "no se pudo recorrer"):
+                bu.validar_rootfs(self.rootfs)
+
+    def test_tamano_rootfs_recorrido_inaccesible_aborta(self):
+        def walk_falla(directorio, onerror=None):
+            exc = PermissionError("Permission denied", 13, str(Path(directorio) / "etc"))
+            if onerror is not None:
+                onerror(exc)
+            return iter(())
+
+        with mock.patch("tools.build_usb_image.os.walk", side_effect=walk_falla):
+            with self.assertRaisesRegex(bu.BuildError, "no se pudo recorrer"):
+                bu._tamano_rootfs(self.rootfs)
+
+    def test_tamano_rootfs_metadatos_inaccesibles_aborta(self):
+        lstat_original = os.lstat
+        objetivo = str(self.rootfs / "etc" / "marca.txt")
+
+        def lstat_falla(ruta, *args, **kwargs):
+            if os.fspath(ruta) == objetivo:
+                raise PermissionError("Permission denied", 13, objetivo)
+            return lstat_original(ruta, *args, **kwargs)
+
+        with mock.patch("tools.build_usb_image.os.lstat", side_effect=lstat_falla):
+            with self.assertRaisesRegex(bu.BuildError, "metadatos"):
+                bu._tamano_rootfs(self.rootfs)
 
     def test_contenido_que_no_cabe(self):
         with open(self.rootfs / "grande.bin", "wb") as f:
@@ -433,17 +503,41 @@ class TestConstruccion(Base):
         self.assertEqual(inf["sha256_imagen"], hashlib.sha256(destino.read_bytes()).hexdigest())
         self.assertEqual(self._carpeta_limpia(), ["prueba.img", "prueba.img.informe.json"])
 
-    def test_publicar_sin_enlaces_duros_sigue_sin_sobrescribir(self):
+    def test_publicar_sin_enlaces_duros_falla_sin_publicar_ni_sobrescribir(self):
         a, b = self.dir / "a", self.dir / "b"
         a.write_text("nuevo")
-        with mock.patch("os.link", side_effect=OSError("sin enlaces duros")):
-            bu._publicar(a, b)
-            self.assertEqual(b.read_text(), "nuevo")
-            self.assertFalse(a.exists())
-            a.write_text("otro")
-            with self.assertRaisesRegex(bu.BuildError, "apareció"):
+        with mock.patch("os.link", side_effect=OSError("sistema de archivos sin soporte")):
+            with self.assertRaisesRegex(bu.BuildError, "de forma atómica y sin sobrescritura"):
                 bu._publicar(a, b)
-        self.assertEqual(b.read_text(), "nuevo")
+        self.assertEqual(a.read_text(), "nuevo", "el temporal de origen debe conservarse para diagnóstico/limpieza")
+        self.assertFalse(b.exists(), "no debe publicarse usando una secuencia con carrera TOCTOU")
+
+    def test_publicar_si_el_destino_aparece_no_lo_sobrescribe(self):
+        a, b = self.dir / "a", self.dir / "b"
+        a.write_text("nuevo")
+        b.write_text("ajeno")
+        with self.assertRaisesRegex(bu.BuildError, "apareció durante la construcción"):
+            bu._publicar(a, b)
+        self.assertEqual(a.read_text(), "nuevo")
+        self.assertEqual(b.read_text(), "ajeno")
+
+    def test_publicar_revierte_el_destino_si_falla_el_unlink_del_temporal(self):
+        a, b = self.dir / "a", self.dir / "b"
+        a.write_text("nuevo")
+        unlink_real = os.unlink
+        llamadas = []
+
+        def falla_una_vez(path, *args, **kwargs):
+            llamadas.append(Path(path))
+            if len(llamadas) == 1:
+                raise PermissionError("fallo simulado al retirar temporal")
+            return unlink_real(path, *args, **kwargs)
+
+        with mock.patch("os.unlink", side_effect=falla_una_vez):
+            with self.assertRaisesRegex(bu.BuildError, "no se pudo retirar el temporal"):
+                bu._publicar(a, b)
+        self.assertTrue(a.exists(), "el temporal original debe quedar disponible para diagnóstico")
+        self.assertFalse(b.exists(), "la publicación debe revertirse si no se pudo retirar el temporal")
 
     def test_herramienta_faltante(self):
         with mock.patch("shutil.which", return_value=None), mock.patch("os.path.exists", return_value=False):

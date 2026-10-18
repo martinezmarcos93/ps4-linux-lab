@@ -245,6 +245,22 @@ class TestFormato(Base):
         self.poner("initramfs.cpio.gz", bytes(datos))
         self.assertTrue(any("gzip" in e for e in vbc.verificar_formato(self.dir)["errores"]))
 
+    def test_initramfs_rechaza_bytes_tras_miembro_gzip_valido(self):
+        self.poner("bzImage", hacer_bzimage())
+        datos = hacer_initramfs() + b"\x00basura-final"
+        self.poner("initramfs.cpio.gz", datos)
+        r = vbc.verificar_formato(self.dir)
+        self.assertEqual(r["estado"], "FALLO")
+        self.assertTrue(any("datos posteriores" in e for e in r["errores"]), r)
+
+    def test_initramfs_rechaza_miembros_gzip_concatenados_explicito(self):
+        self.poner("bzImage", hacer_bzimage())
+        datos = hacer_initramfs() + gzip.compress(b"segundo miembro", mtime=0)
+        self.poner("initramfs.cpio.gz", datos)
+        r = vbc.verificar_formato(self.dir)
+        self.assertEqual(r["estado"], "FALLO")
+        self.assertTrue(any("datos posteriores" in e for e in r["errores"]), r)
+
     def test_initramfs_gzip_valido_pero_no_cpio(self):
         self.poner("bzImage", hacer_bzimage())
         self.poner("initramfs.cpio.gz", gzip.compress(b"esto no es cpio" * 20, mtime=0))
@@ -307,6 +323,14 @@ class TestFormato(Base):
         self.assertEqual(r["estado"], "OK")
         self.assertTrue(any("primera línea" in a for a in r["avisos"]))
 
+    def test_bootargs_con_byte_nulo_falla(self):
+        self.cadena_valida()
+        self.poner("bootargs.txt", b"panic=0\x00extra=1")
+        r = vbc.verificar_formato(self.dir)
+        self.assertEqual(r["estado"], "FALLO")
+        self.assertTrue(any("NUL" in e or "carácter" in e or "inválido" in e or "byte" in e for e in r["errores"]))
+
+
 
 class TestIntegridadYMezclas(Base):
     def setUp(self):
@@ -352,6 +376,12 @@ class TestIntegridadYMezclas(Base):
         c = json.loads(json.dumps(base)); c["artefactos"][1]["id"] = "k"; casos.append(c)
         c = json.loads(json.dumps(base)); c["artefactos"][0]["size_bytes"] = True; casos.append(c)
         c = json.loads(json.dumps(base)); del c["artefactos"][0]["release"]; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["id"] = []; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["release"] = 7; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["southbridges"] = "baikal"; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["southbridges"] = ["baikal", None]; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["southbridges"] = ["baikal", "Baikal"]; casos.append(c)
+        c = json.loads(json.dumps(base)); c["artefactos"][0]["evidencia_compatibilidad"] = []; casos.append(c)
         for caso in casos:
             ruta = self.dir.parent / "cat_tmp.json"
             ruta.write_text(json.dumps(caso), encoding="utf-8")
@@ -360,6 +390,21 @@ class TestIntegridadYMezclas(Base):
                     vbc.cargar_catalogo(ruta)
             finally:
                 ruta.unlink()
+
+
+    def test_catalogo_rechaza_hash_ambiguo_para_mismo_rol(self):
+        base = self.catalogo(self.k, self.i)
+        duplicado = json.loads(json.dumps(base["artefactos"][0]))
+        duplicado["id"] = "otro-kernel"
+        duplicado["release"] = "otra-release"
+        base["artefactos"].append(duplicado)
+        ruta = self.dir.parent / "cat_ambiguo_tmp.json"
+        ruta.write_text(json.dumps(base), encoding="utf-8")
+        try:
+            with self.assertRaisesRegex(BootChainError, "procedencia sería ambigua"):
+                vbc.cargar_catalogo(ruta)
+        finally:
+            ruta.unlink()
 
     def test_catalogo_no_json(self):
         ruta = self.dir.parent / "cat_tmp2.json"

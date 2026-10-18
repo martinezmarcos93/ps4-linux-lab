@@ -58,8 +58,13 @@ def _descomprimir(carga: bytes) -> tuple[str, bytes]:
             raise KernelError("el kernel usa zstd y no hay binario `zstd` en el sistema")
         # Alimentar desde un archivo temporal evita bloquear al escribir stdin mientras stdout se llena.
         # La salida se lee en bloques y se corta al superar TOPE; no se acumula una salida ilimitada en RAM.
+        # El protocolo del bzImage añade al payload comprimido un entero final de 4 bytes
+        # con el tamaño descomprimido. No se debe pasar ese trailer al CLI de zstd: hacerlo
+        # puede producir una salida parcial con código de error, que nunca debe aceptarse.
+        if len(carga) <= 4:
+            raise KernelError("payload zstd demasiado corto para contener el trailer de tamaño")
         with tempfile.TemporaryFile() as entrada, tempfile.TemporaryFile() as errores:
-            entrada.write(carga)
+            entrada.write(carga[:-4])
             entrada.seek(0)
             try:
                 proc = subprocess.Popen([exe, "-dc"], stdin=entrada, stdout=subprocess.PIPE, stderr=errores)
@@ -94,12 +99,10 @@ def _descomprimir(carga: bytes) -> tuple[str, bytes]:
             errores.seek(0)
             detalle = errores.read(200).decode("utf-8", "replace")
             salida = b"".join(partes)
-            # El kernel añade 4 bytes tras el marco zstd; algunas versiones del CLI
-            # devuelven código distinto de cero por esos bytes finales, aunque emitieron el marco.
+            if codigo != 0:
+                raise KernelError(f"zstd terminó con código {codigo}: {detalle}")
             if not salida:
-                raise KernelError("zstd no produjo salida: " + detalle)
-            if codigo != 0 and not detalle:
-                raise KernelError(f"zstd terminó con código {codigo}")
+                raise KernelError("zstd no produjo salida")
             return "zstd", salida
     raise KernelError(f"formato de compresión no reconocido (primeros bytes {carga[:4].hex()})")
 

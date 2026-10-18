@@ -1,0 +1,422 @@
+{
+  "aviso": "`formato: OK` significa solo que la estructura del archivo es coherente con lo que dice ser (cabecera x86, gzip+cpio, MBR/GPT, tabla del ELF). NO significa compatibilidad con ninguna consola, autenticidad ni que arranque. `procedencia` compara hashes con las referencias aportadas; una lista publicada por el mismo autor no es independiente.",
+  "raices": {
+    "artefactos": {
+      "directorio": "PS4-Linux-artefactos",
+      "ruta_absoluta": "(omitida; use --incluir-ruta-absoluta)"
+    }
+  },
+  "archivos": [
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/boot/initramfs.cpio.gz",
+      "rol": "initramfs",
+      "bytes": 4102011,
+      "sha256": "3f373bd6c469e490eaf4e5cf4d2e8ed77cf7bb91449b6a18da6a6529d479169b",
+      "origen_conocido": [
+        {
+          "fuente": "arranque-catalogo.json",
+          "nombre": "initramfs-psxitarch-v0.9.1",
+          "nivel": "catalogo"
+        },
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "initramfs.cpio.gz",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con el catálogo",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "gzip+cpio íntegros, 48 entradas"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/boot/baikal/bzImage",
+      "rol": "kernel",
+      "bytes": 13841408,
+      "sha256": "46c835f762e7b0b5400ea762b8daa1bcec638a1b769c7ec0905137bc565b1ba8",
+      "origen_conocido": [
+        {
+          "fuente": "arranque-catalogo.json",
+          "nombre": "bzImage-baikal-7.0.8",
+          "nivel": "catalogo"
+        },
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "bzImage-baikal-7.0.8",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con el catálogo",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "protocolo x86 2.15; versión declarada: 7.0.8-Strawberry-FullLTO-Baikal-+ (pask@pask-MacBookPro16-1) #1 SMP PREEMPT_DYNAMIC Tue Sep  8 03:09:52 CEST 2026"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/boot/belize/bzImage",
+      "rol": "kernel",
+      "bytes": 20415488,
+      "sha256": "072113898347932c34888cfdc7556953ee27233c0727cc45f419a57119242480",
+      "origen_conocido": [
+        {
+          "fuente": "arranque-catalogo.json",
+          "nombre": "bzImage-belize-7.1.7",
+          "nivel": "catalogo"
+        },
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "bzImage-belize-7.1.7",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con el catálogo",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "protocolo x86 2.15; versión declarada: 7.1.7-Strawberry-General-FullLTO+ (runner@runnervmgx7h7) #1 SMP PREEMPT_DYNAMIC Tue Aug 25 18:56:41 UTC 2026"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/payload/linux-1024mb.elf",
+      "rol": "payload_loader",
+      "bytes": 320936,
+      "sha256": "623c3b68592437b612ede22a4fc1a6f1eef6b17c4b16a1270100ece04cb3c98f",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "linux-1024mb.elf",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "ELF con fw_table de 20 filas (sin contrastar con una revisión de fuente)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/payload/linux-128mb.elf",
+      "rol": "payload_loader",
+      "bytes": 320936,
+      "sha256": "ba415598d9235b91ba9dde8871dbd49d0bee889ceb07646d9002106a70c241ea",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "linux-128mb.elf",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "ELF con fw_table de 20 filas (sin contrastar con una revisión de fuente)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/payload/linux-2048mb.elf",
+      "rol": "payload_loader",
+      "bytes": 320936,
+      "sha256": "efb9bb027543a829b5f14d5f122a91fddbf8e04488e754607862421c36563a8a",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "linux-2048mb.elf",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "ELF con fw_table de 20 filas (sin contrastar con una revisión de fuente)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/payload/linux-256mb.elf",
+      "rol": "payload_loader",
+      "bytes": 320936,
+      "sha256": "bef32f64b560e7541f094dd89c8d012256368ec6d89c880df2547ef2a306a4f6",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "linux-256mb.elf",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "ELF con fw_table de 20 filas (sin contrastar con una revisión de fuente)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/payload/linux-3072mb.elf",
+      "rol": "payload_loader",
+      "bytes": 320936,
+      "sha256": "e759edf99461f3eec62d3d7aef7fc2e511d736becfa66534340a133e8f2101ea",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "linux-3072mb.elf",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "ELF con fw_table de 20 filas (sin contrastar con una revisión de fuente)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/payload/linux-32mb.elf",
+      "rol": "payload_loader",
+      "bytes": 320936,
+      "sha256": "cb393c938898f0e1e381d673b7eb4251c87f5176d45da3b4a97719bc2f6f2d9f",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "linux-32mb.elf",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "ELF con fw_table de 20 filas (sin contrastar con una revisión de fuente)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/payload/linux-4096mb.elf",
+      "rol": "payload_loader",
+      "bytes": 320936,
+      "sha256": "0d03cf3f5460985759a2eec29df0b4ae7b1c7e5450c04df99738e911e035a8db",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "linux-4096mb.elf",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "ELF con fw_table de 20 filas (sin contrastar con una revisión de fuente)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/payload/linux-512mb.elf",
+      "rol": "payload_loader",
+      "bytes": 320936,
+      "sha256": "7aff2eb1edb111d1e2db846b26c734ffeab4db343998d99f05e4be7d43c8b94d",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "linux-512mb.elf",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "ELF con fw_table de 20 filas (sin contrastar con una revisión de fuente)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "distro/payload/linux-64mb.elf",
+      "rol": "payload_loader",
+      "bytes": 320936,
+      "sha256": "e655932de5c864bc77f620ac2ffaabfa7e3bbc6d3e9e4ae6cad7561b0a03eb0e",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "linux-64mb.elf",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "ELF con fw_table de 20 filas (sin contrastar con una revisión de fuente)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "goldhen-oficial-2.4b18/GoldHEN_v2.4b18.7z",
+      "rol": "goldhen",
+      "bytes": 258065,
+      "sha256": "d0c84c79f65df5afc79a00c578f33ab1aa70aeb9c205f1e789895dc7d4fca38d",
+      "origen_conocido": [],
+      "procedencia": "desconocido (sin referencia de procedencia)",
+      "validacion": {
+        "formato": "NO_VALIDADO",
+        "detalle": [
+          "sin comprobación de formato disponible para este tipo/extensión"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "goldhen-oficial-2.4b18/extraido/goldhen.bin",
+      "rol": "goldhen",
+      "bytes": 260160,
+      "sha256": "eb9fee5e9e3618c0a144a6fc6b8fc1ec7e89cf06483ad64ae7c1085efc9525a3",
+      "origen_conocido": [],
+      "procedencia": "desconocido (sin referencia de procedencia)",
+      "validacion": {
+        "formato": "NO_VALIDADO",
+        "detalle": [
+          "sin comprobación de formato disponible para este tipo/extensión"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "raw13g-9ba2f07/goldhen.bin",
+      "rol": "goldhen",
+      "bytes": 293120,
+      "sha256": "df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12",
+      "origen_conocido": [],
+      "procedencia": "desconocido (sin referencia de procedencia)",
+      "validacion": {
+        "formato": "NO_VALIDADO",
+        "detalle": [
+          "sin comprobación de formato disponible para este tipo/extensión"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "raw13g-9ba2f07/payload2.bin",
+      "rol": "goldhen",
+      "bytes": 293120,
+      "sha256": "df3f27c1b35bc7c40e3a08caab948930914dc7d0301a73b68945cf6ffe40ea12",
+      "origen_conocido": [],
+      "procedencia": "desconocido (sin referencia de procedencia)",
+      "validacion": {
+        "formato": "NO_VALIDADO",
+        "detalle": [
+          "sin comprobación de formato disponible para este tipo/extensión"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "release-v1.0/psxitarch-usb.img",
+      "rol": "imagen",
+      "bytes": 8871489536,
+      "sha256": "badd487308899edeaf43eafe67a5842b609b7ef809e5101bf77eb2762a1e0143",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "psxitarch-usb.img",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "OK",
+        "detalle": [
+          "tabla mbr: 0x0c 536870912 B FAT32 (firma), 0x83 8333570048 B ext2/3/4 (firma 0xEF53)"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "release-v1.0/psxitarch-usb.img.xz",
+      "rol": "imagen_comprimida",
+      "bytes": 2176630452,
+      "sha256": "153cec02127d7fcf2132e74b7eb1fe2342e66c97450ccf1c674964630b5f89b3",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "psxitarch-usb.img.xz",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "NO_VALIDADO",
+        "detalle": [
+          "sin comprobación de formato disponible para este tipo/extensión"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "release-v1.0/psxitarch-usb.img.xz.part1",
+      "rol": "parte_de_imagen",
+      "bytes": 1088315226,
+      "sha256": "4063f3386c8fe4687c8768f0439ddb868b3bd3f01d4e5176558a277b219bf588",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "psxitarch-usb.img.xz.part1",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "NO_VALIDADO",
+        "detalle": [
+          "sin comprobación de formato disponible para este tipo/extensión"
+        ]
+      }
+    },
+    {
+      "raiz": "artefactos",
+      "ruta": "release-v1.0/psxitarch-usb.img.xz.part2",
+      "rol": "parte_de_imagen",
+      "bytes": 1088315226,
+      "sha256": "e62aa04d0fff12979f3095d5371b8711af6ee04c600d7599913fdc460462df2d",
+      "origen_conocido": [
+        {
+          "fuente": "SHA256SUMS",
+          "nombre": "psxitarch-usb.img.xz.part2",
+          "nivel": "publicado_por_autor"
+        }
+      ],
+      "procedencia": "coincide con la lista publicada por el autor (no independiente)",
+      "validacion": {
+        "formato": "NO_VALIDADO",
+        "detalle": [
+          "sin comprobación de formato disponible para este tipo/extensión"
+        ]
+      }
+    }
+  ]
+}

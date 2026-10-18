@@ -187,7 +187,7 @@ def comprobar_cabecera_bzimage(path: Path) -> tuple[list[str], dict]:
 
 
 class _LectorGzip:
-    """Descomprime gzip en streaming con tope de bytes descomprimidos."""
+    """Descomprime un único miembro gzip en streaming y rechaza cualquier dato posterior."""
 
     def __init__(self, f, tope: int):
         self.f = f
@@ -200,6 +200,15 @@ class _LectorGzip:
     def _llenar(self) -> bool:
         if self.fin:
             return False
+        if self.d.eof:
+            # Un gzip válido puede terminar antes del final del archivo. No aceptamos
+            # basura ni miembros concatenados silenciosamente: la política es un
+            # único miembro gzip, sin bytes residuales.
+            residual = self.d.unused_data
+            if residual or self.f.read(1):
+                raise zlib.error("hay datos posteriores al único miembro gzip permitido")
+            self.fin = True
+            return False
         crudo = self.f.read(256 * 1024)
         if not crudo:
             self.fin = True
@@ -211,8 +220,8 @@ class _LectorGzip:
         if self.total > self.tope:
             raise zlib.error(f"el contenido descomprimido supera {self.tope} bytes")
         self.buf += salida
-        if self.d.eof:
-            self.fin = True
+        if self.d.eof and self.d.unused_data:
+            raise zlib.error("hay datos posteriores al único miembro gzip permitido")
         return True
 
     def leer(self, n: int) -> bytes:
@@ -231,6 +240,12 @@ class _LectorGzip:
             del self.buf[:k]
             quitado += k
         return quitado
+
+    def verificar_fin(self) -> None:
+        """Consume el resto para validar CRC/EOF y rechazar datos fuera del miembro gzip."""
+        self.buf.clear()
+        while self._llenar():
+            self.buf.clear()
 
 
 def comprobar_initramfs(path: Path) -> tuple[list[str], dict]:
@@ -287,6 +302,11 @@ def comprobar_initramfs(path: Path) -> tuple[list[str], dict]:
             except zlib.error as exc:
                 errores.append(f"{INITRAMFS}: gzip corrupto o truncado ({exc})")
             if not errores:
+                try:
+                    lector.verificar_fin()
+                except zlib.error as exc:
+                    errores.append(f"{INITRAMFS}: gzip corrupto o con datos posteriores ({exc})")
+            if not errores:
                 if "init" not in nombres_clave and "sbin/init" not in nombres_clave:
                     errores.append(f"{INITRAMFS}: no contiene /init ni /sbin/init; el kernel no tendría qué ejecutar")
             datos["entradas_cpio"] = entradas
@@ -322,7 +342,7 @@ def _verificar_opcionales(boot_dir: Path, errores: list[str], avisos: list[str],
             return
         linea = crudo.split(b"\n", 1)[0]
         if b"\0" in crudo:
-            avisos.append(f"{BOOTARGS}: contiene NUL; el loader cortaría la línea de órdenes ahí")
+            errores.append(f"{BOOTARGS}: contiene NUL; el loader cortaría la línea de órdenes ahí")
         if len(linea) > CMDLINE_X86_MAX:
             errores.append(f"{BOOTARGS}: la primera línea mide {len(linea)} > {CMDLINE_X86_MAX} bytes (límite x86)")
         if not linea.strip():
@@ -373,22 +393,48 @@ def cargar_catalogo(path: Path) -> dict:
     arts = cat.get("artefactos")
     if not isinstance(arts, list) or not arts:
         raise BootChainError("catálogo inválido: 'artefactos' debe ser una lista no vacía")
-    vistos: set[str] = set()
-    for a in arts:
+    vistos_ids: set[str] = set()
+    vistos_artefactos: set[tuple[str, str]] = set()
+    for indice, a in enumerate(arts):
+        prefijo = f"catálogo inválido: artefactos[{indice}]"
         if not isinstance(a, dict):
-            raise BootChainError("catálogo inválido: cada artefacto debe ser un objeto")
+            raise BootChainError(f"{prefijo} debe ser un objeto")
         for campo in ("id", "rol", "sha256", "size_bytes", "release"):
             if campo not in a:
-                raise BootChainError(f"catálogo inválido: artefacto sin '{campo}'")
-        if a["rol"] not in ("kernel", "initramfs"):
-            raise BootChainError(f"catálogo inválido: rol '{a['rol']}' desconocido")
-        if not isinstance(a["sha256"], str) or not SHA256_RE.match(a["sha256"]):
-            raise BootChainError(f"catálogo inválido: sha256 de '{a['id']}' no es hexadecimal de 64 caracteres")
+                raise BootChainError(f"{prefijo} sin '{campo}'")
+        ident = a["id"]
+        if not isinstance(ident, str) or not ident.strip():
+            raise BootChainError(f"{prefijo}: 'id' debe ser texto no vacío")
+        if not isinstance(a["rol"], str) or a["rol"] not in ("kernel", "initramfs"):
+            raise BootChainError(f"{prefijo}: rol '{a['rol']}' desconocido")
+        if not isinstance(a["sha256"], str) or not SHA256_RE.fullmatch(a["sha256"]):
+            raise BootChainError(f"{prefijo}: sha256 de '{ident}' no es hexadecimal minúsculo de 64 caracteres")
         if not isinstance(a["size_bytes"], int) or isinstance(a["size_bytes"], bool) or a["size_bytes"] <= 0:
-            raise BootChainError(f"catálogo inválido: size_bytes de '{a['id']}'")
-        if a["id"] in vistos:
-            raise BootChainError(f"catálogo inválido: id duplicado '{a['id']}'")
-        vistos.add(a["id"])
+            raise BootChainError(f"{prefijo}: size_bytes de '{ident}' debe ser un entero positivo")
+        if not isinstance(a["release"], str) or not a["release"].strip():
+            raise BootChainError(f"{prefijo}: 'release' debe ser texto no vacío")
+        if ident in vistos_ids:
+            raise BootChainError(f"catálogo inválido: id duplicado '{ident}'")
+        vistos_ids.add(ident)
+
+        clave = (a["rol"], a["sha256"])
+        if clave in vistos_artefactos:
+            raise BootChainError(
+                f"catálogo inválido: sha256 duplicado para rol '{a['rol']}' "
+                f"({a['sha256'][:12]}…); la procedencia sería ambigua")
+        vistos_artefactos.add(clave)
+
+        if "southbridges" in a:
+            sbs = a["southbridges"]
+            if not isinstance(sbs, list) or any(not isinstance(sb, str) or not sb.strip() for sb in sbs):
+                raise BootChainError(f"{prefijo}: 'southbridges' debe ser una lista de textos no vacíos")
+            normalizados = [sb.strip().lower() for sb in sbs]
+            if len(normalizados) != len(set(normalizados)):
+                raise BootChainError(f"{prefijo}: 'southbridges' contiene valores duplicados")
+        if "evidencia_compatibilidad" in a and (
+            not isinstance(a["evidencia_compatibilidad"], str) or not a["evidencia_compatibilidad"].strip()
+        ):
+            raise BootChainError(f"{prefijo}: 'evidencia_compatibilidad' debe ser texto no vacío")
     return cat
 
 

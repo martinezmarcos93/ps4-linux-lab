@@ -46,7 +46,7 @@ Estos elementos acreditan investigación y preparación, no compatibilidad funci
 
 ### P1 — Preparación reproducible
 - [ ] Ejecutar la suite completa en un entorno limpio y conservar la salida real.
-- [ ] Reparar/verificar GitHub Actions; el diagnóstico previo indica fallo antes de ejecutar el runner por facturación/configuración.
+- [x] GitHub Actions funciona: los runs de `main` terminan en `success` (run 111, 2026-10-16) y las ramas de PR también ejecutan el workflow; el bloqueo de facturación del 2026-10-15 quedó resuelto (ver `docs/CI_DIAGNOSIS.md`). Falta decidir la protección de `main`.
 - [ ] Elegir kernel, initramfs y rootfs compatibles.
 - [ ] Completar el manifiesto de artefactos con hashes esperados obtenidos de fuentes confiables.
 - [ ] Construir y auditar una imagen candidata en PC, primero en modo dry-run.

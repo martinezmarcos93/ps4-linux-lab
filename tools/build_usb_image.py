@@ -93,6 +93,48 @@ def validar_entrada(ruta: Path, nombre: str) -> Path:
     return Path(ruta)
 
 
+def _error_recorrido_rootfs(exc: OSError) -> None:
+    """Convierte errores de os.walk/scandir en fallo explícito; nunca acepta un árbol parcial."""
+    ruta = getattr(exc, "filename", None)
+    detalle = f" en '{ruta}'" if ruta else ""
+    raise BuildError(f"rootfs: no se pudo recorrer{detalle}: {exc.strerror or exc}") from exc
+
+
+def _lstat_rootfs(ruta: str | Path):
+    try:
+        return os.lstat(ruta)
+    except OSError as exc:
+        raise BuildError(f"rootfs: no se pudieron consultar los metadatos de '{ruta}': {exc.strerror or exc}") from exc
+
+
+def _leer_snapshot_entrada(ruta: Path, nombre: str, sha_esperado: str | None = None,
+                            bytes_esperados: int | None = None) -> bytes:
+    """Lee una instantánea desde un archivo regular sin seguir symlinks y verifica su identidad/contenido."""
+    ruta = Path(ruta)
+    try:
+        previo = os.lstat(ruta)
+        if not stat.S_ISREG(previo.st_mode):
+            raise BuildError(f"{nombre}: '{ruta}' dejó de ser un archivo regular")
+        flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(ruta, flags)
+        with os.fdopen(fd, "rb") as f:
+            abierto = os.fstat(f.fileno())
+            if not stat.S_ISREG(abierto.st_mode) or (abierto.st_dev, abierto.st_ino) != (previo.st_dev, previo.st_ino):
+                raise BuildError(f"{nombre}: '{ruta}' cambió durante la apertura")
+            contenido = f.read()
+    except BuildError:
+        raise
+    except OSError as exc:
+        raise BuildError(f"{nombre}: no se pudo leer una instantánea segura de '{ruta}': {exc.strerror or exc}") from exc
+
+    digest = hashlib.sha256(contenido).hexdigest()
+    if sha_esperado is not None and digest != sha_esperado:
+        raise BuildError(f"{nombre}: '{ruta}' cambió desde la planificación (SHA-256 distinto)")
+    if bytes_esperados is not None and len(contenido) != bytes_esperados:
+        raise BuildError(f"{nombre}: '{ruta}' cambió desde la planificación (tamaño distinto)")
+    return contenido
+
+
 def validar_rootfs(directorio: Path) -> Path:
     try:
         st = os.lstat(directorio)
@@ -100,22 +142,20 @@ def validar_rootfs(directorio: Path) -> Path:
         raise BuildError(f"rootfs: no se puede consultar '{directorio}': {exc.strerror or exc}") from exc
     if not stat.S_ISDIR(st.st_mode):
         raise BuildError(f"rootfs: '{directorio}' debe ser un directorio real (no symlink)")
-    for raiz, dirs, archivos in os.walk(directorio):
+    for raiz, dirs, archivos in os.walk(directorio, onerror=_error_recorrido_rootfs):
         for n in dirs + archivos:
-            modo = os.lstat(os.path.join(raiz, n)).st_mode
+            ruta = os.path.join(raiz, n)
+            modo = _lstat_rootfs(ruta).st_mode
             if not (stat.S_ISREG(modo) or stat.S_ISDIR(modo) or stat.S_ISLNK(modo)):
-                raise BuildError(f"rootfs: '{os.path.join(raiz, n)}' es un archivo especial (dispositivo/FIFO/socket)")
+                raise BuildError(f"rootfs: '{ruta}' es un archivo especial (dispositivo/FIFO/socket)")
     return Path(directorio)
 
 
 def _tamano_rootfs(directorio: Path) -> int:
     total = 0
-    for raiz, _d, archivos in os.walk(directorio):
+    for raiz, _d, archivos in os.walk(directorio, onerror=_error_recorrido_rootfs):
         for n in archivos:
-            try:
-                total += os.lstat(os.path.join(raiz, n)).st_size
-            except OSError:
-                pass
+            total += _lstat_rootfs(os.path.join(raiz, n)).st_size
     return total
 
 
@@ -125,6 +165,17 @@ def planificar(args) -> dict:
     salida = validar_salida(args.salida)
     initramfs = validar_entrada(args.initramfs, "initramfs")
     kernel = validar_entrada(args.kernel, "kernel")
+    # Fijar hash/tamaño antes de validar formato; construir() volverá a leer y exigirá
+    # exactamente esta instantánea antes de incorporar los bytes a la imagen.
+    instantaneas = {
+        "initramfs": _leer_snapshot_entrada(initramfs, "initramfs"),
+        "kernel": _leer_snapshot_entrada(kernel, "kernel"),
+    }
+    metadatos_entrada = {
+        nombre: {"sha256": hashlib.sha256(datos).hexdigest(), "bytes": len(datos)}
+        for nombre, datos in instantaneas.items()
+    }
+    del instantaneas
     rootfs = validar_rootfs(args.rootfs_dir)
     p1, total = args.p1_mib, args.tamano_mib
     if p1 < P1_MIN_MIB:
@@ -134,7 +185,7 @@ def planificar(args) -> dict:
     p2 = total - p1 - 1  # 1 MiB de alineación inicial
     if p2 < P2_MIN_MIB:
         raise BuildError(f"p2 quedaría en {p2} MiB; mínimo {P2_MIN_MIB} (aumente --tamano-mib)")
-    arranque = initramfs.stat().st_size + kernel.stat().st_size
+    arranque = metadatos_entrada["initramfs"]["bytes"] + metadatos_entrada["kernel"]["bytes"]
     datos_rootfs = _tamano_rootfs(rootfs)
     usado = arranque + datos_rootfs
     if arranque * 11 // 10 > p1 * MIB:
@@ -156,7 +207,7 @@ def planificar(args) -> dict:
         raise BuildError(f"ya existe '{informe}'; no se sobrescribe (bórrelo usted si es de una construcción descartada)")
     return {"omitir_fsck": bool(getattr(args, "omitir_fsck", False)), "salida": str(salida), "p1_mib": p1, "p2_mib": p2, "tamano_total_mib": total,
             "initramfs": str(initramfs), "kernel": str(kernel), "rootfs_dir": str(rootfs),
-            "bytes_a_copiar": usado}
+            "entradas": metadatos_entrada, "bytes_a_copiar": usado}
 
 
 def _ejecutar(cmd: list[str]) -> None:
@@ -180,6 +231,12 @@ def construir(plan: dict) -> Path:
     exito = False
     publicados: list[Path] = []  # archivos finales creados por ESTA ejecución (para revertir si algo falla después)
     try:
+        instantaneas = {
+            nombre: _leer_snapshot_entrada(
+                Path(plan[nombre]), nombre, plan["entradas"][nombre]["sha256"], plan["entradas"][nombre]["bytes"]
+            )
+            for nombre in ("initramfs", "kernel")
+        }
         fd = os.open(parcial, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
         try:
             os.ftruncate(fd, plan["tamano_total_mib"] * MIB)  # archivo disperso
@@ -190,15 +247,15 @@ def construir(plan: dict) -> Path:
                        text=True, capture_output=True, check=True, timeout=120)
         _ejecutar([mkvfat, "-F", "32", "-n", "PS4BOOT", "--offset", "2048", str(parcial), str(p1 * 1024)])
         off1, size1 = fat.particion_mbr(parcial, 1)
-        fat.agregar_archivo(parcial, off1, size1, "initramfs.cpio.gz", Path(plan["initramfs"]).read_bytes())
-        fat.agregar_archivo(parcial, off1, size1, "bzImage", Path(plan["kernel"]).read_bytes())
+        fat.agregar_archivo(parcial, off1, size1, "initramfs.cpio.gz", instantaneas["initramfs"])
+        fat.agregar_archivo(parcial, off1, size1, "bzImage", instantaneas["kernel"])
         off2, size2 = fat.particion_mbr(parcial, 2)
         _ejecutar([mkext4, "-q", "-F", "-L", "psxitarch", "-E", f"offset={off2}", "-d", plan["rootfs_dir"],
                    str(parcial), str(size2 // 1024)])
         verificaciones = _verificar_sistemas_de_archivos(parcial, off1, size1, off2, plan.get("omitir_fsck", False))
         # El informe se prepara (hash de la imagen incluido) ANTES de publicar nada y se publica PRIMERO:
         # si algo falla, nunca queda una imagen final sin su informe de verificación.
-        _preparar_informe(informe_parcial, parcial, destino, plan, verificaciones)
+        _preparar_informe(informe_parcial, parcial, destino, plan, verificaciones, instantaneas)
         _publicar(informe_parcial, informe_final)
         publicados.append(informe_final)
         _publicar(parcial, destino)
@@ -220,18 +277,39 @@ def construir(plan: dict) -> Path:
 
 
 def _publicar(origen: Path, destino: Path) -> None:
-    """Publica `origen` como `destino` SIN sobrescribir: enlace duro (falla si existe) y, si el sistema de archivos
-    no admite enlaces duros, comprobación previa + os.replace (ventana mínima de carrera)."""
+    """Publica `origen` como `destino` sin sobrescribir.
+
+    Los temporales se crean en el mismo directorio que el destino, por lo que la publicación normal usa un enlace
+    duro atómico que falla si el nombre final ya existe. Si el sistema de archivos no admite enlaces duros o devuelve
+    cualquier otro error, se falla de forma cerrada: no se sustituye por una comprobación seguida de os.replace,
+    porque esa secuencia reabre una carrera TOCTOU y puede sobrescribir un archivo ajeno.
+    """
     try:
         os.link(origen, destino)
     except FileExistsError as exc:
         raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe") from exc
-    except OSError:
-        if os.path.lexists(destino):
-            raise BuildError(f"'{destino}' apareció durante la construcción; no se sobrescribe")
-        os.replace(origen, destino)
-        return
-    os.unlink(origen)
+    except OSError as exc:
+        raise BuildError(
+            f"no se pudo publicar '{destino}' de forma atómica y sin sobrescritura: {exc}"
+        ) from exc
+
+    # La publicación ya creó un enlace al mismo inode. Si retirar el temporal falla, revertir
+    # únicamente si el nombre final todavía apunta al inode que acabamos de publicar.
+    try:
+        os.unlink(origen)
+    except OSError as exc:
+        try:
+            origen_st = os.stat(origen, follow_symlinks=False)
+            destino_st = os.stat(destino, follow_symlinks=False)
+            if (origen_st.st_dev, origen_st.st_ino) == (destino_st.st_dev, destino_st.st_ino):
+                os.unlink(destino)
+        except OSError:
+            # No ocultar el fallo original; el mensaje indica que la limpieza manual puede ser necesaria.
+            pass
+        raise BuildError(
+            f"se creó '{destino}', pero no se pudo retirar el temporal '{origen}'; "
+            f"se intentó revertir la publicación: {exc}"
+        ) from exc
 
 
 def _verificar_sistemas_de_archivos(imagen: Path, off1: int, size1: int, off2: int, omitir: bool) -> dict:
@@ -287,15 +365,17 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def _preparar_informe(informe_parcial: Path, imagen_parcial: Path, destino: Path, plan: dict, verificaciones: dict) -> None:
-    """Escribe el informe en un temporal (nuevo, nunca sobrescribe): entradas con hash, hash de la imagen terminada y
-    verificaciones realmente ejecutadas. El hash se calcula sobre la imagen parcial, que es la que se publicará."""
+def _preparar_informe(informe_parcial: Path, imagen_parcial: Path, destino: Path, plan: dict,
+                       verificaciones: dict, instantaneas: dict[str, bytes]) -> None:
+    """Escribe informe con hashes de las mismas instantáneas incorporadas a FAT, nunca relee fuentes mutables."""
     informe = {
         "imagen": destino.name,
         "sha256_imagen": _sha256(imagen_parcial),
         "bytes_imagen": imagen_parcial.stat().st_size,
-        "entradas": {n: {"archivo": plan[n], "sha256": _sha256(Path(plan[n])), "bytes": Path(plan[n]).stat().st_size}
-                     for n in ("initramfs", "kernel")},
+        "entradas": {
+            n: {"archivo": plan[n], "sha256": hashlib.sha256(instantaneas[n]).hexdigest(), "bytes": len(instantaneas[n])}
+            for n in ("initramfs", "kernel")
+        },
         "rootfs_dir": plan["rootfs_dir"],
         "particiones_mib": {"p1": plan["p1_mib"], "p2": plan["p2_mib"]},
         "verificaciones": verificaciones,

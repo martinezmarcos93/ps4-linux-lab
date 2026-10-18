@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.strict_usb_preflight import verificar_configuracion_minima
+from tools.strict_usb_preflight import CMDLINE_DEFAULT, verificar_configuracion_minima
 from tools.verify_boot_chain import BootChainError
 
 
@@ -62,6 +62,52 @@ class TestPreflightMinimo(unittest.TestCase):
             self.skipTest("symlinks no soportados en este entorno")
         errores = verificar_configuracion_minima(self.boot)
         self.assertTrue(any("vram.txt" in e and "está presente" in e for e in errores))
+
+    def test_perfil_rescue_shell_acepta_cmdline_completa(self):
+        (self.boot / "bootargs.txt").write_text(CMDLINE_DEFAULT + " rescueshell", encoding="ascii")
+        errores = verificar_configuracion_minima(self.boot, "rescue-shell")
+        self.assertEqual(errores, [])
+
+    def test_rescue_shell_rechaza_solo_token_sin_cmdline_default(self):
+        (self.boot / "bootargs.txt").write_text("rescueshell", encoding="ascii")
+        errores = verificar_configuracion_minima(self.boot, "rescue-shell")
+        self.assertTrue(any("cmdline por defecto completa" in e for e in errores))
+
+    def test_rescue_shell_rechaza_token_duplicado(self):
+        (self.boot / "bootargs.txt").write_text(
+            CMDLINE_DEFAULT + " rescueshell rescueshell", encoding="ascii"
+        )
+        errores = verificar_configuracion_minima(self.boot, "rescue-shell")
+        self.assertTrue(any("exactamente un token" in e for e in errores))
+
+    def test_rescue_shell_rechaza_controles_y_saltos_de_linea(self):
+        (self.boot / "bootargs.txt").write_bytes((CMDLINE_DEFAULT + " rescueshell").encode("ascii") + bytes([10]))
+        errores = verificar_configuracion_minima(self.boot, "rescue-shell")
+        self.assertTrue(any("ASCII imprimible" in e for e in errores))
+
+    def test_rescue_shell_rechaza_cmdline_excesiva(self):
+        (self.boot / "bootargs.txt").write_text(
+            CMDLINE_DEFAULT + " rescueshell " + ("x" * 2100), encoding="ascii"
+        )
+        errores = verificar_configuracion_minima(self.boot, "rescue-shell")
+        self.assertTrue(any("supera 2047 bytes" in e for e in errores))
+
+    def test_rescue_shell_rechaza_parametros_conflictivos_adicionales(self):
+        (self.boot / "bootargs.txt").write_text(
+            CMDLINE_DEFAULT + " rescueshell panic=1", encoding="ascii"
+        )
+        errores = verificar_configuracion_minima(self.boot, "rescue-shell")
+        self.assertTrue(any("parámetros adicionales" in e for e in errores))
+
+    def test_rescue_shell_rechaza_vram_opcional(self):
+        (self.boot / "bootargs.txt").write_text(CMDLINE_DEFAULT + " rescueshell", encoding="ascii")
+        (self.boot / "vram.txt").write_text("1024\\n", encoding="ascii")
+        errores = verificar_configuracion_minima(self.boot, "rescue-shell")
+        self.assertTrue(any("vram.txt" in e and "exige omitirlo" in e for e in errores))
+
+    def test_perfil_desconocido_es_error_de_uso(self):
+        with self.assertRaisesRegex(BootChainError, "perfil desconocido"):
+            verificar_configuracion_minima(self.boot, "rescue")
 
     def test_falta_kernel(self):
         (self.boot / "bzImage").unlink()
