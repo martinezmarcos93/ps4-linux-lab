@@ -342,7 +342,7 @@ def _verificar_opcionales(boot_dir: Path, errores: list[str], avisos: list[str],
             return
         linea = crudo.split(b"\n", 1)[0]
         if b"\0" in crudo:
-            avisos.append(f"{BOOTARGS}: contiene NUL; el loader cortaría la línea de órdenes ahí")
+            errores.append(f"{BOOTARGS}: contiene NUL; el loader cortaría la línea de órdenes ahí")
         if len(linea) > CMDLINE_X86_MAX:
             errores.append(f"{BOOTARGS}: la primera línea mide {len(linea)} > {CMDLINE_X86_MAX} bytes (límite x86)")
         if not linea.strip():
