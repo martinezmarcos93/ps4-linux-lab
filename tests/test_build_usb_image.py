@@ -97,6 +97,41 @@ class TestValidaciones(Base):
         with self.assertRaises(bu.BuildError):
             bu.planificar(self.args(kernel=Path("/dev/null")))
 
+    def test_plan_fija_hashes_y_rechaza_entrada_modificada(self):
+        plan = bu.planificar(self.args())
+        esperado = plan["entradas"]["kernel"]
+        self.assertEqual(esperado["bytes"], self.kernel.stat().st_size)
+        self.assertEqual(esperado["sha256"], bu.hashlib.sha256(self.kernel.read_bytes()).hexdigest())
+        self.kernel.write_bytes(b"kernel cambiado tras planificar")
+        with self.assertRaisesRegex(bu.BuildError, "cambió desde la planificación"):
+            bu._leer_snapshot_entrada(self.kernel, "kernel", esperado["sha256"], esperado["bytes"])
+
+    def test_informe_hash_usa_snapshot_incorporada_no_fuente_actual(self):
+        kernel_snapshot = self.kernel.read_bytes()
+        initramfs_snapshot = self.initramfs.read_bytes()
+        self.kernel.write_bytes("contenido distinto posterior a la instantánea".encode("utf-8"))
+        imagen_parcial = self.dir / "imagen.parcial"
+        informe_parcial = self.dir / "informe.parcial"
+        imagen_parcial.write_bytes(b"imagen ficticia")
+        plan = {
+            "kernel": str(self.kernel),
+            "initramfs": str(self.initramfs),
+            "rootfs_dir": str(self.rootfs),
+            "p1_mib": 40,
+            "p2_mib": 31,
+        }
+        bu._preparar_informe(
+            informe_parcial, imagen_parcial, self.dir / "final.img", plan,
+            {"fat": {"estado": "OK"}, "ext4": {"estado": "OK"}},
+            {"kernel": kernel_snapshot, "initramfs": initramfs_snapshot},
+        )
+        informe = json.loads(informe_parcial.read_text(encoding="utf-8"))
+        self.assertEqual(informe["entradas"]["kernel"]["sha256"],
+                         bu.hashlib.sha256(kernel_snapshot).hexdigest())
+        self.assertEqual(informe["entradas"]["kernel"]["bytes"], len(kernel_snapshot))
+        self.assertNotEqual(informe["entradas"]["kernel"]["sha256"],
+                            bu.hashlib.sha256(self.kernel.read_bytes()).hexdigest())
+
     def test_formato_invalido_rechazado_salvo_que_se_omita(self):
         self.kernel.write_bytes(b"dummy kernel")
         with self.assertRaisesRegex(bu.BuildError, "formato"):
