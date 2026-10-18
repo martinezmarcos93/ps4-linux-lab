@@ -24,3 +24,7 @@ __pycache__/
 venv/
 .DS_Store
 Thumbs.db
+
+# Clon local del loader de terceros y salida de builds
+src/
+output/
