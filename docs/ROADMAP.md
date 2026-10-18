@@ -8,6 +8,8 @@ Auditoría cruzada documental 2026-10-16: [`docs/CROSS_DOC_AUDIT_2026-10-16.md`]
 
 **Nota de consolidación (merge a main, 2026-10-16):** este archivo tenía fases duplicadas (`Fase 3`, `5`, `6`, `7`, `8` aparecían dos veces con contenidos distintos) porque las ramas `main` y `chatgpt/ps4-audit-roadmap` lo evolucionaron en paralelo sin renumerar. Se consolidó en una sola secuencia 0–12, conservando el contenido más reciente y mejor evidenciado de cada fase (ver [`docs/INTEGRACION_RAMAS_2026-10-16.md`](INTEGRACION_RAMAS_2026-10-16.md)).
 
+**Actualización 2026-10-17 (Linux nativo):** bloque 1 del handoff ejecutado; ver [`docs/AUDITORIA_ARTEFACTOS_LINUX_2026-10-17.md`](AUDITORIA_ARTEFACTOS_LINUX_2026-10-17.md). Hallazgo H-1: la imagen publicada no contiene el kernel Baikal; la candidata debe construirse con él. No cambia ninguna fase a `LAB`/`VERIFIED`.
+
 ## Escala de evidencia
 
 | Etiqueta | Significado |
