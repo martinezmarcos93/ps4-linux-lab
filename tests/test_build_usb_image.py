@@ -123,6 +123,41 @@ class TestValidaciones(Base):
         with self.assertRaisesRegex(bu.BuildError, "especial"):
             bu.planificar(self.args())
 
+    def test_rootfs_recorrido_inaccesible_aborta(self):
+        def walk_falla(directorio, onerror=None):
+            exc = PermissionError("Permission denied", 13, str(Path(directorio) / "etc"))
+            if onerror is not None:
+                onerror(exc)
+            return iter(())
+
+        with mock.patch("tools.build_usb_image.os.walk", side_effect=walk_falla):
+            with self.assertRaisesRegex(bu.BuildError, "no se pudo recorrer"):
+                bu.validar_rootfs(self.rootfs)
+
+    def test_tamano_rootfs_recorrido_inaccesible_aborta(self):
+        def walk_falla(directorio, onerror=None):
+            exc = PermissionError("Permission denied", 13, str(Path(directorio) / "etc"))
+            if onerror is not None:
+                onerror(exc)
+            return iter(())
+
+        with mock.patch("tools.build_usb_image.os.walk", side_effect=walk_falla):
+            with self.assertRaisesRegex(bu.BuildError, "no se pudo recorrer"):
+                bu._tamano_rootfs(self.rootfs)
+
+    def test_tamano_rootfs_metadatos_inaccesibles_aborta(self):
+        lstat_original = os.lstat
+        objetivo = str(self.rootfs / "etc" / "marca.txt")
+
+        def lstat_falla(ruta, *args, **kwargs):
+            if os.fspath(ruta) == objetivo:
+                raise PermissionError("Permission denied", 13, objetivo)
+            return lstat_original(ruta, *args, **kwargs)
+
+        with mock.patch("tools.build_usb_image.os.lstat", side_effect=lstat_falla):
+            with self.assertRaisesRegex(bu.BuildError, "metadatos"):
+                bu._tamano_rootfs(self.rootfs)
+
     def test_contenido_que_no_cabe(self):
         with open(self.rootfs / "grande.bin", "wb") as f:
             f.truncate(40 * 1024 * 1024)  # disperso: no ocupa disco real
