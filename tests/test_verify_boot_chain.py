@@ -245,6 +245,22 @@ class TestFormato(Base):
         self.poner("initramfs.cpio.gz", bytes(datos))
         self.assertTrue(any("gzip" in e for e in vbc.verificar_formato(self.dir)["errores"]))
 
+    def test_initramfs_rechaza_bytes_tras_miembro_gzip_valido(self):
+        self.poner("bzImage", hacer_bzimage())
+        datos = hacer_initramfs() + b"\x00basura-final"
+        self.poner("initramfs.cpio.gz", datos)
+        r = vbc.verificar_formato(self.dir)
+        self.assertEqual(r["estado"], "FALLO")
+        self.assertTrue(any("datos posteriores" in e for e in r["errores"]), r)
+
+    def test_initramfs_rechaza_miembros_gzip_concatenados_explicito(self):
+        self.poner("bzImage", hacer_bzimage())
+        datos = hacer_initramfs() + gzip.compress(b"segundo miembro", mtime=0)
+        self.poner("initramfs.cpio.gz", datos)
+        r = vbc.verificar_formato(self.dir)
+        self.assertEqual(r["estado"], "FALLO")
+        self.assertTrue(any("datos posteriores" in e for e in r["errores"]), r)
+
     def test_initramfs_gzip_valido_pero_no_cpio(self):
         self.poner("bzImage", hacer_bzimage())
         self.poner("initramfs.cpio.gz", gzip.compress(b"esto no es cpio" * 20, mtime=0))
