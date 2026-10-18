@@ -43,7 +43,7 @@ Los bloqueos reales que quedan son:
 - [ ] Definir una disposición donde kernel, initramfs, configuración y rootfs correspondan al mismo manifiesto.
 - [ ] El diseño debe fallar cerrado si falta cualquier artefacto; nunca tomar silenciosamente un archivo del disco interno.
 - [x] Inspección inicial de la imagen publicada registrada en `docs/PLAN_INMEDIATO.md` y `docs/USB_ONLY_DESIGN.md`: particiones/layout leídos sin montar en escritura; el contenido de arranque actual no incluye `bzImage` con nombre exacto ni el kernel Baikal.
-- [ ] Inspeccionar una copia de imagen candidata tras agregar el kernel Baikal en la FAT, sin montar en escritura ni modificar dispositivos físicos.
+- [x] Inspeccionar una copia de imagen candidata tras agregar el kernel Baikal en la FAT, sin montar en escritura ni modificar dispositivos físicos (ver `docs/IMAGEN_CANDIDATA_Y_GATE3_2026-10-17.md`).
 - [ ] Validar tamaño, estructura y hashes con fixtures sintéticos y salidas temporales explícitas.
 - [ ] Verificar por lectura estática los argumentos de arranque y cómo el initramfs localiza la raíz USB; la revisión existente del initramfs/rootfs es parcial y no prueba que Linux no acceda al disco interno.
 - [ ] Documentar recuperación y límites de lo que no puede probarse sin hardware.
